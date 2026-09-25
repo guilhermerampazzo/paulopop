@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 import { Suspense } from 'react'
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
-import { Plus, Search } from 'lucide-react'
+import { Link2, Plus, Search } from 'lucide-react'
 import { ImoveisTableClient } from '@/components/admin/ImoveisTableClient'
 
 interface SearchParams {
@@ -108,14 +108,23 @@ export default function AdminImoveisPage({
           <h1 className="text-2xl font-bold text-[#0D2F5E]">Imóveis</h1>
           <p className="text-sm text-gray-500 mt-0.5">Gerencie todos os imóveis cadastrados</p>
         </div>
-        <Link
-          href="/admin/imoveis/novo"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-[#0D2F5E] text-white text-sm font-medium rounded-lg hover:bg-[#081E3F] transition-colors"
-          aria-label="Cadastrar novo imóvel"
-        >
-          <Plus className="w-4 h-4" />
-          Novo Imóvel
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/admin/imoveis/importar"
+            className="inline-flex items-center gap-2 px-4 py-2 border border-[#0D2F5E] text-[#0D2F5E] text-sm font-medium rounded-lg hover:bg-[#0D2F5E] hover:text-white transition-colors"
+          >
+            <Link2 className="w-4 h-4" />
+            Importar da RE/MAX
+          </Link>
+          <Link
+            href="/admin/imoveis/novo"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-[#0D2F5E] text-white text-sm font-medium rounded-lg hover:bg-[#081E3F] transition-colors"
+            aria-label="Cadastrar novo imóvel"
+          >
+            <Plus className="w-4 h-4" />
+            Novo Imóvel
+          </Link>
+        </div>
       </div>
 
       {/* Filtros */}

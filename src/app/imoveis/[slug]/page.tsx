@@ -151,6 +151,78 @@ export default async function PropertyPage({ params }: Props) {
   const title = property.title
     ?? `${property.propertyType} — ${transactionLabel[property.transactionType]} — ${property.city}, ${property.state}`
 
+  // Título no padrão RE/MAX: "Apartamento - Venda - Samambaia, DF"
+  const place = [property.city, property.state].filter(Boolean).join(', ')
+  const headline = property.propertyType
+    ? [property.propertyType, transactionLabel[property.transactionType], place].filter(Boolean).join(' - ')
+    : title
+
+  const fullAddress = property.showFullAddress
+    ? [property.address, property.number, property.complement, property.neighborhood, property.city, property.state, property.zipCode]
+        .filter(Boolean).join(', ')
+    : [property.neighborhood, property.city, property.state].filter(Boolean).join(', ')
+
+  const periodLabel = (p: string | null) => (p ? p.charAt(0).toUpperCase() + p.slice(1).toLowerCase() : null)
+  const costRows = [
+    property.condominiumFee && Number(property.condominiumFee) > 0
+      ? { label: 'Preço de Condomínio', value: formatCurrency(Number(property.condominiumFee)), suffix: periodLabel(property.condominiumFeePeriod) }
+      : null,
+    property.iptu && Number(property.iptu) > 0
+      ? { label: 'Valor do IPTU', value: formatCurrency(Number(property.iptu)), suffix: periodLabel(property.iptuPeriod) }
+      : null,
+    property.availabilityDate
+      ? { label: 'Data disponível', value: property.availabilityDate.toLocaleDateString('pt-BR', { timeZone: 'UTC' }), suffix: null }
+      : null,
+  ].filter((r): r is { label: string; value: string; suffix: string | null } => r !== null)
+
+  // Ficha do imóvel (mesmos itens da RE/MAX, mais os do cadastro iList)
+  const n = (v: unknown) => (v === null || v === undefined ? null : Number(v))
+  const fichaRows: { label: string; value: string }[] = []
+  const addFicha = (label: string, value: string | number | null | undefined) => {
+    if (value === null || value === undefined || value === '' || value === 0) return
+    fichaRows.push({ label, value: String(value) })
+  }
+  addFicha('Ambientes Totais', property.environments)
+  addFicha('Dormitórios', property.bedrooms)
+  addFicha('Suítes', property.suites)
+  addFicha('Banheiros', property.bathrooms)
+  addFicha('Vagas', property.totalParkingSpots)
+  addFicha('Total m²', n(property.totalArea) ? formatArea(Number(property.totalArea)) : null)
+  addFicha('Área útil', n(property.usefulArea) ? formatArea(Number(property.usefulArea)) : null)
+  addFicha('Área do terreno', n(property.landArea) ? formatArea(Number(property.landArea)) : null)
+  addFicha('Ano/ Mês de Construção', property.constructionYear
+    ? `${property.constructionYear}${property.constructionMonth ? `/${String(property.constructionMonth).padStart(2, '0')}` : ''}`
+    : null)
+  addFicha('Número de Pisos', property.floors)
+  addFicha('Andar', property.floor)
+  addFicha('Uso do terreno designado para', property.landUse)
+  addFicha('Categoria', property.category)
+  addFicha('Condição', property.condition)
+
+  const featureList = [
+    ...property.features.map(f => featureLabels[f.feature] ?? f.feature),
+    ...property.extraFeatures,
+  ].filter((v, i, a) => a.indexOf(v) === i)
+
+  // Links relacionados (faixa de preço ±25% na cidade, venda/aluguel na cidade)
+  const relatedLinks: { href: string; label: string }[] = []
+  const cityParam = property.city ? encodeURIComponent(property.city) : null
+  if (property.propertyType) {
+    relatedLinks.push({ href: `/imoveis?tipo=${encodeURIComponent(property.propertyType)}`, label: `Veja mais imóveis do tipo ${property.propertyType}` })
+  }
+  if (property.price && cityParam) {
+    const p = Number(property.price)
+    const min = Math.round(p * 0.75), max = Math.round(p * 1.25)
+    relatedLinks.push({
+      href: `/imoveis?cidade=${cityParam}&precoMin=${min}&precoMax=${max}`,
+      label: `Entre ${formatCurrency(min)} e ${formatCurrency(max)} em ${property.city}`,
+    })
+  }
+  if (cityParam) {
+    relatedLinks.push({ href: `/imoveis?cidade=${cityParam}&transacao=comprar`, label: `Venda em ${property.city}` })
+    relatedLinks.push({ href: `/imoveis?cidade=${cityParam}&transacao=alugar`, label: `Alugar em ${property.city}` })
+  }
+
   const breadcrumb = [
     { label: 'Imóveis', href: '/imoveis' },
     ...(property.propertyType ? [{ label: property.propertyType, href: `/imoveis?tipo=${property.propertyType}` }] : []),
@@ -215,37 +287,70 @@ export default async function PropertyPage({ params }: Props) {
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Cabeçalho */}
+          {/* Cabeçalho (padrão RE/MAX: tipo · transação · bairro, título, preço, ID, endereço e custos) */}
           <div className="mb-6">
+            <div className="flex flex-wrap items-center gap-2 mb-3 text-xs font-medium">
+              {property.propertyType && (
+                <Link href={`/imoveis?tipo=${encodeURIComponent(property.propertyType)}`} className="px-2.5 py-1 rounded-full bg-white border border-gray-200 text-[#0D2F5E] hover:border-[#0D2F5E]">
+                  {property.propertyType}
+                </Link>
+              )}
+              <Link href={`/imoveis?transacao=${property.transactionType === 'RENT' ? 'alugar' : 'comprar'}`} className="px-2.5 py-1 rounded-full bg-white border border-gray-200 text-[#0D2F5E] hover:border-[#0D2F5E]">
+                {transactionLabel[property.transactionType]}
+              </Link>
+              {property.neighborhood && (
+                <span className="px-2.5 py-1 rounded-full bg-white border border-gray-200 text-gray-600">{property.neighborhood}</span>
+              )}
+            </div>
             <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-              <div>
+              <div className="min-w-0">
                 <h1 className="font-display text-2xl md:text-3xl font-bold text-[#0D2F5E] mb-2">
-                  {title}
+                  {headline}
                 </h1>
-                {property.address && (
-                  <p className="flex items-center gap-1.5 text-gray-500 text-sm">
-                    <MapPin className="w-4 h-4 text-[#2E86DE] flex-shrink-0" />
-                    {[property.address, property.number, property.neighborhood, property.city, property.state]
-                      .filter(Boolean).join(', ')}
+                {fullAddress && (
+                  <p className="flex items-start gap-1.5 text-gray-500 text-sm">
+                    <MapPin className="w-4 h-4 mt-0.5 text-[#2E86DE] flex-shrink-0" />
+                    {fullAddress}
                   </p>
                 )}
               </div>
-              <div className="text-right flex-shrink-0">
-                {property.price && (
+              <div className="md:text-right flex-shrink-0">
+                {property.price && !property.hidePrice ? (
                   <p className="font-display text-3xl font-bold text-[#0D2F5E]">
                     {formatCurrency(Number(property.price))}
                     {property.transactionType === 'RENT' && (
                       <span className="text-base font-normal text-gray-500">/mês</span>
                     )}
                   </p>
+                ) : (
+                  <p className="font-display text-xl font-bold text-[#0D2F5E]">Consulte o valor</p>
                 )}
-                <p className="text-xs text-gray-400 mt-0.5">Ref: {property.ref}</p>
+                <p className="text-xs text-gray-400 mt-0.5">ID: {property.ref}</p>
               </div>
             </div>
+
+            {costRows.length > 0 && (
+              <dl className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {costRows.map(row => (
+                  <div key={row.label} className="flex items-baseline justify-between sm:block bg-white rounded-xl px-4 py-3 shadow-sm">
+                    <dt className="text-xs text-gray-400">{row.label}</dt>
+                    <dd className="font-semibold text-[#0D2F5E] text-sm">
+                      {row.value}
+                      {row.suffix && <span className="font-normal text-gray-400"> {row.suffix}</span>}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            )}
           </div>
 
           {/* Galeria */}
-          <div className="mb-8">
+          <div className="mb-8 relative">
+            {property.marketStatus && (
+              <span className="absolute top-3 left-3 z-10 px-3 py-1 rounded-full bg-[#0D2F5E] text-white text-xs font-semibold shadow">
+                {property.marketStatus}
+              </span>
+            )}
             <PropertyGallery
               images={property.images.map(img => ({ url: img.url, alt: img.alt }))}
               title={title}
@@ -256,13 +361,21 @@ export default async function PropertyPage({ params }: Props) {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Coluna esquerda (detalhes) */}
             <div className="lg:col-span-2 space-y-8">
-              {/* Stats do imóvel */}
+              {/* Descrição (primeiro, como na RE/MAX) */}
+              {(property.title || property.description) && (
+                <ExpandableDescription
+                  title={property.title ?? undefined}
+                  description={property.description ?? undefined}
+                />
+              )}
+
+              {/* Ficha do imóvel */}
               <div className="bg-white rounded-2xl p-6 shadow-sm">
                 <h2 className="font-semibold text-[#0D2F5E] mb-4 flex items-center gap-2">
                   <Layers className="w-4 h-4" />
                   Detalhes do Imóvel
                 </h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-5">
                   {property.totalArea && (
                     <div className="flex flex-col items-center p-3 bg-[#F0F4F8] rounded-xl">
                       <Maximize2 className="w-5 h-5 text-[#2E86DE] mb-1" />
@@ -320,28 +433,30 @@ export default async function PropertyPage({ params }: Props) {
                     </div>
                   )}
                 </div>
-              </div>
-
-              {/* Descrição */}
-              {(property.title || property.description) && (
-                <ExpandableDescription
-                  title={property.title ?? undefined}
-                  description={property.description ?? undefined}
-                />
-              )}
-
-              {/* Características */}
-              {property.features.length > 0 && (
-                <div className="bg-white rounded-2xl p-6 shadow-sm">
-                  <h2 className="font-semibold text-[#0D2F5E] mb-4">Características</h2>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {property.features.map(f => (
-                      <div key={f.feature} className="flex items-center gap-2 text-sm text-gray-700">
-                        <span className="w-2 h-2 rounded-full bg-[#2E86DE] flex-shrink-0" />
-                        {featureLabels[f.feature] ?? f.feature}
+                {fichaRows.length > 0 && (
+                  <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 border-t border-gray-100 pt-4">
+                    {fichaRows.map(row => (
+                      <div key={row.label} className="flex justify-between gap-4 py-2 border-b border-gray-50 text-sm">
+                        <dt className="text-gray-500">{row.label}</dt>
+                        <dd className="font-medium text-[#0D2F5E] text-right">{row.value}</dd>
                       </div>
                     ))}
-                  </div>
+                  </dl>
+                )}
+              </div>
+
+              {/* Características */}
+              {featureList.length > 0 && (
+                <div className="bg-white rounded-2xl p-6 shadow-sm">
+                  <h2 className="font-semibold text-[#0D2F5E] mb-4">Características</h2>
+                  <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                    {featureList.map(label => (
+                      <li key={label} className="flex items-center gap-2 text-sm text-gray-700">
+                        <span className="w-2 h-2 rounded-full bg-[#2E86DE] flex-shrink-0" />
+                        {label}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               )}
 
@@ -387,6 +502,11 @@ export default async function PropertyPage({ params }: Props) {
                   />
                 </div>
               )}
+
+              <p className="text-xs text-gray-400 leading-relaxed">
+                Todas as informações fornecidas pelo corretor são consideradas confiáveis, mas não são garantidas e
+                devem ser verificadas de forma independente. Valores e disponibilidade sujeitos a alteração sem aviso.
+              </p>
 
               {/* Vídeos YouTube */}
               {property.videos && property.videos.length > 0 && (
@@ -451,6 +571,20 @@ export default async function PropertyPage({ params }: Props) {
                     ))}
                   </div>
                 </div>
+              )}
+
+              {/* Links relacionados */}
+              {relatedLinks.length > 0 && (
+                <nav aria-labelledby="links-relacionados" className="bg-white rounded-2xl p-6 shadow-sm">
+                  <h2 id="links-relacionados" className="font-semibold text-[#0D2F5E] mb-3">Links relacionados</h2>
+                  <ul className="space-y-1.5 text-sm">
+                    {relatedLinks.map(l => (
+                      <li key={l.href}>
+                        <Link href={l.href} className="text-[#2E86DE] hover:underline">{l.label}</Link>
+                      </li>
+                    ))}
+                  </ul>
+                </nav>
               )}
             </div>
 

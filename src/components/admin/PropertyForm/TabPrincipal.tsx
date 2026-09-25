@@ -233,6 +233,19 @@ export function TabPrincipal({ data, onChange }: TabPrincipalProps) {
   return (
     <div className="space-y-8 py-4">
 
+      {typeof data.sourceUrl === 'string' && data.sourceUrl && (
+        <div className="p-4 rounded-xl bg-[#F0F4F8] border border-[#D6E2F0] text-sm text-[#0D2F5E]">
+          Importado da RE/MAX
+          {typeof data.importedAt === 'string' && ` em ${new Date(data.importedAt).toLocaleDateString('pt-BR')}`}
+          {typeof data.sourceAgentName === 'string' && data.sourceAgentName && (
+            <> · captação: <b>{data.sourceAgentName as string}</b>{typeof data.sourceOfficeName === 'string' && data.sourceOfficeName ? ` (${data.sourceOfficeName})` : ''}</>
+          )}
+          {' · '}
+          <a href={data.sourceUrl as string} target="_blank" rel="noopener noreferrer" className="underline">ver anúncio original</a>
+          <span className="block text-xs text-gray-500 mt-1">Para atualizar com os dados atuais da RE/MAX, importe o mesmo link de novo em Imóveis → Importar da RE/MAX.</span>
+        </div>
+      )}
+
       {/* ── Status e Datas ───────────────────────────────────────────────────── */}
       <section>
         <SectionTitle>Status e Datas</SectionTitle>
@@ -541,6 +554,16 @@ export function TabPrincipal({ data, onChange }: TabPrincipalProps) {
               placeholder="2020"
             />
             <Input
+              label="Mês de Construção"
+              id="constructionMonth"
+              type="number"
+              min={1}
+              max={12}
+              value={(data.constructionMonth as string) ?? ''}
+              onChange={e => onChange('constructionMonth', e.target.value)}
+              placeholder="1 a 12"
+            />
+            <Input
               label="Data de Disponibilidade"
               id="availabilityDate"
               type="date"
@@ -773,6 +796,20 @@ export function TabPrincipal({ data, onChange }: TabPrincipalProps) {
             {showAllFeatures ? 'Ver menos' : `Ver mais (${FEATURES.length - 8} características)`}
           </button>
         )}
+        <div className="mt-4">
+          <label htmlFor="extraFeatures" className="block text-sm font-medium text-gray-700 mb-1">
+            Outras características (uma por linha)
+          </label>
+          <textarea
+            id="extraFeatures"
+            rows={5}
+            value={Array.isArray(data.extraFeatures) ? (data.extraFeatures as string[]).join('\n') : ((data.extraFeatures as string) ?? '')}
+            onChange={e => onChange('extraFeatures', e.target.value.split('\n'))}
+            placeholder={'Perto do metrô\nArmário embutido\nPortaria com câmera'}
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86DE]"
+          />
+          <p className="text-xs text-gray-400 mt-1">Aparecem no site junto com as marcadas acima. Os anúncios importados da RE/MAX já vêm preenchidos.</p>
+        </div>
       </section>
 
       {/* ── Estilo de Vida ───────────────────────────────────────────────────── */}

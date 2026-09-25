@@ -8,9 +8,13 @@ import { v4 as uuidv4 } from 'uuid'
 const UPLOAD_BASE = process.env.UPLOAD_DIR ?? path.join(process.cwd(), 'public', 'uploads')
 
 export async function saveImage(file: File): Promise<{ url: string; thumbnailUrl: string }> {
-  const sharp = (await import('sharp')).default
   const bytes = await file.arrayBuffer()
-  const buffer = Buffer.from(bytes)
+  return saveImageBuffer(Buffer.from(bytes))
+}
+
+/** Grava uma imagem já em memória (ex.: baixada na importação) como WebP + miniatura. */
+export async function saveImageBuffer(buffer: Buffer): Promise<{ url: string; thumbnailUrl: string }> {
+  const sharp = (await import('sharp')).default
 
   const dir = path.isAbsolute(UPLOAD_BASE)
     ? path.join(UPLOAD_BASE, 'images')

@@ -21,6 +21,7 @@ const RELATION_FIELDS = [
 const NULLABLE_DATE_FIELDS = ['expiryDate', 'availabilityDate', 'publishedAt'] as const
 const NULLABLE_INT_FIELDS = [
   'constructionYear',
+  'constructionMonth',
   'floors',
   'unitsInBuilding',
   'maxOccupancy',
@@ -51,7 +52,11 @@ const NULLABLE_DECIMAL_FIELDS = [
 ] as const
 const NULLABLE_ENUM_FIELDS = ['contractType', 'priceType'] as const
 const NULLABLE_FK_FIELDS = ['condominiumId', 'empreendimentoId', 'ownerId', 'secondaryAgentId'] as const
-const IMMUTABLE_FIELDS = ['createdAt', 'updatedAt', 'id', 'ref', 'slug', 'views', 'favorites'] as const
+const IMMUTABLE_FIELDS = [
+  'createdAt', 'updatedAt', 'id', 'ref', 'slug', 'views', 'favorites',
+  // origem da importação: só o importador grava
+  'sourcePortal', 'sourceId', 'sourceUrl', 'sourceAgentName', 'sourceOfficeName', 'importedAt',
+] as const
 
 function parseDate(value: unknown): string | null {
   if (value === '' || value === null || value === undefined) return null
@@ -128,6 +133,14 @@ export function normalizePropertyUpdateInput(body: Record<string, unknown>) {
     if (field in data) {
       data[field] = data[field] === '' || data[field] === undefined ? null : data[field]
     }
+  }
+
+  if ('extraFeatures' in data) {
+    const raw = data.extraFeatures
+    const list = Array.isArray(raw) ? raw : typeof raw === 'string' ? raw.split('\n') : []
+    data.extraFeatures = Array.from(new Set(
+      list.map(v => String(v).trim()).filter(v => v.length > 0 && v.length <= 80),
+    )).slice(0, 100)
   }
 
   if (data.status === 'ACTIVE' && !data.publishedAt) {
