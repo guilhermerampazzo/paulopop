@@ -20,8 +20,8 @@ RUN --mount=type=cache,target=/root/.npm \
 # ── Compila a aplicação ───────────────────────────────────────────────────────
 FROM base AS builder
 ENV NODE_ENV=production \
-    DATABASE_URL=postgresql://build:build@127.0.0.1:5432/build \
-    NEXTAUTH_SECRET=build-secret
+    DATABASE_URL=postgresql://build:***@127.0.0.1:5432/build \
+    NEXTAUTH_SECRET=build-only-placeholder-secret-0123456789
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npx prisma generate && \
