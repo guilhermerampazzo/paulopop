@@ -149,7 +149,7 @@ export function ImoveisTableClient({ properties, total, page, totalPages, search
 
       {/* Barra de ações em massa */}
       {someSelected && (
-        <div className="flex items-center gap-3 mb-3 px-4 py-2.5 bg-[#0D2F5E] text-white rounded-xl text-sm font-medium animate-in slide-in-from-top-1">
+        <div className="flex items-center gap-3 mb-3 px-4 py-2.5 bg-[#1e3a8a] text-white rounded-xl text-sm font-medium animate-in slide-in-from-top-1">
           <span className="shrink-0">
             {selected.size} selecionado{selected.size !== 1 ? 's' : ''}
           </span>
@@ -235,7 +235,7 @@ export function ImoveisTableClient({ properties, total, page, totalPages, search
                       checked={allSelected}
                       onChange={toggleAll}
                       aria-label="Selecionar todos"
-                      className="w-4 h-4 rounded border-gray-300 accent-[#0D2F5E] cursor-pointer"
+                      className="w-4 h-4 rounded border-gray-300 accent-[#1e3a8a] cursor-pointer"
                     />
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Imóvel</th>
@@ -260,7 +260,7 @@ export function ImoveisTableClient({ properties, total, page, totalPages, search
                         checked={selected.has(p.id)}
                         onChange={() => toggleRow(p.id)}
                         aria-label={`Selecionar ${p.ref}`}
-                        className="w-4 h-4 rounded border-gray-300 accent-[#0D2F5E] cursor-pointer"
+                        className="w-4 h-4 rounded border-gray-300 accent-[#1e3a8a] cursor-pointer"
                       />
                     </td>
                     <td className="px-4 py-3">
@@ -309,7 +309,7 @@ export function ImoveisTableClient({ properties, total, page, totalPages, search
                             rel="noopener noreferrer"
                             title="Ver no site"
                             aria-label={`Ver ${p.ref} no site`}
-                            className="p-1.5 text-gray-400 hover:text-[#2E86DE] hover:bg-blue-50 rounded-md transition-colors"
+                            className="p-1.5 text-gray-400 hover:text-[#2563eb] hover:bg-blue-50 rounded-md transition-colors"
                           >
                             <ExternalLink className="w-4 h-4" />
                           </a>
@@ -332,7 +332,7 @@ export function ImoveisTableClient({ properties, total, page, totalPages, search
                           href={`/admin/imoveis/${p.id}`}
                           title="Editar"
                           aria-label={`Editar ${p.ref}`}
-                          className="p-1.5 text-gray-400 hover:text-[#0D2F5E] hover:bg-indigo-50 rounded-md transition-colors"
+                          className="p-1.5 text-gray-400 hover:text-[#1e3a8a] hover:bg-indigo-50 rounded-md transition-colors"
                         >
                           <Pencil className="w-4 h-4" />
                         </Link>
@@ -362,7 +362,7 @@ export function ImoveisTableClient({ properties, total, page, totalPages, search
               <div
                 key={p.id}
                 className={`bg-white rounded-xl border p-4 transition-colors ${
-                  selected.has(p.id) ? 'border-[#0D2F5E] bg-blue-50' : 'border-gray-200'
+                  selected.has(p.id) ? 'border-[#1e3a8a] bg-blue-50' : 'border-gray-200'
                 }`}
               >
                 <div className="flex items-start gap-3">
@@ -372,7 +372,7 @@ export function ImoveisTableClient({ properties, total, page, totalPages, search
                     checked={selected.has(p.id)}
                     onChange={() => toggleRow(p.id)}
                     aria-label={`Selecionar ${p.ref}`}
-                    className="mt-1 w-4 h-4 rounded border-gray-300 accent-[#0D2F5E]"
+                    className="mt-1 w-4 h-4 rounded border-gray-300 accent-[#1e3a8a]"
                   />
                   {/* Thumbnail */}
                   <div className="w-16 h-14 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
@@ -397,7 +397,7 @@ export function ImoveisTableClient({ properties, total, page, totalPages, search
                         {propertyStatusLabel[p.status]}
                       </Badge>
                       {p.price && (
-                        <span className="text-xs font-semibold text-[#0D2F5E]">
+                        <span className="text-xs font-semibold text-[#1e3a8a]">
                           {formatCurrency(Number(p.price))}
                         </span>
                       )}
@@ -408,7 +408,7 @@ export function ImoveisTableClient({ properties, total, page, totalPages, search
                 <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
                   <Link
                     href={`/admin/imoveis/${p.id}`}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium text-[#0D2F5E] border border-[#0D2F5E] rounded-lg hover:bg-indigo-50 transition-colors"
+                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium text-[#1e3a8a] border border-[#1e3a8a] rounded-lg hover:bg-indigo-50 transition-colors"
                   >
                     <Pencil className="w-3.5 h-3.5" />
                     Editar
@@ -450,8 +450,8 @@ export function ImoveisTableClient({ properties, total, page, totalPages, search
                 href={`?${new URLSearchParams({ ...searchParams, page: String(p2) })}`}
                 className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${
                   p2 === page
-                    ? 'bg-[#0D2F5E] text-white'
-                    : 'bg-white border border-gray-200 text-gray-600 hover:border-[#0D2F5E] hover:text-[#0D2F5E]'
+                    ? 'bg-[#1e3a8a] text-white'
+                    : 'bg-white border border-gray-200 text-gray-600 hover:border-[#1e3a8a] hover:text-[#1e3a8a]'
                 }`}
               >
                 {p2}

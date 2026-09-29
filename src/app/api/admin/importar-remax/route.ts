@@ -6,6 +6,7 @@ import { getServerSession } from 'next-auth'
 import { z } from 'zod'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { revalidateSite } from '@/lib/cache'
 import { importRemaxListing } from '@/lib/remax/import'
 import { RemaxFetchError } from '@/lib/remax/client'
 
@@ -53,6 +54,7 @@ export async function POST(request: NextRequest) {
       agentId: user.id,
       publish: parsed.data.publish,
     })
+    revalidateSite('properties')
     return NextResponse.json(result, { status: result.created ? 201 : 200 })
   } catch (e) {
     if (e instanceof RemaxFetchError) {

@@ -2,7 +2,9 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Printer, X, Save, CheckCircle, Megaphone, FileText, BarChart3, AlertCircle } from 'lucide-react'
+import { Printer, X, Save, CheckCircle, Megaphone, FileText, BarChart3, AlertCircle, BadgeCheck } from 'lucide-react'
+import { SaleModal } from '@/components/admin/SaleModal'
+import { formatDuration } from '@/lib/sales'
 import { Button } from '@/components/ui/Button'
 import { MarketingPlanModal } from '@/components/admin/MarketingPlanModal'
 import { ContractModal } from '@/components/admin/ContractModal'
@@ -50,6 +52,7 @@ interface PropertyFormProps {
 export function PropertyForm({ propertyId, initialData }: PropertyFormProps) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<TabId>('principal')
+  const [showSaleModal, setShowSaleModal] = useState(false)
   const [data, setData] = useState<Record<string, unknown>>(initialData)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -162,7 +165,7 @@ export function PropertyForm({ propertyId, initialData }: PropertyFormProps) {
           <div className="flex items-center gap-3">
             <div>
               <p className="text-xs text-gray-400 uppercase tracking-wide">Ref</p>
-              <p className="text-sm font-semibold text-[#0D2F5E]">{initialData.ref ?? propertyId}</p>
+              <p className="text-sm font-semibold text-[#1e3a8a]">{initialData.ref ?? propertyId}</p>
               {initialData.agent && (
                 <p className="text-xs text-gray-500">{(initialData.agent as { name: string }).name}</p>
               )}
@@ -174,6 +177,9 @@ export function PropertyForm({ propertyId, initialData }: PropertyFormProps) {
             >
               {statusInfo.label}
             </span>
+            {(currentStatus === 'SOLD' || currentStatus === 'RENTED') && data.daysOnMarket != null && (
+              <span className="text-xs text-gray-500">em {formatDuration(Number(data.daysOnMarket))}{data.saleDiscountPct != null ? ` · desconto ${Number(data.saleDiscountPct).toLocaleString('pt-BR')}%` : ''}</span>
+            )}
           </div>
 
           {/* Switches */}
@@ -185,7 +191,7 @@ export function PropertyForm({ propertyId, initialData }: PropertyFormProps) {
                 onClick={() => setTransactionType('SALE')}
                 className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
                   transactionType === 'SALE'
-                    ? 'bg-[#0D2F5E] text-white shadow'
+                    ? 'bg-[#1e3a8a] text-white shadow'
                     : 'text-gray-600 hover:text-gray-800'
                 }`}
               >
@@ -196,7 +202,7 @@ export function PropertyForm({ propertyId, initialData }: PropertyFormProps) {
                 onClick={() => setTransactionType('RENT')}
                 className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
                   transactionType === 'RENT'
-                    ? 'bg-[#0D2F5E] text-white shadow'
+                    ? 'bg-[#1e3a8a] text-white shadow'
                     : 'text-gray-600 hover:text-gray-800'
                 }`}
               >
@@ -211,7 +217,7 @@ export function PropertyForm({ propertyId, initialData }: PropertyFormProps) {
                 onClick={() => setPurpose('RESIDENTIAL')}
                 className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
                   purpose === 'RESIDENTIAL'
-                    ? 'bg-[#2E86DE] text-white shadow'
+                    ? 'bg-[#2563eb] text-white shadow'
                     : 'text-gray-600 hover:text-gray-800'
                 }`}
               >
@@ -222,7 +228,7 @@ export function PropertyForm({ propertyId, initialData }: PropertyFormProps) {
                 onClick={() => setPurpose('COMMERCIAL')}
                 className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
                   purpose === 'COMMERCIAL'
-                    ? 'bg-[#2E86DE] text-white shadow'
+                    ? 'bg-[#2563eb] text-white shadow'
                     : 'text-gray-600 hover:text-gray-800'
                 }`}
               >
@@ -261,7 +267,7 @@ export function PropertyForm({ propertyId, initialData }: PropertyFormProps) {
                 onClick={() => setActiveTab(tab.id)}
                 className={`px-4 py-2 text-xs font-medium whitespace-nowrap border-b-2 transition-colors ${
                   activeTab === tab.id
-                    ? 'border-[#0D2F5E] text-[#0D2F5E]'
+                    ? 'border-[#1e3a8a] text-[#1e3a8a]'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
                 aria-selected={activeTab === tab.id}
@@ -353,13 +359,23 @@ export function PropertyForm({ propertyId, initialData }: PropertyFormProps) {
               <FileText className="w-4 h-4" />
               <span className="hidden sm:inline">Contrato</span>
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowSaleModal(true)}
+              aria-label={transactionType === 'RENT' ? 'Marcar como alugado' : 'Marcar como vendido'}
+              className="border-green-600 text-green-700 hover:bg-green-600 hover:text-white"
+            >
+              <BadgeCheck className="w-4 h-4" />
+              <span className="hidden sm:inline">{currentStatus === 'SOLD' || currentStatus === 'RENTED' ? 'Registro da venda' : transactionType === 'RENT' ? 'Alugado' : 'Vendido'}</span>
+            </Button>
             <a
-              href={`/admin/analise-mercado`}
-              className="flex items-center gap-1 px-3 py-2 text-sm text-[#2E86DE] hover:text-[#0D2F5E] border border-[#2E86DE] rounded-md hover:bg-blue-50 transition-colors"
-              aria-label="Análise de mercado"
+              href={`/admin/estudos?propertyId=${propertyId}`}
+              className="flex items-center gap-1 px-3 py-2 text-sm text-[#2563eb] hover:text-[#1e3a8a] border border-[#2563eb] rounded-md hover:bg-blue-50 transition-colors"
+              aria-label="Estudo de mercado deste imóvel"
             >
               <BarChart3 className="w-4 h-4" />
-              <span className="hidden sm:inline">Análise</span>
+              <span className="hidden sm:inline">Estudo</span>
             </a>
           </div>
 
@@ -386,12 +402,12 @@ export function PropertyForm({ propertyId, initialData }: PropertyFormProps) {
             <Button
               variant="primary"
               size="sm"
-              onClick={() => save('ACTIVE')}
+              onClick={() => save(currentStatus === 'SOLD' || currentStatus === 'RENTED' ? currentStatus : 'ACTIVE')}
               loading={saving}
               disabled={saving}
             >
               <CheckCircle className="w-4 h-4 mr-1" />
-              {currentStatus === 'ACTIVE' ? 'Salvar Alterações' : 'Salvar e Ativar'}
+              {currentStatus === 'ACTIVE' || currentStatus === 'SOLD' || currentStatus === 'RENTED' ? 'Salvar Alterações' : 'Salvar e Ativar'}
             </Button>
           </div>
         </div>
@@ -402,6 +418,37 @@ export function PropertyForm({ propertyId, initialData }: PropertyFormProps) {
           propertyId={propertyId}
           propertyTitle={(data.title as string) ?? initialData.ref ?? propertyId}
           onClose={() => setShowMarketingModal(false)}
+        />
+      )}
+      {showSaleModal && (
+        <SaleModal
+          propertyId={propertyId}
+          transactionType={transactionType as 'SALE' | 'RENT'}
+          listPrice={data.price != null && data.price !== '' ? Number(data.price) : null}
+          listedAt={(data.publishedAt as string) ?? (data.registrationDate as string) ?? (initialData.createdAt as string) ?? null}
+          current={{
+            status: currentStatus,
+            soldAt: data.soldAt as string | null,
+            salePrice: data.salePrice as number | null,
+            saleDiscountPct: data.saleDiscountPct as number | null,
+            daysOnMarket: data.daysOnMarket as number | null,
+            saleSource: data.saleSource as string | null,
+            saleNotes: data.saleNotes as string | null,
+            showSalePrice: Boolean(data.showSalePrice),
+          }}
+          onClose={() => setShowSaleModal(false)}
+          onDone={(result) => {
+            setShowSaleModal(false)
+            if (result) {
+              setCurrentStatus(String(result.status))
+              setData(prev => ({ ...prev, ...result }))
+              setSaveSuccess(`Imóvel marcado como ${result.status === 'RENTED' ? 'alugado' : 'vendido'}.`)
+            } else {
+              setCurrentStatus('ACTIVE')
+              setData(prev => ({ ...prev, status: 'ACTIVE', soldAt: null, salePrice: null, saleDiscountPct: null, saleDiscountValue: null, daysOnMarket: null, saleSource: null, saleNotes: null, showSalePrice: false }))
+              setSaveSuccess('Venda desfeita. O imóvel voltou a ficar ativo.')
+            }
+          }}
         />
       )}
       {showContractModal && (

@@ -13,9 +13,9 @@ interface Props {
 // Renderizador simples de Markdown — converte títulos, negrito, listas e parágrafos para HTML
 function renderMarkdown(md: string): string {
   return md
-    .replace(/^### (.+)$/gm, '<h3 class="text-base font-bold text-[#0D2F5E] mt-5 mb-2">$1</h3>')
-    .replace(/^## (.+)$/gm, '<h2 class="text-lg font-bold text-[#0D2F5E] mt-6 mb-2 border-b border-gray-100 pb-1">$1</h2>')
-    .replace(/^# (.+)$/gm, '<h1 class="text-xl font-bold text-[#0D2F5E] mt-6 mb-3">$1</h1>')
+    .replace(/^### (.+)$/gm, '<h3 class="text-base font-bold text-[#1e3a8a] mt-5 mb-2">$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2 class="text-lg font-bold text-[#1e3a8a] mt-6 mb-2 border-b border-gray-100 pb-1">$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1 class="text-xl font-bold text-[#1e3a8a] mt-6 mb-3">$1</h1>')
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/^- (.+)$/gm, '<li class="ml-4 list-disc text-gray-600 text-sm">$1</li>')
     .replace(/^(\d+)\. (.+)$/gm, '<li class="ml-4 list-decimal text-gray-600 text-sm">$2</li>')
@@ -68,10 +68,10 @@ export function MarketingPlanModal({ propertyId, propertyTitle, onClose }: Props
         {/* Cabeçalho */}
         <div className="flex items-center gap-3 p-5 border-b border-gray-100">
           <div className="w-10 h-10 bg-[#F0F4F8] rounded-xl flex items-center justify-center">
-            <Megaphone size={20} className="text-[#2E86DE]" />
+            <Megaphone size={20} className="text-[#2563eb]" />
           </div>
           <div className="flex-1">
-            <h2 className="font-bold text-[#0D2F5E]">Plano de Marketing</h2>
+            <h2 className="font-bold text-[#1e3a8a]">Plano de Marketing</h2>
             <p className="text-xs text-gray-400 truncate">{propertyTitle}</p>
           </div>
           <button
@@ -89,10 +89,10 @@ export function MarketingPlanModal({ propertyId, propertyTitle, onClose }: Props
           {!plan && !loading && !error && (
             <div className="flex flex-col items-center gap-4 py-12 text-center">
               <div className="w-16 h-16 bg-[#F0F4F8] rounded-2xl flex items-center justify-center">
-                <Megaphone size={28} className="text-[#2E86DE]" />
+                <Megaphone size={28} className="text-[#2563eb]" />
               </div>
               <div>
-                <p className="font-semibold text-[#0D2F5E] mb-1">Gerar Plano de Marketing com IA</p>
+                <p className="font-semibold text-[#1e3a8a] mb-1">Gerar Plano de Marketing com IA</p>
                 <p className="text-sm text-gray-400 max-w-sm">
                   Clique no botão abaixo para criar um plano completo com canais, cronograma, orçamento e KPIs.
                 </p>
@@ -106,7 +106,7 @@ export function MarketingPlanModal({ propertyId, propertyTitle, onClose }: Props
 
           {loading && (
             <div className="flex flex-col items-center gap-3 py-12 text-gray-500">
-              <RefreshCw className="animate-spin text-[#2E86DE]" size={28} />
+              <RefreshCw className="animate-spin text-[#2563eb]" size={28} />
               <p className="text-sm font-medium">Gerando plano de marketing...</p>
               <p className="text-xs text-gray-400">Isso pode levar alguns segundos</p>
             </div>

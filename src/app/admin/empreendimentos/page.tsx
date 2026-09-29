@@ -87,7 +87,7 @@ async function EmpreendimentosTable({ searchParams }: { searchParams: SearchPara
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <Link href={`/admin/empreendimentos/${e.id}`} className="text-[#0D2F5E] hover:underline text-xs font-medium">Editar</Link>
+                        <Link href={`/admin/empreendimentos/${e.id}`} className="text-[#1e3a8a] hover:underline text-xs font-medium">Editar</Link>
                       </td>
                     </tr>
                   )
@@ -113,7 +113,7 @@ async function EmpreendimentosTable({ searchParams }: { searchParams: SearchPara
             const p = i + 1
             return (
               <Link key={p} href={`?${new URLSearchParams({ ...searchParams, page: String(p) })}`}
-                className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${p === page ? 'bg-[#0D2F5E] text-white' : 'bg-white border border-gray-200 text-gray-600'}`}>
+                className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${p === page ? 'bg-[#1e3a8a] text-white' : 'bg-white border border-gray-200 text-gray-600'}`}>
                 {p}
               </Link>
             )
@@ -129,11 +129,11 @@ export default function AdminEmpreendimentosPage({ searchParams }: { searchParam
     <div className="p-4 md:p-6 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-[#0D2F5E]">Empreendimentos</h1>
+          <h1 className="text-2xl font-bold text-[#1e3a8a]">Empreendimentos</h1>
           <p className="text-sm text-gray-500 mt-0.5">Lançamentos e projetos imobiliários</p>
         </div>
         <Link href="/admin/empreendimentos/novo"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-[#0D2F5E] text-white text-sm font-medium rounded-lg hover:bg-[#081E3F] transition-colors">
+          className="inline-flex items-center gap-2 px-4 py-2 bg-[#1e3a8a] text-white text-sm font-medium rounded-lg hover:bg-[#172554] transition-colors">
           <Plus className="w-4 h-4" />Novo Empreendimento
         </Link>
       </div>
@@ -141,9 +141,9 @@ export default function AdminEmpreendimentosPage({ searchParams }: { searchParam
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input type="text" name="q" defaultValue={searchParams.q} placeholder="Buscar por nome..."
-            className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0D2F5E] bg-white" />
+            className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a8a] bg-white" />
         </div>
-        <button type="submit" className="px-4 py-2 bg-[#2E86DE] text-white text-sm font-medium rounded-lg hover:bg-[#1B6EC2] transition-colors">Filtrar</button>
+        <button type="submit" className="px-4 py-2 bg-[#2563eb] text-white text-sm font-medium rounded-lg hover:bg-[#1d4ed8] transition-colors">Filtrar</button>
       </form>
       <Suspense fallback={<div className="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-400 text-sm">Carregando...</div>}>
         <EmpreendimentosTable searchParams={searchParams} />

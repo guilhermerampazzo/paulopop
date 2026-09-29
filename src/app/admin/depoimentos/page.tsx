@@ -108,7 +108,7 @@ export default function DepoimentosPage() {
     <div className="p-4 md:p-6 max-w-5xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-[#0D2F5E] flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-[#1e3a8a] flex items-center gap-2">
             <MessageSquareQuote className="w-6 h-6" /> Depoimentos
           </h1>
           <p className="text-sm text-gray-500 mt-0.5">
@@ -122,7 +122,7 @@ export default function DepoimentosPage() {
         </div>
         <button
           onClick={openNovo}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-[#0D2F5E] text-white text-sm font-medium rounded-lg hover:bg-[#081E3F] transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-[#1e3a8a] text-white text-sm font-medium rounded-lg hover:bg-[#172554] transition-colors"
           aria-label="Adicionar depoimento"
         >
           <Plus className="w-4 h-4" /> Adicionar Depoimento
@@ -159,7 +159,7 @@ export default function DepoimentosPage() {
             key={f.id}
             onClick={() => setFilter(f.id as typeof filter)}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-              filter === f.id ? 'bg-[#0D2F5E] text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+              filter === f.id ? 'bg-[#1e3a8a] text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
             }`}
           >
             {f.label}
@@ -174,7 +174,7 @@ export default function DepoimentosPage() {
 
       {loading ? (
         <div className="flex justify-center py-16">
-          <Loader2 className="w-8 h-8 animate-spin text-[#2E86DE]" />
+          <Loader2 className="w-8 h-8 animate-spin text-[#2563eb]" />
         </div>
       ) : (
         <div className="space-y-3">
@@ -223,7 +223,7 @@ export default function DepoimentosPage() {
                   </button>
                   <button
                     onClick={() => openEdit(d)}
-                    className="p-1.5 rounded hover:bg-gray-100 text-gray-500 hover:text-[#0D2F5E]"
+                    className="p-1.5 rounded hover:bg-gray-100 text-gray-500 hover:text-[#1e3a8a]"
                     aria-label={`Editar depoimento de ${d.name}`}
                   >
                     <Pencil className="w-4 h-4" />
@@ -247,7 +247,7 @@ export default function DepoimentosPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-6 border-b">
-              <h2 className="text-lg font-bold text-[#0D2F5E]">
+              <h2 className="text-lg font-bold text-[#1e3a8a]">
                 {modal === 'novo' ? 'Adicionar Depoimento' : 'Editar Depoimento'}
               </h2>
               <button onClick={() => setModal(null)} aria-label="Fechar modal">
@@ -260,7 +260,7 @@ export default function DepoimentosPage() {
                 <input
                   value={form.name}
                   onChange={e => set('name', e.target.value)}
-                  className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86DE]"
+                  className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
                   aria-label="Nome"
                 />
               </div>
@@ -270,7 +270,7 @@ export default function DepoimentosPage() {
                   value={form.role}
                   onChange={e => set('role', e.target.value)}
                   placeholder="ex: Cliente comprador, Proprietário..."
-                  className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86DE]"
+                  className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
                   aria-label="Cargo ou descrição"
                 />
               </div>
@@ -281,7 +281,7 @@ export default function DepoimentosPage() {
                   onChange={e => set('text', e.target.value)}
                   rows={4}
                   maxLength={1000}
-                  className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86DE]"
+                  className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
                   aria-label="Texto do depoimento"
                 />
                 <p className="text-xs text-gray-400 mt-1">{form.text.length}/1000</p>
@@ -307,7 +307,7 @@ export default function DepoimentosPage() {
                   type="checkbox"
                   checked={form.approved}
                   onChange={e => set('approved', e.target.checked)}
-                  className="w-4 h-4 accent-[#2E86DE]"
+                  className="w-4 h-4 accent-[#2563eb]"
                   aria-label="Aprovado para exibição"
                 />
                 <label htmlFor="approved-check" className="text-sm text-gray-700">Aprovado para exibição no site</label>
@@ -323,7 +323,7 @@ export default function DepoimentosPage() {
               <button
                 onClick={handleSave}
                 disabled={saving || !form.name || !form.text}
-                className="flex items-center gap-2 px-4 py-2 bg-[#0D2F5E] text-white rounded-xl text-sm font-medium hover:bg-[#081E3F] disabled:opacity-60"
+                className="flex items-center gap-2 px-4 py-2 bg-[#1e3a8a] text-white rounded-xl text-sm font-medium hover:bg-[#172554] disabled:opacity-60"
                 aria-label="Salvar depoimento"
               >
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}

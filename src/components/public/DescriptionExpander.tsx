@@ -18,7 +18,7 @@ export default function DescriptionExpander({ text }: { text: string }) {
         <button
           type="button"
           onClick={() => setExpanded(v => !v)}
-          className="mt-3 flex items-center gap-1 text-sm font-medium text-[#2E86DE] hover:text-[#0D2F5E] transition-colors"
+          className="mt-3 flex items-center gap-1 text-sm font-medium text-[#2563eb] hover:text-[#1e3a8a] transition-colors"
           aria-expanded={expanded}
         >
           {expanded ? (

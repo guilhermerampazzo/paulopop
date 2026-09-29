@@ -35,7 +35,7 @@ export function Drawer({ open, onClose, title, children, side = 'right' }: Drawe
       >
         {title && (
           <div className="flex items-center justify-between p-4 border-b border-gray-100">
-            <h2 className="font-semibold text-[#0D2F5E]">{title}</h2>
+            <h2 className="font-semibold text-[#1e3a8a]">{title}</h2>
             <button onClick={onClose} aria-label="Fechar" className="p-1 rounded hover:bg-gray-100">
               <X size={20} className="text-gray-400" />
             </button>

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { Link2, Plus, Search } from 'lucide-react'
 import { ImoveisTableClient } from '@/components/admin/ImoveisTableClient'
+import { getSessionUser, propertyScope } from '@/lib/authz'
 
 interface SearchParams {
   q?: string
@@ -17,7 +18,10 @@ async function PropertiesTable({ searchParams }: { searchParams: SearchParams })
   const pageSize = 20
   const skip = (page - 1) * pageSize
 
+  // Corretor comum só vê os próprios imóveis; administradores veem todos
+  const user = await getSessionUser()
   const where = {
+    ...(user ? propertyScope(user) : { id: '__none__' }),
     ...(searchParams.q
       ? {
           OR: [
@@ -105,20 +109,20 @@ export default function AdminImoveisPage({
       {/* Cabeçalho */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-[#0D2F5E]">Imóveis</h1>
+          <h1 className="text-2xl font-bold text-[#1e3a8a]">Imóveis</h1>
           <p className="text-sm text-gray-500 mt-0.5">Gerencie todos os imóveis cadastrados</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Link
             href="/admin/imoveis/importar"
-            className="inline-flex items-center gap-2 px-4 py-2 border border-[#0D2F5E] text-[#0D2F5E] text-sm font-medium rounded-lg hover:bg-[#0D2F5E] hover:text-white transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 border border-[#1e3a8a] text-[#1e3a8a] text-sm font-medium rounded-lg hover:bg-[#1e3a8a] hover:text-white transition-colors"
           >
             <Link2 className="w-4 h-4" />
             Importar da RE/MAX
           </Link>
           <Link
             href="/admin/imoveis/novo"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-[#0D2F5E] text-white text-sm font-medium rounded-lg hover:bg-[#081E3F] transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-[#1e3a8a] text-white text-sm font-medium rounded-lg hover:bg-[#172554] transition-colors"
             aria-label="Cadastrar novo imóvel"
           >
             <Plus className="w-4 h-4" />
@@ -136,14 +140,14 @@ export default function AdminImoveisPage({
             name="q"
             defaultValue={searchParams.q}
             placeholder="Buscar por ref, título, endereço, cidade..."
-            className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0D2F5E] bg-white"
+            className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a8a] bg-white"
             aria-label="Buscar imóveis"
           />
         </div>
         <select
           name="status"
           defaultValue={searchParams.status ?? ''}
-          className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#0D2F5E] text-gray-700"
+          className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1e3a8a] text-gray-700"
           aria-label="Filtrar por status"
         >
           {statusOptions.map(o => (
@@ -152,7 +156,7 @@ export default function AdminImoveisPage({
         </select>
         <button
           type="submit"
-          className="px-4 py-2 bg-[#2E86DE] text-white text-sm font-medium rounded-lg hover:bg-[#1B6EC2] transition-colors"
+          className="px-4 py-2 bg-[#2563eb] text-white text-sm font-medium rounded-lg hover:bg-[#1d4ed8] transition-colors"
         >
           Filtrar
         </button>

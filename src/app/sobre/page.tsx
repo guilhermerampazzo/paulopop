@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic'
 
 import { prisma } from '@/lib/prisma'
+import { Testimonials } from '@/components/public/Testimonials'
 import { ContactForm } from '@/components/public/ContactForm'
 import { PropertyCard } from '@/components/public/PropertyCard'
 import { Phone, Mail, MapPin, Building2, MessageCircle } from 'lucide-react'
@@ -36,9 +37,9 @@ export default async function SobrePage() {
       take: 6,
       select: {
         id: true, slug: true, title: true, propertyType: true, transactionType: true, status: true,
-        price: true, totalArea: true, bedrooms: true, bathrooms: true, environments: true,
+        price: true, totalArea: true, usefulArea: true, suites: true, balconies: true, bedrooms: true, bathrooms: true, environments: true,
         totalParkingSpots: true, neighborhood: true, city: true, state: true, zipCode: true, createdAt: true,
-        images: { where: { isCover: true }, take: 1, select: { url: true, thumbnailUrl: true } },
+        images: { orderBy: [{ isCover: 'desc' }, { order: 'asc' }], take: 1, select: { url: true, thumbnailUrl: true } },
       },
     }),
   ])
@@ -60,21 +61,21 @@ export default async function SobrePage() {
   ].filter(s => !!s.href)
 
   const contactItems = [
-    config?.ownerPhone && { icon: <Phone className="w-4 h-4 text-[#2E86DE]" />, label: 'Telefone', value: config.ownerPhone, href: `tel:${config.ownerPhone}` },
+    config?.ownerPhone && { icon: <Phone className="w-4 h-4 text-[#2563eb]" />, label: 'Telefone', value: config.ownerPhone, href: `tel:${config.ownerPhone}` },
     whatsapp && { icon: <MessageCircle className="w-4 h-4 text-[#25D366]" />, label: 'WhatsApp', value: whatsapp, href: `https://wa.me/${whatsapp.replace(/\D/g, '')}` },
-    config?.ownerEmail && { icon: <Mail className="w-4 h-4 text-[#2E86DE]" />, label: 'E-mail', value: config.ownerEmail, href: `mailto:${config.ownerEmail}` },
-    config?.ownerAddress && { icon: <MapPin className="w-4 h-4 text-[#2E86DE]" />, label: 'Endereço', value: config.ownerAddress, href: null },
+    config?.ownerEmail && { icon: <Mail className="w-4 h-4 text-[#2563eb]" />, label: 'E-mail', value: config.ownerEmail, href: `mailto:${config.ownerEmail}` },
+    config?.ownerAddress && { icon: <MapPin className="w-4 h-4 text-[#2563eb]" />, label: 'Endereço', value: config.ownerAddress, href: null },
   ].filter(Boolean)
 
   return (
     <div className="min-h-screen bg-[#F0F4F8]">
       {/* Hero banner */}
       <div
-        className="bg-[#0D2F5E] py-16 px-4"
+        className="bg-[#1e3a8a] py-16 px-4"
         aria-labelledby="sobre-title"
       >
         <div className="max-w-7xl mx-auto">
-          <p className="text-[#2E86DE] text-xs font-semibold uppercase tracking-widest mb-2">Corretor de Imóveis</p>
+          <p className="text-[#2563eb] text-xs font-semibold uppercase tracking-widest mb-2">Corretor de Imóveis</p>
           <h1 id="sobre-title" className="font-display text-4xl md:text-5xl font-bold text-white">
             {ownerName}
           </h1>
@@ -135,7 +136,7 @@ export default async function SobrePage() {
             {/* Contatos */}
             {contactItems.length > 0 && (
               <div className="bg-white rounded-2xl p-5 shadow-sm">
-                <h2 className="font-semibold text-[#0D2F5E] mb-4">Contato</h2>
+                <h2 className="font-semibold text-[#1e3a8a] mb-4">Contato</h2>
                 <div className="space-y-3">
                   {contactItems.map((item) => item && (
                     <div key={item.label} className="flex items-center gap-3">
@@ -149,7 +150,7 @@ export default async function SobrePage() {
                             href={item.href}
                             target={item.href.startsWith('http') ? '_blank' : undefined}
                             rel={item.href.startsWith('http') ? 'noopener noreferrer' : undefined}
-                            className="text-sm font-medium text-[#0D2F5E] hover:text-[#2E86DE] transition-colors truncate block"
+                            className="text-sm font-medium text-[#1e3a8a] hover:text-[#2563eb] transition-colors truncate block"
                           >
                             {item.value}
                           </a>
@@ -169,7 +170,7 @@ export default async function SobrePage() {
             {/* Bio */}
             {config?.ownerBio && (
               <div className="bg-white rounded-2xl p-6 shadow-sm">
-                <h2 className="font-display text-xl font-bold text-[#0D2F5E] mb-4">Sobre Mim</h2>
+                <h2 className="font-display text-xl font-bold text-[#1e3a8a] mb-4">Sobre Mim</h2>
                 <div className="prose prose-sm max-w-none text-gray-600 leading-relaxed">
                   {config.ownerBio.split('\n').map((paragraph, i) => (
                     paragraph.trim() && <p key={i}>{paragraph}</p>
@@ -181,7 +182,7 @@ export default async function SobrePage() {
             {/* Imóveis ativos */}
             {properties.length > 0 && (
               <div>
-                <h2 className="font-display text-xl font-bold text-[#0D2F5E] mb-4">
+                <h2 className="font-display text-xl font-bold text-[#1e3a8a] mb-4">
                   Meus Imóveis Disponíveis
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -191,6 +192,9 @@ export default async function SobrePage() {
                       {...p}
                       price={p.price ? Number(p.price) : null}
                       totalArea={p.totalArea ? Number(p.totalArea) : null}
+                      usefulArea={p.usefulArea ? Number(p.usefulArea) : null}
+                      suites={p.suites}
+                      balconies={p.balconies}
                       coverImage={p.images[0]?.thumbnailUrl ?? p.images[0]?.url ?? null}
                       isNew={p.createdAt > thirtyDaysAgo}
                     />
@@ -201,7 +205,7 @@ export default async function SobrePage() {
 
             {/* Formulário de contato */}
             <div className="bg-white rounded-2xl p-6 shadow-sm">
-              <h2 className="font-display text-xl font-bold text-[#0D2F5E] mb-2">Entre em Contato</h2>
+              <h2 className="font-display text-xl font-bold text-[#1e3a8a] mb-2">Entre em Contato</h2>
               <p className="text-sm text-gray-400 mb-5">
                 Preencha o formulário e responderei em breve.
               </p>
@@ -212,6 +216,8 @@ export default async function SobrePage() {
             </div>
           </div>
         </div>
+        {/* v1.1: depoimentos aprovados no painel */}
+        <Testimonials className="py-12" title="O que dizem os clientes" />
       </div>
     </div>
   )

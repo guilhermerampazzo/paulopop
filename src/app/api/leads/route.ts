@@ -5,6 +5,8 @@ import { prisma } from '@/lib/prisma'
 import { sendLeadNotificationToAgent, sendLeadConfirmationToContact } from '@/lib/email'
 import { checkRateLimit } from '@/lib/rateLimit'
 import { stripHtml, limitString } from '@/lib/sanitize'
+import { requireSession, isAdmin } from '@/lib/authz'
+import { SITE_URL } from '@/lib/site'
 
 export async function POST(request: NextRequest) {
   // Rate limiting: máx 5 envios por IP por hora (5.4)
@@ -33,16 +35,24 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Dados excedem o tamanho permitido' }, { status: 400 })
   }
 
-  // Buscar dados do imóvel se informado
+  // Buscar dados do imóvel e do corretor responsável (v1.1: o lead vai para o corretor do imóvel)
   let propertyTitle: string | null = null
   let propertyRef: string | null = null
-  if (propertyId) {
+  let propertySlug: string | null = null
+  let agentId: string | null = null
+  let agentEmail: string | null = null
+  let agentName: string | null = null
+  if (propertyId && typeof propertyId === 'string') {
     const property = await prisma.property.findUnique({
       where: { id: propertyId },
-      select: { title: true, ref: true },
+      select: { title: true, ref: true, slug: true, agentId: true, agent: { select: { email: true, name: true, active: true } } },
     })
     propertyTitle = property?.title ?? null
     propertyRef = property?.ref ?? null
+    propertySlug = property?.slug ?? null
+    agentId = property?.agentId ?? null
+    agentEmail = property?.agent?.active ? property.agent.email : null
+    agentName = property?.agent?.name ?? null
   }
 
   const lead = await prisma.lead.create({
@@ -51,14 +61,18 @@ export async function POST(request: NextRequest) {
       email: email ? limitString(stripHtml(email), 200) : null,
       phone: limitString(stripHtml(phone), 30),
       message: message ? limitString(stripHtml(message), 2000) : null,
-      propertyId: propertyId ?? null,
+      propertyId: propertyRef ? propertyId : null,
+      agentId,
       source: 'SITE',
       status: 'NEW',
     },
   })
 
   // Disparar e-mails em background (não bloqueia a resposta)
-  void sendLeadNotificationToAgent({ name, email, phone, message, propertyTitle, propertyRef })
+  void sendLeadNotificationToAgent({
+    name, email, phone, message, propertyTitle, propertyRef, agentEmail, agentName,
+    propertyUrl: propertySlug ? `${SITE_URL}/imoveis/${propertySlug}` : null,
+  })
   if (email) {
     void sendLeadConfirmationToContact({ name, email, propertyTitle })
   }
@@ -67,8 +81,16 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET() {
+  // Só usuário logado vê a lista de contatos; corretor vê os seus e os dos seus imóveis
+  const auth = await requireSession()
+  if (auth.response) return auth.response
+  const where = isAdmin(auth.user)
+    ? {}
+    : { OR: [{ agentId: auth.user.id }, { property: { agentId: auth.user.id } }] }
   const leads = await prisma.lead.findMany({
+    where,
     orderBy: { createdAt: 'desc' },
+    take: 500,
     include: {
       property: { select: { id: true, title: true, ref: true } },
     },

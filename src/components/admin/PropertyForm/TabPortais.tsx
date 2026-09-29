@@ -46,7 +46,7 @@ export function TabPortais({ portals, onPortalsChange }: TabPortaisProps) {
             <div
               key={name}
               className={`border-2 rounded-xl p-4 transition-all ${
-                portal.active ? 'border-[#2E86DE] bg-blue-50' : 'border-gray-200 bg-white'
+                portal.active ? 'border-[#2563eb] bg-blue-50' : 'border-gray-200 bg-white'
               }`}
             >
               <div className="flex items-center justify-between mb-2">
@@ -60,8 +60,8 @@ export function TabPortais({ portals, onPortalsChange }: TabPortaisProps) {
                   aria-checked={portal.active}
                   aria-label={`${portal.active ? 'Desativar' : 'Ativar'} ${name}`}
                   onClick={() => toggle(name)}
-                  className={`relative inline-flex h-6 w-11 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#2E86DE] focus:ring-offset-1 ${
-                    portal.active ? 'bg-[#2E86DE]' : 'bg-gray-300'
+                  className={`relative inline-flex h-6 w-11 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#2563eb] focus:ring-offset-1 ${
+                    portal.active ? 'bg-[#2563eb]' : 'bg-gray-300'
                   }`}
                 >
                   <span
@@ -78,7 +78,7 @@ export function TabPortais({ portals, onPortalsChange }: TabPortaisProps) {
                     placeholder="ID externo (opcional)"
                     defaultValue={portal.externalId ?? ''}
                     aria-label={`ID externo ${name}`}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#2E86DE]"
+                    className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-[#2563eb]"
                     onBlur={e => {
                       onPortalsChange(
                         portals.map(p =>

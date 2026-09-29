@@ -1,17 +1,30 @@
 export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { requireSession, isAdmin } from '@/lib/authz'
 import bcrypt from 'bcryptjs'
 
 // PUT /api/admin/corretores/[id]
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
-  const session = await getServerSession(authOptions)
-  if (!session) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  const auth = await requireSession()
+  if (auth.response) return auth.response
+  const self = auth.user.id === params.id
+  // Corretor comum só edita o próprio perfil; papel e ativo só por administrador
+  if (!self && !isAdmin(auth.user)) return NextResponse.json({ error: 'Sem permissão para esta ação' }, { status: 403 })
 
   const body = await request.json() as Record<string, string | boolean>
+  if (!isAdmin(auth.user)) {
+    delete body.role
+    delete body.active
+    delete body.email
+  }
+  if (body.role === 'SUPER_ADMIN' && auth.user.role !== 'SUPER_ADMIN') {
+    return NextResponse.json({ error: 'Só o super administrador pode dar esse papel' }, { status: 403 })
+  }
+  if (body.password && (body.password as string).length < 8) {
+    return NextResponse.json({ error: 'A senha precisa ter pelo menos 8 caracteres' }, { status: 400 })
+  }
 
   const data: Record<string, unknown> = {}
 
@@ -31,6 +44,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   if (body.facebook !== undefined) data.facebook = body.facebook
   if (body.linkedin !== undefined) data.linkedin = body.linkedin
   if (body.youtube !== undefined) data.youtube = body.youtube
+  if (body.telegram !== undefined) data.telegram = body.telegram
+  if (body.twitter !== undefined) data.twitter = body.twitter
 
   const updated = await prisma.user.update({
     where: { id: params.id },
@@ -43,8 +58,10 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
 // DELETE /api/admin/corretores/[id] — desativa (soft delete)
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
-  const session = await getServerSession(authOptions)
-  if (!session) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  const auth = await requireSession()
+  if (auth.response) return auth.response
+  if (!isAdmin(auth.user)) return NextResponse.json({ error: 'Sem permissão para esta ação' }, { status: 403 })
+  if (auth.user.id === params.id) return NextResponse.json({ error: 'Você não pode desativar o próprio usuário' }, { status: 400 })
 
   await prisma.user.update({
     where: { id: params.id },

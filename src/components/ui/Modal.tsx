@@ -46,7 +46,7 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
       <div className={cn('relative bg-white rounded-xl shadow-2xl w-full', sizes[size])}>
         {title && (
           <div className="flex items-center justify-between p-5 border-b border-gray-100">
-            <h2 className="text-lg font-semibold text-[#0D2F5E]">{title}</h2>
+            <h2 className="text-lg font-semibold text-[#1e3a8a]">{title}</h2>
             <button
               onClick={onClose}
               aria-label="Fechar modal"

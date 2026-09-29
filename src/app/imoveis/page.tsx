@@ -5,17 +5,25 @@ import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { PropertyCard } from '@/components/public/PropertyCard'
 import { PropertyFilters } from '@/components/public/PropertyFilters'
+import { HomeSearch } from '@/components/public/HomeSearch'
 import { Search } from 'lucide-react'
 import type { Metadata } from 'next'
 import type { Prisma } from '@prisma/client'
+import { CARD_SELECT, toCard } from '@/lib/section-data'
+import { searchTextWhere, sortByRelevance, normalizeSearchText } from '@/lib/property-search'
+import { getSiteConfigCached, getActiveCitiesCached } from '@/lib/cache'
+import { getPublishedCityLinksCached } from '@/lib/city-pages'
 
 export const metadata: Metadata = {
-  title: 'Imóveis | Paulo Pop',
+  title: 'Imóveis à venda e para alugar no DF',
+  alternates: { canonical: '/imoveis' },
   description: 'Encontre apartamentos, casas, terrenos e muito mais. Filtre por localização, preço, tipo e características.',
 }
 
 interface SearchParams {
   q?: string
+  /** v1.3: busca por texto único (ref, título, bairro, cidade, endereço, empreendimento) */
+  busca?: string
   transacao?: string
   finalidade?: string
   tipo?: string
@@ -26,12 +34,17 @@ interface SearchParams {
   areaMin?: string
   estado?: string
   cidade?: string
+  bairro?: string
   feature?: string | string[]
   ordem?: string
   pagina?: string
 }
 
 const PAGE_SIZE = 12
+
+function searchText(sp: SearchParams): string {
+  return normalizeSearchText(sp.busca ?? sp.q)
+}
 
 /** Converte SearchParams para Record<string,string> ignorando arrays (feature) */
 function spToRecord(sp: SearchParams, overrides: Record<string, string>): Record<string, string> {
@@ -70,15 +83,9 @@ function buildWhere(sp: SearchParams): Prisma.PropertyWhereInput {
     ...(sp.areaMin ? { totalArea: { gte: parseFloat(sp.areaMin) } } : {}),
     ...(sp.estado ? { state: { equals: sp.estado, mode: 'insensitive' as const } } : {}),
     ...(sp.cidade ? { city: { contains: sp.cidade, mode: 'insensitive' as const } } : {}),
-    ...(sp.q ? {
-      OR: [
-        { ref: { contains: sp.q, mode: 'insensitive' as const } },
-        { title: { contains: sp.q, mode: 'insensitive' as const } },
-        { neighborhood: { contains: sp.q, mode: 'insensitive' as const } },
-        { city: { contains: sp.q, mode: 'insensitive' as const } },
-        { address: { contains: sp.q, mode: 'insensitive' as const } },
-      ]
-    } : {}),
+    ...(sp.bairro ? { neighborhood: { contains: sp.bairro, mode: 'insensitive' as const } } : {}),
+    // v1.3: `busca` (ou `q`, legado) procura em ref, título, bairro, cidade, endereço, bairro comercial e empreendimento
+    ...(searchText(sp) ? { OR: searchTextWhere(searchText(sp)) } : {}),
     ...(features.length > 0 ? {
       features: { some: { feature: { in: features as never[] } } }
     } : {}),
@@ -94,51 +101,27 @@ function buildOrderBy(ordem?: string): Prisma.PropertyOrderByWithRelationInput {
   }
 }
 
-async function PropertyGrid({ searchParams }: { searchParams: SearchParams }) {
+async function PropertyGrid({ searchParams, whatsapp }: { searchParams: SearchParams; whatsapp?: string | null }) {
   const page = Math.max(1, parseInt(searchParams.pagina ?? '1'))
   const skip = (page - 1) * PAGE_SIZE
 
   const where = buildWhere(searchParams)
   const orderBy = buildOrderBy(searchParams.ordem)
+  const text = searchText(searchParams)
 
-  const [properties, total] = await Promise.all([
+  const [rows, total] = await Promise.all([
     prisma.property.findMany({
       where,
       skip,
       take: PAGE_SIZE,
       orderBy,
-      select: {
-        id: true,
-        slug: true,
-        title: true,
-        propertyType: true,
-        transactionType: true,
-        status: true,
-        price: true,
-        totalArea: true,
-        usefulArea: true,
-        suites: true,
-        bedrooms: true,
-        bathrooms: true,
-        environments: true,
-        totalParkingSpots: true,
-        neighborhood: true,
-        city: true,
-        state: true,
-        zipCode: true,
-        createdAt: true,
-        images: {
-          where: { isCover: true },
-          take: 1,
-          select: { url: true, thumbnailUrl: true },
-        },
-      },
+      // v1.3: select do card (ref, fotos do carrossel, histórico de preço)
+      select: CARD_SELECT,
     }),
     prisma.property.count({ where }),
   ])
-
-  const thirtyDaysAgo = new Date()
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+  // v1.3: relevância simples — acerto exato na ref primeiro
+  const properties = (text ? sortByRelevance(rows, text) : rows).map(toCard)
 
   const totalPages = Math.ceil(total / PAGE_SIZE)
 
@@ -156,17 +139,8 @@ async function PropertyGrid({ searchParams }: { searchParams: SearchParams }) {
     <div>
       {/* Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-        {properties.map(p => (
-          <PropertyCard
-            key={p.id}
-            {...p}
-            price={p.price ? Number(p.price) : null}
-            totalArea={p.totalArea ? Number(p.totalArea) : null}
-            usefulArea={p.usefulArea ? Number(p.usefulArea) : null}
-            suites={p.suites ?? null}
-            coverImage={p.images[0]?.thumbnailUrl ?? p.images[0]?.url ?? null}
-            isNew={p.createdAt > thirtyDaysAgo}
-          />
+        {properties.map((p, i) => (
+          <PropertyCard key={p.id} {...p} whatsapp={whatsapp} priority={i < 3} />
         ))}
       </div>
 
@@ -176,7 +150,7 @@ async function PropertyGrid({ searchParams }: { searchParams: SearchParams }) {
           {page > 1 && (
             <Link
               href={`?${new URLSearchParams(spToRecord(searchParams, { pagina: String(page - 1) }))}`}
-              className="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-200 bg-white text-sm text-gray-600 hover:border-[#0D2F5E] hover:text-[#0D2F5E] transition-colors"
+              className="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-200 bg-white text-sm text-gray-600 hover:border-[#1e3a8a] hover:text-[#1e3a8a] transition-colors"
               aria-label="Página anterior"
             >
               ‹
@@ -190,8 +164,8 @@ async function PropertyGrid({ searchParams }: { searchParams: SearchParams }) {
                 href={`?${new URLSearchParams(spToRecord(searchParams, { pagina: String(p2) }))}`}
                 className={`w-10 h-10 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${
                   p2 === page
-                    ? 'bg-[#0D2F5E] text-white'
-                    : 'bg-white border border-gray-200 text-gray-600 hover:border-[#0D2F5E] hover:text-[#0D2F5E]'
+                    ? 'bg-[#1e3a8a] text-white'
+                    : 'bg-white border border-gray-200 text-gray-600 hover:border-[#1e3a8a] hover:text-[#1e3a8a]'
                 }`}
                 aria-current={p2 === page ? 'page' : undefined}
               >
@@ -202,7 +176,7 @@ async function PropertyGrid({ searchParams }: { searchParams: SearchParams }) {
           {page < totalPages && (
             <Link
               href={`?${new URLSearchParams(spToRecord(searchParams, { pagina: String(page + 1) }))}`}
-              className="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-200 bg-white text-sm text-gray-600 hover:border-[#0D2F5E] hover:text-[#0D2F5E] transition-colors"
+              className="w-10 h-10 flex items-center justify-center rounded-lg border border-gray-200 bg-white text-sm text-gray-600 hover:border-[#1e3a8a] hover:text-[#1e3a8a] transition-colors"
               aria-label="Próxima página"
             >
               ›
@@ -218,7 +192,36 @@ async function PropertyGrid({ searchParams }: { searchParams: SearchParams }) {
   )
 }
 
-export default function ImoveisPage({ searchParams }: { searchParams: SearchParams }) {
+// v1.1: cidades e bairros dos imóveis publicados, para o filtro de localização
+async function loadLocations() {
+  const rows = await prisma.property.findMany({
+    where: { status: 'ACTIVE', hideOnSite: false, city: { not: null } },
+    select: { city: true, neighborhood: true },
+    distinct: ['city', 'neighborhood'],
+    orderBy: [{ city: 'asc' }, { neighborhood: 'asc' }],
+  })
+  return Object.values(
+    rows.reduce<Record<string, { city: string; neighborhoods: string[] }>>((acc, r) => {
+      const city = (r.city ?? '').replace(/\s*-\s*DF$/i, '').trim()
+      if (!city) return acc
+      acc[city] ??= { city, neighborhoods: [] }
+      if (r.neighborhood && !acc[city].neighborhoods.includes(r.neighborhood)) acc[city].neighborhoods.push(r.neighborhood)
+      return acc
+    }, {})
+  )
+}
+
+export default async function ImoveisPage({ searchParams }: { searchParams: SearchParams }) {
+  const [locations, config, activeCities, cityLinks] = await Promise.all([
+    loadLocations(),
+    getSiteConfigCached().catch(() => null),
+    getActiveCitiesCached().catch(() => [] as string[]),
+    getPublishedCityLinksCached().catch(() => []),
+  ])
+  const whatsapp = config?.ownerWhatsapp ?? process.env.NEXT_PUBLIC_WHATSAPP ?? null
+  const text = searchText(searchParams)
+  const regions = Array.from(new Set([...cityLinks.map(c => c.name), ...activeCities])).slice(0, 8)
+  const defaultTab = searchParams.transacao === 'alugar' ? 'alugar' : 'comprar'
   const sortOptions = [
     { value: 'recente', label: 'Mais recente' },
     { value: 'menor-preco', label: 'Menor preço' },
@@ -231,30 +234,14 @@ export default function ImoveisPage({ searchParams }: { searchParams: SearchPara
       {/* Header da listagem */}
       <div className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <h1 className="font-display text-2xl md:text-3xl font-bold text-[#0D2F5E] mb-4">
-            {searchParams.q ? `Resultados para "${searchParams.q}"` : 'Todos os Imóveis'}
+          <h1 className="font-display text-2xl md:text-3xl font-bold text-[#1e3a8a] mb-4">
+            {text ? `Resultados para "${text}"` : 'Todos os Imóveis'}
           </h1>
 
-          {/* Barra de busca rápida */}
-          <form method="GET" className="flex gap-2">
-            <div className="relative flex-1 max-w-lg">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                name="q"
-                defaultValue={searchParams.q}
-                placeholder="Buscar por cidade, bairro, ref..."
-                className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86DE] bg-white"
-                aria-label="Buscar imóveis"
-              />
-            </div>
-            <button
-              type="submit"
-              className="px-4 py-2.5 bg-[#0D2F5E] text-white text-sm font-medium rounded-lg hover:bg-[#081E3F] transition-colors"
-            >
-              Buscar
-            </button>
-          </form>
+          {/* v1.3: busca por texto único (modo compacto) */}
+          <div className="max-w-3xl">
+            <HomeSearch compact tone="light" regions={regions} defaultQuery={text} defaultTab={defaultTab} />
+          </div>
         </div>
       </div>
 
@@ -262,13 +249,13 @@ export default function ImoveisPage({ searchParams }: { searchParams: SearchPara
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex gap-8">
           {/* Sidebar de filtros */}
-          <PropertyFilters />
+          <PropertyFilters locations={locations} />
 
           {/* Resultados */}
           <div className="flex-1 min-w-0">
             {/* Ordenação e filtros mobile */}
             <div className="flex items-center justify-between mb-6 gap-3">
-              <PropertyFilters className="lg:hidden" />
+              <PropertyFilters className="lg:hidden" locations={locations} />
 
               <div className="flex items-center gap-2 ml-auto">
                 <label className="text-xs text-gray-500 hidden sm:block" htmlFor="ordem">
@@ -285,7 +272,7 @@ export default function ImoveisPage({ searchParams }: { searchParams: SearchPara
                     id="ordem"
                     name="ordem"
                     defaultValue={searchParams.ordem ?? 'recente'}
-                    className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2E86DE]"
+                    className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
                     aria-label="Ordenar imóveis"
                   >
                     {sortOptions.map(o => (
@@ -294,7 +281,7 @@ export default function ImoveisPage({ searchParams }: { searchParams: SearchPara
                   </select>
                   <button
                     type="submit"
-                    className="ml-2 px-3 py-2 text-sm font-medium rounded-lg border border-[#0D2F5E] text-[#0D2F5E] hover:bg-[#0D2F5E] hover:text-white transition-colors"
+                    className="ml-2 px-3 py-2 text-sm font-medium rounded-lg border border-[#1e3a8a] text-[#1e3a8a] hover:bg-[#1e3a8a] hover:text-white transition-colors"
                   >
                     Aplicar
                   </button>
@@ -309,7 +296,7 @@ export default function ImoveisPage({ searchParams }: { searchParams: SearchPara
                 ))}
               </div>
             }>
-              <PropertyGrid searchParams={searchParams} />
+              <PropertyGrid searchParams={searchParams} whatsapp={whatsapp} />
             </Suspense>
           </div>
         </div>

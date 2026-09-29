@@ -106,7 +106,7 @@ export default async function AdminDashboard() {
       label: 'Imóveis Ativos',
       value: stats.activeProperties,
       icon: Building2,
-      color: 'text-[#2E86DE]',
+      color: 'text-[#2563eb]',
       bg: 'bg-blue-50',
     },
     {
@@ -120,7 +120,7 @@ export default async function AdminDashboard() {
       label: 'Publicados Este Mês',
       value: stats.publishedThisMonth,
       icon: TrendingUp,
-      color: 'text-[#0D2F5E]',
+      color: 'text-[#1e3a8a]',
       bg: 'bg-indigo-50',
     },
     {
@@ -158,8 +158,8 @@ export default async function AdminDashboard() {
       {/* Tabela: Últimos Imóveis Cadastrados */}
       <Card padding={false}>
         <div className="flex items-center justify-between p-5 border-b border-gray-100">
-          <h2 className="font-semibold text-[#0D2F5E]">Últimos Imóveis Cadastrados</h2>
-          <a href="/admin/imoveis" className="text-sm text-[#2E86DE] hover:underline">
+          <h2 className="font-semibold text-[#1e3a8a]">Últimos Imóveis Cadastrados</h2>
+          <a href="/admin/imoveis" className="text-sm text-[#2563eb] hover:underline">
             Ver todos
           </a>
         </div>
@@ -199,7 +199,7 @@ export default async function AdminDashboard() {
                     <td className="px-5 py-3 text-gray-600">
                       {transactionLabel[p.transactionType] ?? p.transactionType}
                     </td>
-                    <td className="px-5 py-3 text-right font-medium text-[#0D2F5E]">
+                    <td className="px-5 py-3 text-right font-medium text-[#1e3a8a]">
                       {p.price ? formatCurrency(Number(p.price)) : 'Sob consulta'}
                     </td>
                     <td className="px-5 py-3 text-gray-400">{formatDate(p.createdAt)}</td>
@@ -214,8 +214,8 @@ export default async function AdminDashboard() {
       {/* Tabela: Últimos Leads Recebidos */}
       <Card padding={false}>
         <div className="flex items-center justify-between p-5 border-b border-gray-100">
-          <h2 className="font-semibold text-[#0D2F5E]">Últimos Leads Recebidos</h2>
-          <a href="/admin/contatos" className="text-sm text-[#2E86DE] hover:underline">
+          <h2 className="font-semibold text-[#1e3a8a]">Últimos Leads Recebidos</h2>
+          <a href="/admin/contatos" className="text-sm text-[#2563eb] hover:underline">
             Ver todos
           </a>
         </div>

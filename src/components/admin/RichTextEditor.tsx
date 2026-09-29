@@ -45,8 +45,8 @@ function ToolbarButton({
       aria-pressed={active}
       className={`p-1.5 rounded-lg transition-colors ${
         active
-          ? 'bg-[#0D2F5E] text-white'
-          : 'text-gray-600 hover:bg-gray-100 hover:text-[#0D2F5E]'
+          ? 'bg-[#1e3a8a] text-white'
+          : 'text-gray-600 hover:bg-gray-100 hover:text-[#1e3a8a]'
       } disabled:opacity-40 disabled:cursor-not-allowed`}
     >
       {children}
@@ -67,7 +67,7 @@ export function RichTextEditor({ value, onChange }: RichTextEditorProps) {
       StarterKit,
       Underline,
       Image.configure({ inline: false, allowBase64: false }),
-      Link.configure({ openOnClick: false, HTMLAttributes: { class: 'text-[#2E86DE] hover:underline', target: '_blank', rel: 'noopener noreferrer' } }),
+      Link.configure({ openOnClick: false, HTMLAttributes: { class: 'text-[#2563eb] hover:underline', target: '_blank', rel: 'noopener noreferrer' } }),
       Placeholder.configure({ placeholder: 'Escreva o conteúdo do post aqui...' }),
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
     ],
@@ -114,7 +114,7 @@ export function RichTextEditor({ value, onChange }: RichTextEditorProps) {
   if (!editor) return null
 
   return (
-    <div className="border border-gray-300 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#2E86DE]">
+    <div className="border border-gray-300 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#2563eb]">
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-0.5 px-2 py-2 bg-gray-50 border-b border-gray-200">
         {/* Histórico */}

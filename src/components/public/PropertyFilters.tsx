@@ -24,18 +24,6 @@ const FEATURES = [
   { value: 'GOURMET_BALCONY', label: 'Varanda Gourmet' },
 ]
 
-const BRAZIL_STATES = [
-  { uf: 'AC', name: 'Acre' }, { uf: 'AL', name: 'Alagoas' }, { uf: 'AP', name: 'Amapá' },
-  { uf: 'AM', name: 'Amazonas' }, { uf: 'BA', name: 'Bahia' }, { uf: 'CE', name: 'Ceará' },
-  { uf: 'DF', name: 'Distrito Federal' }, { uf: 'ES', name: 'Espírito Santo' },
-  { uf: 'GO', name: 'Goiás' }, { uf: 'MA', name: 'Maranhão' }, { uf: 'MT', name: 'Mato Grosso' },
-  { uf: 'MS', name: 'Mato Grosso do Sul' }, { uf: 'MG', name: 'Minas Gerais' },
-  { uf: 'PA', name: 'Pará' }, { uf: 'PB', name: 'Paraíba' }, { uf: 'PR', name: 'Paraná' },
-  { uf: 'PE', name: 'Pernambuco' }, { uf: 'PI', name: 'Piauí' }, { uf: 'RJ', name: 'Rio de Janeiro' },
-  { uf: 'RN', name: 'Rio Grande do Norte' }, { uf: 'RS', name: 'Rio Grande do Sul' },
-  { uf: 'RO', name: 'Rondônia' }, { uf: 'RR', name: 'Roraima' }, { uf: 'SC', name: 'Santa Catarina' },
-  { uf: 'SP', name: 'São Paulo' }, { uf: 'SE', name: 'Sergipe' }, { uf: 'TO', name: 'Tocantins' },
-]
 
 function CountButton({ value, current, onClick }: { value: string; current: string; onClick: (v: string) => void }) {
   return (
@@ -45,8 +33,8 @@ function CountButton({ value, current, onClick }: { value: string; current: stri
       className={cn(
         'w-10 h-10 rounded-lg border text-sm font-medium transition-colors',
         current === value
-          ? 'bg-[#0D2F5E] text-white border-[#0D2F5E]'
-          : 'bg-white text-gray-600 border-gray-200 hover:border-[#0D2F5E] hover:text-[#0D2F5E]'
+          ? 'bg-[#1e3a8a] text-white border-[#1e3a8a]'
+          : 'bg-white text-gray-600 border-gray-200 hover:border-[#1e3a8a] hover:text-[#1e3a8a]'
       )}
       aria-pressed={current === value}
     >
@@ -55,11 +43,14 @@ function CountButton({ value, current, onClick }: { value: string; current: stri
   )
 }
 
+export interface FilterLocation { city: string; neighborhoods: string[] }
+
 interface PropertyFiltersProps {
   className?: string
+  locations?: FilterLocation[]
 }
 
-export function PropertyFilters({ className }: PropertyFiltersProps) {
+export function PropertyFilters({ className, locations = [] }: PropertyFiltersProps) {
   const router = useRouter()
   const pathname = usePathname()
   const params = useSearchParams()
@@ -76,9 +67,12 @@ export function PropertyFilters({ className }: PropertyFiltersProps) {
   const banheiros = params.get('banheiros') ?? ''
   const areaMin = params.get('areaMin') ?? ''
   const estado = params.get('estado') ?? ''
+  const bairro = params.get('bairro') ?? ''
   const cidade = params.get('cidade') ?? ''
   const features = params.getAll('feature')
+  // v1.3: `busca` é o campo único novo; `q` continua aceito
   const q = params.get('q') ?? ''
+  const busca = params.get('busca') ?? ''
 
   const setParam = useCallback((key: string, value: string) => {
     const next = new URLSearchParams(params.toString())
@@ -107,11 +101,12 @@ export function PropertyFilters({ className }: PropertyFiltersProps) {
   const clearAll = useCallback(() => {
     const next = new URLSearchParams()
     if (q) next.set('q', q)
+    if (busca) next.set('busca', busca)
     router.push(`${pathname}?${next.toString()}`)
-  }, [q, pathname, router])
+  }, [q, busca, pathname, router])
 
   const hasFilters = transacao !== 'comprar' || !!finalidade || !!tipo || !!precoMin || !!precoMax ||
-    !!quartos || !!banheiros || !!areaMin || !!estado || features.length > 0
+    !!quartos || !!banheiros || !!areaMin || !!estado || !!bairro || features.length > 0
 
   const filterContent = (
     <div className={cn('space-y-6', className)}>
@@ -120,7 +115,7 @@ export function PropertyFilters({ className }: PropertyFiltersProps) {
         <button
           type="button"
           onClick={clearAll}
-          className="flex items-center gap-1 text-sm text-[#2E86DE] hover:text-[#0D2F5E] transition-colors"
+          className="flex items-center gap-1 text-sm text-[#2563eb] hover:text-[#1e3a8a] transition-colors"
         >
           <X className="w-4 h-4" />
           Limpar filtros
@@ -139,8 +134,8 @@ export function PropertyFilters({ className }: PropertyFiltersProps) {
               className={cn(
                 'flex-1 py-2 text-sm rounded-lg border font-medium transition-colors',
                 transacao === t
-                  ? 'bg-[#0D2F5E] text-white border-[#0D2F5E]'
-                  : 'bg-white text-gray-600 border-gray-200 hover:border-[#0D2F5E]'
+                  ? 'bg-[#1e3a8a] text-white border-[#1e3a8a]'
+                  : 'bg-white text-gray-600 border-gray-200 hover:border-[#1e3a8a]'
               )}
               aria-pressed={transacao === t}
             >
@@ -162,8 +157,8 @@ export function PropertyFilters({ className }: PropertyFiltersProps) {
               className={cn(
                 'flex-1 py-2 text-xs rounded-lg border font-medium transition-colors',
                 finalidade === f.v
-                  ? 'bg-[#2E86DE] text-white border-[#2E86DE]'
-                  : 'bg-white text-gray-600 border-gray-200 hover:border-[#2E86DE]'
+                  ? 'bg-[#2563eb] text-white border-[#2563eb]'
+                  : 'bg-white text-gray-600 border-gray-200 hover:border-[#2563eb]'
               )}
               aria-pressed={finalidade === f.v}
             >
@@ -180,7 +175,7 @@ export function PropertyFilters({ className }: PropertyFiltersProps) {
           value={tipo}
           onChange={e => setParam('tipo', e.target.value)}
           aria-label="Tipo de imóvel"
-          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2E86DE]"
+          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
         >
           <option value="">Todos os tipos</option>
           {PROPERTY_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
@@ -199,7 +194,7 @@ export function PropertyFilters({ className }: PropertyFiltersProps) {
             onChange={e => setParam('precoMin', e.target.value)}
             placeholder="Mín."
             aria-label="Preço mínimo"
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86DE]"
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
           />
           <input
             type="number"
@@ -207,7 +202,7 @@ export function PropertyFilters({ className }: PropertyFiltersProps) {
             onChange={e => setParam('precoMax', e.target.value)}
             placeholder="Máx."
             aria-label="Preço máximo"
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86DE]"
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
           />
         </div>
       </div>
@@ -241,31 +236,39 @@ export function PropertyFilters({ className }: PropertyFiltersProps) {
           onChange={e => setParam('areaMin', e.target.value)}
           placeholder="Ex: 50"
           aria-label="Área mínima"
-          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86DE]"
+          className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
         />
       </div>
 
-      {/* Estado / Cidade */}
+      {/* v1.1: cidade e bairro do DF a partir dos imóveis cadastrados (antes: lista dos 27 estados) */}
       <div>
         <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Localização</p>
         <div className="space-y-2">
           <select
-            value={estado}
-            onChange={e => { setParam('estado', e.target.value); setParam('cidade', '') }}
-            aria-label="Estado"
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2E86DE]"
-          >
-            <option value="">Todos os estados</option>
-            {BRAZIL_STATES.map(s => <option key={s.uf} value={s.uf}>{s.name}</option>)}
-          </select>
-          <input
-            type="text"
             value={cidade}
-            onChange={e => setParam('cidade', e.target.value)}
-            placeholder="Cidade"
-            aria-label="Cidade"
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86DE]"
-          />
+            onChange={e => { setParam('cidade', e.target.value); setParam('bairro', ''); setParam('estado', '') }}
+            aria-label="Cidade ou região"
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
+          >
+            <option value="">Todas as cidades</option>
+            {locations.map(l => <option key={l.city} value={l.city}>{l.city}</option>)}
+          </select>
+          {(() => {
+            const current = locations.find(l => l.city.toLowerCase() === cidade.toLowerCase())
+            const options = current ? current.neighborhoods : Array.from(new Set(locations.flatMap(l => l.neighborhoods))).sort()
+            if (!options.length) return null
+            return (
+              <select
+                value={bairro}
+                onChange={e => setParam('bairro', e.target.value)}
+                aria-label="Bairro ou setor"
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
+              >
+                <option value="">Todos os bairros</option>
+                {options.map(b => <option key={b} value={b}>{b}</option>)}
+              </select>
+            )
+          })()}
         </div>
       </div>
 
@@ -280,7 +283,7 @@ export function PropertyFilters({ className }: PropertyFiltersProps) {
                 checked={features.includes(f.value)}
                 onChange={() => toggleFeature(f.value)}
                 aria-label={f.label}
-                className="w-4 h-4 rounded border-gray-300 text-[#0D2F5E] focus:ring-[#2E86DE]"
+                className="w-4 h-4 rounded border-gray-300 text-[#1e3a8a] focus:ring-[#2563eb]"
               />
               <span className="text-sm text-gray-700">{f.label}</span>
             </label>
@@ -295,7 +298,7 @@ export function PropertyFilters({ className }: PropertyFiltersProps) {
       {/* Desktop sidebar */}
       <aside className="hidden lg:block w-72 flex-shrink-0" aria-label="Filtros de busca">
         <div className="bg-white rounded-2xl p-6 shadow-sm sticky top-24">
-          <h2 className="font-semibold text-[#0D2F5E] mb-4 flex items-center gap-2">
+          <h2 className="font-semibold text-[#1e3a8a] mb-4 flex items-center gap-2">
             <SlidersHorizontal className="w-4 h-4" />
             Filtros
           </h2>
@@ -308,15 +311,15 @@ export function PropertyFilters({ className }: PropertyFiltersProps) {
         <button
           type="button"
           onClick={() => setMobileOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:border-[#0D2F5E] transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:border-[#1e3a8a] transition-colors"
           aria-expanded={mobileOpen}
           aria-controls="mobile-filters"
         >
           <SlidersHorizontal className="w-4 h-4" />
           Filtros
           {hasFilters && (
-            <span className="ml-1 w-5 h-5 bg-[#0D2F5E] text-white text-xs rounded-full flex items-center justify-center">
-              {[transacao !== 'comprar', finalidade, tipo, precoMin, precoMax, quartos, banheiros, areaMin, estado, features.length > 0].filter(Boolean).length}
+            <span className="ml-1 w-5 h-5 bg-[#1e3a8a] text-white text-xs rounded-full flex items-center justify-center">
+              {[transacao !== 'comprar', finalidade, tipo, precoMin, precoMax, quartos, banheiros, areaMin, cidade, bairro, features.length > 0].filter(Boolean).length}
             </span>
           )}
         </button>
@@ -327,7 +330,7 @@ export function PropertyFilters({ className }: PropertyFiltersProps) {
             <div className="flex-1 bg-black/50" onClick={() => setMobileOpen(false)} />
             <div className="w-80 bg-white h-full overflow-y-auto p-6 shadow-2xl">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="font-semibold text-[#0D2F5E] flex items-center gap-2">
+                <h2 className="font-semibold text-[#1e3a8a] flex items-center gap-2">
                   <SlidersHorizontal className="w-4 h-4" />
                   Filtros
                 </h2>
@@ -344,7 +347,7 @@ export function PropertyFilters({ className }: PropertyFiltersProps) {
               <button
                 type="button"
                 onClick={() => setMobileOpen(false)}
-                className="mt-6 w-full py-3 bg-[#0D2F5E] text-white font-semibold rounded-xl text-sm"
+                className="mt-6 w-full py-3 bg-[#1e3a8a] text-white font-semibold rounded-xl text-sm"
               >
                 Ver resultados
               </button>

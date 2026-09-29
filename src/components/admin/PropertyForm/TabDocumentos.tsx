@@ -44,7 +44,7 @@ function DocumentSection({
 
   return (
     <section>
-      <h3 className="text-sm font-semibold text-[#0D2F5E] uppercase tracking-wider border-b border-gray-200 pb-2 mb-4">
+      <h3 className="text-sm font-semibold text-[#1e3a8a] uppercase tracking-wider border-b border-gray-200 pb-2 mb-4">
         {title}
       </h3>
       <div className="space-y-2 mb-3">
@@ -63,7 +63,7 @@ function DocumentSection({
                   href={doc.url}
                   download
                   aria-label={`Baixar ${doc.name}`}
-                  className="p-1.5 text-gray-400 hover:text-[#2E86DE] hover:bg-blue-50 rounded-lg transition-colors"
+                  className="p-1.5 text-gray-400 hover:text-[#2563eb] hover:bg-blue-50 rounded-lg transition-colors"
                 >
                   <Download size={16} />
                 </a>
@@ -84,7 +84,7 @@ function DocumentSection({
         type="button"
         onClick={() => ref.current?.click()}
         disabled={uploading}
-        className="flex items-center gap-2 text-sm text-[#2E86DE] border border-[#2E86DE] px-4 py-2 rounded-lg hover:bg-[#2E86DE] hover:text-white transition-colors disabled:opacity-60"
+        className="flex items-center gap-2 text-sm text-[#2563eb] border border-[#2563eb] px-4 py-2 rounded-lg hover:bg-[#2563eb] hover:text-white transition-colors disabled:opacity-60"
       >
         <Upload size={16} />
         {uploading ? 'Enviando...' : 'Carregar documentos (máx 10MB)'}

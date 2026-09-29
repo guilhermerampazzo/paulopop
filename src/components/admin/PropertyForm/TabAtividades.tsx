@@ -62,7 +62,7 @@ export function TabAtividades({ activities, propertyId }: TabAtividadesProps) {
           onChange={e => setNote(e.target.value)}
           placeholder="Registre uma observação, visita ou contato..."
           aria-label="Nova nota"
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm resize-none h-20 focus:outline-none focus:ring-2 focus:ring-[#2E86DE]"
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm resize-none h-20 focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
         />
         <div className="flex justify-end mt-2">
           <Button

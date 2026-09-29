@@ -2,30 +2,11 @@
 
 import { useState, useRef } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { PropertyCard } from './PropertyCard'
+import { PropertyCard, type PropertyCardProps } from './PropertyCard'
 import { cn } from '@/lib/utils'
 
-interface Property {
-  id: string
-  slug: string
-  title?: string | null
-  propertyType?: string | null
-  transactionType: string
-  status: string
-  price?: number | null
-  totalArea?: number | null
-  bedrooms?: number | null
-  bathrooms?: number | null
-  environments?: number | null
-  totalParkingSpots?: number | null
-  neighborhood?: string | null
-  city?: string | null
-  state?: string | null
-  zipCode?: string | null
-  coverImage?: string | null
-  createdAt: Date | string
-  isNew?: boolean
-}
+// v1.3: mesmas props do card (fotos, código, selos)
+type Property = Omit<PropertyCardProps, 'className'>
 
 interface PropertyCarouselProps {
   properties: Property[]
@@ -70,7 +51,7 @@ export function PropertyCarousel({ properties }: PropertyCarouselProps) {
           canScrollLeft ? 'opacity-100 hover:bg-gray-50' : 'opacity-0 pointer-events-none'
         )}
       >
-        <ChevronLeft className="w-5 h-5 text-[#0D2F5E]" />
+        <ChevronLeft className="w-5 h-5 text-[#1e3a8a]" />
       </button>
 
       <button
@@ -85,7 +66,7 @@ export function PropertyCarousel({ properties }: PropertyCarouselProps) {
           canScrollRight ? 'opacity-100 hover:bg-gray-50' : 'opacity-0 pointer-events-none'
         )}
       >
-        <ChevronRight className="w-5 h-5 text-[#0D2F5E]" />
+        <ChevronRight className="w-5 h-5 text-[#1e3a8a]" />
       </button>
 
       {/* Carrossel */}
@@ -124,7 +105,7 @@ export function PropertyCarousel({ properties }: PropertyCarouselProps) {
               className={cn(
                 'h-2 rounded-full transition-all duration-300',
                 Math.floor(activeIndex / 2) === i
-                  ? 'w-6 bg-[#0D2F5E]'
+                  ? 'w-6 bg-[#1e3a8a]'
                   : 'w-2 bg-gray-300 hover:bg-gray-400'
               )}
             />

@@ -63,27 +63,25 @@ const sampleProperties = [
 ] as const
 
 async function upsertAdmin() {
-  const password = await bcrypt.hash('admin123', 12)
+  // v1.1: a senha inicial vem de ADMIN_PASSWORD (obrigatória fora do desenvolvimento)
+  // e o seed NUNCA sobrescreve a senha nem os dados de um administrador já existente.
+  const initialPassword = process.env.ADMIN_PASSWORD ?? (process.env.NODE_ENV === 'production' ? '' : 'admin123')
+  if (!initialPassword || initialPassword.length < 8) {
+    throw new Error('Defina ADMIN_PASSWORD (mínimo 8 caracteres) para criar o administrador inicial.')
+  }
+  const email = process.env.ADMIN_EMAIL ?? 'admin@paulopop.com.br'
+  const password = await bcrypt.hash(initialPassword, 12)
 
   return prisma.user.upsert({
-    where: { email: 'admin@paulopop.com.br' },
-    update: {
-      name: 'Paulo Pop',
-      password,
-      role: 'SUPER_ADMIN',
-      creci: '12345-F',
-      company: 'Paulo Pop Imoveis',
-      phone: '(91) 3255-1000',
-      whatsapp: '(91) 99111-0000',
-      active: true,
-    },
+    where: { email },
+    update: { active: true },
     create: {
-      name: 'Paulo Pop',
-      email: 'admin@paulopop.com.br',
+      name: process.env.ADMIN_NAME ?? 'Paulo Pop',
+      email,
       password,
       role: 'SUPER_ADMIN',
       creci: '12345-F',
-      company: 'Paulo Pop Imoveis',
+      company: 'Paulo Pop Imóveis',
       phone: '(91) 3255-1000',
       whatsapp: '(91) 99111-0000',
       active: true,
@@ -96,15 +94,15 @@ async function upsertConfig() {
   const data = {
     ownerName: 'Paulo Pop',
     ownerCreci: '12345-F',
-    ownerCompany: 'Paulo Pop Imoveis',
+    ownerCompany: 'Paulo Pop Imóveis',
     ownerWhatsapp: '(91) 99111-0000',
     ownerPhone: '(91) 3255-1000',
     ownerEmail: 'contato@paulopop.com.br',
     ownerAddress: 'Belem, Para',
-    metaTitle: 'Paulo Pop | Corretor de Imoveis',
+    metaTitle: 'Paulo Pop | Corretor de Imóveis no DF',
     metaDescription: 'Imoveis para compra, venda e aluguel com atendimento consultivo.',
-    heroTitle: 'Encontre o proximo imovel com a consultoria de Paulo Pop',
-    heroSubtitle: 'Compra, venda e aluguel de imoveis com atendimento consultivo.',
+    heroTitle: 'Encontre o próximo imóvel com a consultoria de Paulo Pop',
+    heroSubtitle: 'Compra, venda e aluguel de imóveis com atendimento consultivo.',
     whatsappMessage: 'Ola Paulo! Vi um imovel no site e gostaria de mais informacoes.',
   }
 
@@ -369,7 +367,7 @@ async function main() {
 
   await upsertTestProperty(admin.id)
 
-  console.log('Admin pronto: admin@paulopop.com.br / admin123')
+  console.log(`Admin pronto: ${process.env.ADMIN_EMAIL ?? 'admin@paulopop.com.br'} (senha de ADMIN_PASSWORD)`)
   console.log('10 imoveis de exemplo cadastrados com imagens, videos e documentos.')
   console.log('Imovel TEST-PUBLISH em DRAFT pronto para testar publicacao.')
 }

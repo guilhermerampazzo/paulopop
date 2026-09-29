@@ -27,10 +27,10 @@ export function MarketingAdminClient({ properties }: MarketingAdminClientProps) 
         <div className="rounded-2xl bg-white p-6 shadow-sm border border-gray-100">
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F0F4F8]">
-              <Megaphone className="h-5 w-5 text-[#2E86DE]" />
+              <Megaphone className="h-5 w-5 text-[#2563eb]" />
             </div>
             <div>
-              <h2 className="font-semibold text-[#0D2F5E]">Planos de marketing</h2>
+              <h2 className="font-semibold text-[#1e3a8a]">Planos de marketing</h2>
               <p className="text-sm text-gray-500">
                 Gere um plano de divulgacao com IA para qualquer imovel cadastrado.
               </p>
@@ -41,10 +41,10 @@ export function MarketingAdminClient({ properties }: MarketingAdminClientProps) 
         <div className="rounded-2xl bg-white shadow-sm border border-gray-100 overflow-hidden">
           <div className="flex items-center justify-between gap-4 p-5 border-b border-gray-100">
             <div>
-              <h3 className="font-semibold text-[#0D2F5E]">Imoveis disponiveis para marketing</h3>
+              <h3 className="font-semibold text-[#1e3a8a]">Imoveis disponiveis para marketing</h3>
               <p className="text-sm text-gray-500">Escolha um imovel para criar ou regenerar o plano.</p>
             </div>
-            <span className="text-sm font-medium text-[#2E86DE]">{properties.length} imoveis</span>
+            <span className="text-sm font-medium text-[#2563eb]">{properties.length} imoveis</span>
           </div>
 
           {properties.length === 0 ? (
@@ -61,7 +61,7 @@ export function MarketingAdminClient({ properties }: MarketingAdminClientProps) 
                 <div key={property.id} className="flex flex-col gap-4 p-5 lg:flex-row lg:items-center lg:justify-between">
                   <div>
                     <p className="text-xs font-mono text-gray-400">{property.ref}</p>
-                    <h4 className="mt-1 font-medium text-[#0D2F5E]">
+                    <h4 className="mt-1 font-medium text-[#1e3a8a]">
                       {property.title ?? property.propertyType ?? 'Imovel sem titulo'}
                     </h4>
                     <p className="mt-1 text-sm text-gray-500">

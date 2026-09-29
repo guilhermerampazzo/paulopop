@@ -13,11 +13,25 @@ const pageTitles: Record<string, string> = {
   '/admin/empreendimentos': 'Empreendimentos',
   '/admin/empreendimentos/novo': 'Novo Empreendimento',
   '/admin/contatos': 'Leads & Contatos',
-  '/admin/analise-mercado': 'Análise de Mercado',
+  '/admin/analise-mercado': 'Estudos de mercado',
+  '/admin/estudos': 'Estudos de mercado',
+  '/admin/estudos/': 'Estudo de mercado',
   '/admin/marketing': 'Marketing',
   '/admin/relatorios': 'Relatórios',
   '/admin/configuracoes': 'Configurações',
+  '/admin/corretores': 'Corretores',
+  '/admin/depoimentos': 'Depoimentos',
+  '/admin/blog': 'Blog',
+  '/admin/cidades': 'Cidades do DF',
+  '/admin/cidades/': 'Editar cidade',
+  '/admin/parceiros': 'Parceiros',
+  '/admin/parceiros/': 'Editar parceiro',
+  '/admin/alertas': 'Alertas de imóveis',
+  '/admin/perfil': 'Meu perfil',
 }
+
+/** Telas só de administrador (SUPER_ADMIN e ADMIN). */
+const ADMIN_ONLY = ['/admin/corretores', '/admin/configuracoes']
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession()
@@ -34,8 +48,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     if (status === 'unauthenticated' && !isLoginPage) {
       router.replace('/admin/login')
+      return
     }
-  }, [status, router, isLoginPage])
+
+    // Corretor comum não entra nas telas de administrador
+    const role = (session?.user as { role?: string } | undefined)?.role
+    if (status === 'authenticated' && role === 'AGENT' && ADMIN_ONLY.some(p => pathname.startsWith(p))) {
+      router.replace('/admin')
+    }
+  }, [status, router, isLoginPage, pathname, session])
 
   // Fechar menu mobile ao trocar de rota
   useEffect(() => {
@@ -45,7 +66,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   if (status === 'loading') {
     return (
       <div className="min-h-screen bg-[#F0F4F8] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-10 w-10 border-4 border-[#2E86DE] border-t-transparent" />
+        <div className="animate-spin rounded-full h-10 w-10 border-4 border-[#2563eb] border-t-transparent" />
       </div>
     )
   }
@@ -60,11 +81,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     .find(([key]) => pathname.startsWith(key))?.[1] ?? 'Admin'
 
   const userName = session?.user?.name ?? 'Admin'
+  const userRole = ((session?.user as { role?: string } | undefined)?.role ?? 'AGENT') as 'SUPER_ADMIN' | 'ADMIN' | 'AGENT'
 
   return (
     <div className="flex min-h-screen bg-[#F0F4F8]">
       <AdminSidebar
         userName={userName}
+        userRole={userRole}
         mobileOpen={mobileMenuOpen}
         onMobileClose={() => setMobileMenuOpen(false)}
       />

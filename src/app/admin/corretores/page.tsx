@@ -129,14 +129,14 @@ export default function CorretoresPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-[#0D2F5E] flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-[#1e3a8a] flex items-center gap-2">
             <UserCog className="w-6 h-6" /> Corretores
           </h1>
           <p className="text-sm text-gray-500 mt-0.5">Gerencie os corretores com acesso ao sistema</p>
         </div>
         <button
           onClick={openNovo}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-[#0D2F5E] text-white text-sm font-medium rounded-lg hover:bg-[#081E3F] transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-[#1e3a8a] text-white text-sm font-medium rounded-lg hover:bg-[#172554] transition-colors"
           aria-label="Cadastrar novo corretor"
         >
           <Plus className="w-4 h-4" /> Novo Corretor
@@ -165,7 +165,7 @@ export default function CorretoresPage() {
       {/* Tabela */}
       {loading ? (
         <div className="flex justify-center py-16">
-          <Loader2 className="w-8 h-8 animate-spin text-[#2E86DE]" />
+          <Loader2 className="w-8 h-8 animate-spin text-[#2563eb]" />
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
@@ -189,7 +189,7 @@ export default function CorretoresPage() {
                   <tr key={c.id} className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${!c.active ? 'opacity-60' : ''}`}>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-[#2E86DE] flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
+                        <div className="w-9 h-9 rounded-full bg-[#2563eb] flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
                           {c.name.charAt(0).toUpperCase()}
                         </div>
                         <div>
@@ -223,7 +223,7 @@ export default function CorretoresPage() {
                       <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => openEdit(c)}
-                          className="p-1.5 rounded hover:bg-gray-100 text-gray-500 hover:text-[#0D2F5E]"
+                          className="p-1.5 rounded hover:bg-gray-100 text-gray-500 hover:text-[#1e3a8a]"
                           aria-label={`Editar ${c.name}`}
                         >
                           <Pencil className="w-4 h-4" />
@@ -250,7 +250,7 @@ export default function CorretoresPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between p-6 border-b">
-              <h2 className="text-lg font-bold text-[#0D2F5E]">
+              <h2 className="text-lg font-bold text-[#1e3a8a]">
                 {modal === 'novo' ? 'Cadastrar Corretor' : `Editar: ${(modal as Corretor).name}`}
               </h2>
               <button onClick={() => setModal(null)} aria-label="Fechar modal">
@@ -270,7 +270,7 @@ export default function CorretoresPage() {
                     type={showPassword ? 'text' : 'password'}
                     value={form.password}
                     onChange={e => set('password', e.target.value)}
-                    className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86DE] pr-10"
+                    className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb] pr-10"
                     aria-label="Senha"
                   />
                   <button
@@ -288,7 +288,7 @@ export default function CorretoresPage() {
                 <select
                   value={form.role}
                   onChange={e => set('role', e.target.value)}
-                  className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86DE]"
+                  className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
                   aria-label="Perfil de acesso"
                 >
                   <option value="AGENT">Corretor</option>
@@ -312,7 +312,7 @@ export default function CorretoresPage() {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex items-center gap-2 px-4 py-2 bg-[#0D2F5E] text-white rounded-xl text-sm font-medium hover:bg-[#081E3F] disabled:opacity-60"
+                className="flex items-center gap-2 px-4 py-2 bg-[#1e3a8a] text-white rounded-xl text-sm font-medium hover:bg-[#172554] disabled:opacity-60"
                 aria-label="Salvar corretor"
               >
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
@@ -335,7 +335,7 @@ function FormField({
   type?: string
   multiline?: boolean
 }) {
-  const cls = 'w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86DE]'
+  const cls = 'w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]'
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>

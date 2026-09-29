@@ -45,7 +45,7 @@ export function ContractModal({ propertyId, propertyTitle, onClose }: Props) {
         <title>Contrato — ${propertyTitle}</title>
         <style>
           body { font-family: Arial, sans-serif; margin: 40px; color: #1a1a1a; line-height: 1.6; }
-          h1, h2, h3 { color: #0D2F5E; }
+          h1, h2, h3 { color: #1e3a8a; }
           table { width: 100%; border-collapse: collapse; margin: 12px 0; }
           td, th { border: 1px solid #ccc; padding: 8px; font-size: 13px; }
           p { margin: 8px 0; font-size: 14px; }
@@ -67,10 +67,10 @@ export function ContractModal({ propertyId, propertyTitle, onClose }: Props) {
         {/* Header */}
         <div className="flex items-center gap-3 p-5 border-b border-gray-100">
           <div className="w-10 h-10 bg-[#F0F4F8] rounded-xl flex items-center justify-center">
-            <FileText size={20} className="text-[#2E86DE]" />
+            <FileText size={20} className="text-[#2563eb]" />
           </div>
           <div className="flex-1">
-            <h2 className="font-bold text-[#0D2F5E]">Contrato de Representação</h2>
+            <h2 className="font-bold text-[#1e3a8a]">Contrato de Representação</h2>
             <p className="text-xs text-gray-400 truncate">{propertyTitle}</p>
           </div>
           <button
@@ -88,10 +88,10 @@ export function ContractModal({ propertyId, propertyTitle, onClose }: Props) {
           {!html && !loading && !error && (
             <div className="flex flex-col items-center gap-4 py-12 text-center">
               <div className="w-16 h-16 bg-[#F0F4F8] rounded-2xl flex items-center justify-center">
-                <FileText size={28} className="text-[#2E86DE]" />
+                <FileText size={28} className="text-[#2563eb]" />
               </div>
               <div>
-                <p className="font-semibold text-[#0D2F5E] mb-1">Gerar Contrato de Representação</p>
+                <p className="font-semibold text-[#1e3a8a] mb-1">Gerar Contrato de Representação</p>
                 <p className="text-sm text-gray-400 max-w-sm">
                   Gera um contrato juridicamente fundamentado com base nos dados do imóvel, proprietário e corretor.
                 </p>
@@ -105,7 +105,7 @@ export function ContractModal({ propertyId, propertyTitle, onClose }: Props) {
 
           {loading && (
             <div className="flex flex-col items-center gap-3 py-12 text-gray-500">
-              <RefreshCw className="animate-spin text-[#2E86DE]" size={28} />
+              <RefreshCw className="animate-spin text-[#2563eb]" size={28} />
               <p className="text-sm font-medium">Gerando contrato...</p>
               <p className="text-xs text-gray-400">Isso pode levar alguns segundos</p>
             </div>

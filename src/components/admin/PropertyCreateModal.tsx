@@ -74,7 +74,7 @@ export function PropertyCreateModal({ open, onClose }: PropertyCreateModalProps)
                   value={opt.value}
                   checked={purpose === opt.value}
                   onChange={() => setPurpose(opt.value as 'RESIDENTIAL' | 'COMMERCIAL')}
-                  className="accent-[#2E86DE] w-4 h-4"
+                  className="accent-[#2563eb] w-4 h-4"
                   aria-label={opt.label}
                 />
                 <span className="text-sm text-gray-700">{opt.label}</span>
@@ -103,7 +103,7 @@ export function PropertyCreateModal({ open, onClose }: PropertyCreateModalProps)
                   value={opt.value}
                   checked={transactionType === opt.value}
                   onChange={() => setTransactionType(opt.value as 'SALE' | 'RENT')}
-                  className="accent-[#2E86DE] w-4 h-4"
+                  className="accent-[#2563eb] w-4 h-4"
                   aria-label={opt.label}
                 />
                 <span className="text-sm text-gray-700">{opt.label}</span>
@@ -123,7 +123,7 @@ export function PropertyCreateModal({ open, onClose }: PropertyCreateModalProps)
             onChange={(e) => { setPropertyType(e.target.value); setError('') }}
             required
             aria-label="Tipo de imóvel"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2E86DE] focus:border-transparent hover:border-gray-400 transition-colors"
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2563eb] focus:border-transparent hover:border-gray-400 transition-colors"
           >
             <option value="">Selecione o tipo...</option>
             {PROPERTY_TYPES.map((type) => (
@@ -153,7 +153,7 @@ export function PropertyCreateModal({ open, onClose }: PropertyCreateModalProps)
                   value={opt.value}
                   checked={location === opt.value}
                   onChange={() => setLocation(opt.value as 'BRAZIL' | 'ABROAD')}
-                  className="accent-[#2E86DE] w-4 h-4"
+                  className="accent-[#2563eb] w-4 h-4"
                   aria-label={opt.label}
                 />
                 <span className="text-sm text-gray-700">{opt.label}</span>

@@ -2,13 +2,15 @@ export const dynamic = 'force-dynamic'
 
 import { prisma } from '@/lib/prisma'
 import { ContactForm } from '@/components/public/ContactForm'
-import { MapPin, Phone, Mail, MessageCircle, UserCircle2 } from 'lucide-react'
+import { MapPin, Phone, Mail, MessageCircle, UserCircle2, Clock, Star } from 'lucide-react'
+import { SITE_URL } from '@/lib/site'
 import Image from 'next/image'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Contato | Paulo Pop',
-  description: 'Entre em contato com Paulo Pop. Tire dúvidas sobre compra, venda ou aluguel de imóveis.',
+  title: 'Contato',
+  description: 'Fale com Paulo Pop, corretor de imóveis RE/MAX em Samambaia, Taguatinga e Águas Claras. WhatsApp, telefone, e-mail e horário de atendimento.',
+  alternates: { canonical: '/contato' },
 }
 
 export default async function ContatoPage() {
@@ -17,13 +19,16 @@ export default async function ContatoPage() {
   const ownerName = config?.ownerName ?? 'Paulo Pop'
 
   const contacts = [
-    config?.ownerPhone && { icon: <Phone className="w-5 h-5 text-[#2E86DE]" />, label: 'Telefone', value: config.ownerPhone, href: `tel:${config.ownerPhone}` },
+    config?.ownerPhone && { icon: <Phone className="w-5 h-5 text-[#2563eb]" />, label: 'Telefone', value: config.ownerPhone, href: `tel:${config.ownerPhone}` },
     whatsapp && { icon: <MessageCircle className="w-5 h-5 text-[#25D366]" />, label: 'WhatsApp', value: whatsapp, href: `https://wa.me/${whatsapp.replace(/\D/g, '')}` },
-    config?.ownerEmail && { icon: <Mail className="w-5 h-5 text-[#2E86DE]" />, label: 'E-mail', value: config.ownerEmail, href: `mailto:${config.ownerEmail}` },
-    config?.ownerAddress && { icon: <MapPin className="w-5 h-5 text-[#2E86DE]" />, label: 'Endereço', value: config.ownerAddress, href: null },
+    config?.ownerEmail && { icon: <Mail className="w-5 h-5 text-[#2563eb]" />, label: 'E-mail', value: config.ownerEmail, href: `mailto:${config.ownerEmail}` },
+    config?.ownerAddress && { icon: <MapPin className="w-5 h-5 text-[#2563eb]" />, label: 'Endereço', value: config.ownerAddress, href: null },
+    // v1.1: horário de atendimento e perfil no Google
+    config?.businessHours && { icon: <Clock className="w-5 h-5 text-[#2563eb]" />, label: 'Horário de atendimento', value: config.businessHours, href: null },
+    config?.googleBusinessUrl && { icon: <Star className="w-5 h-5 text-[#F59E0B]" />, label: 'Avaliações no Google', value: 'Ver perfil no Google Maps', href: config.googleBusinessUrl },
   ].filter(Boolean)
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://paulopop.com.br'
+  const siteUrl = SITE_URL
   const realEstateAgentJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'RealEstateAgent',
@@ -36,6 +41,8 @@ export default async function ContatoPage() {
     ...(config?.ownerAddress ? { address: { '@type': 'PostalAddress', streetAddress: config.ownerAddress, addressRegion: 'DF', addressCountry: 'BR' } } : {}),
     ...(config?.logoUrl ? { logo: config.logoUrl } : {}),
     ...(config?.ownerCompany ? { worksFor: { '@type': 'Organization', name: config.ownerCompany } } : {}),
+    ...(config?.businessHours ? { openingHours: config.businessHours } : {}),
+    areaServed: ['Samambaia', 'Taguatinga', 'Águas Claras', 'Distrito Federal'],
     sameAs: [
       config?.ownerInstagram,
       config?.ownerFacebook,
@@ -52,9 +59,9 @@ export default async function ContatoPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(realEstateAgentJsonLd) }}
       />
       <div className="min-h-screen bg-[#F0F4F8]">
-      <div className="bg-[#0D2F5E] py-14 px-4">
+      <div className="bg-[#1e3a8a] py-14 px-4">
         <div className="max-w-7xl mx-auto">
-          <p className="text-[#2E86DE] text-xs font-semibold uppercase tracking-widest mb-2">Fale Conosco</p>
+          <p className="text-[#2563eb] text-xs font-semibold uppercase tracking-widest mb-2">Fale Conosco</p>
           <h1 className="font-display text-4xl font-bold text-white">Contato</h1>
         </div>
       </div>
@@ -74,12 +81,12 @@ export default async function ContatoPage() {
                   className="w-24 h-24 rounded-full object-cover shadow-md flex-shrink-0"
                 />
               ) : (
-                <div className="w-24 h-24 rounded-full bg-[#E8F1FB] flex items-center justify-center flex-shrink-0 shadow-md">
-                  <UserCircle2 className="w-12 h-12 text-[#2E86DE]" />
+                <div className="w-24 h-24 rounded-full bg-[#eff6ff] flex items-center justify-center flex-shrink-0 shadow-md">
+                  <UserCircle2 className="w-12 h-12 text-[#2563eb]" />
                 </div>
               )}
               <div>
-                <h2 className="font-display text-2xl font-bold text-[#0D2F5E]">
+                <h2 className="font-display text-2xl font-bold text-[#1e3a8a]">
                   Fale com {ownerName}
                 </h2>
                 <p className="text-gray-600 mt-1 text-sm">
@@ -106,7 +113,7 @@ export default async function ContatoPage() {
                         href={c.href}
                         target={c.href.startsWith('http') ? '_blank' : undefined}
                         rel={c.href.startsWith('http') ? 'noopener noreferrer' : undefined}
-                        className="font-medium text-[#0D2F5E] hover:text-[#2E86DE] transition-colors"
+                        className="font-medium text-[#1e3a8a] hover:text-[#2563eb] transition-colors"
                       >
                         {c.value}
                       </a>
@@ -121,7 +128,7 @@ export default async function ContatoPage() {
 
           {/* Formulário */}
           <div className="bg-white rounded-2xl p-8 shadow-sm">
-            <h2 className="font-display text-xl font-bold text-[#0D2F5E] mb-5">
+            <h2 className="font-display text-xl font-bold text-[#1e3a8a] mb-5">
               Envie uma mensagem
             </h2>
             <ContactForm
@@ -130,6 +137,20 @@ export default async function ContatoPage() {
             />
           </div>
         </div>
+
+        {/* v1.1: mapa da região de atendimento (Configurações → Páginas legais e atendimento) */}
+        {config?.mapEmbedUrl && /^https:\/\/www\.google\.com\/maps\/embed/.test(config.mapEmbedUrl) && (
+          <div className="mt-12 rounded-2xl overflow-hidden shadow-sm bg-white">
+            <iframe
+              src={config.mapEmbedUrl}
+              title="Mapa da região de atendimento"
+              className="w-full h-[320px] md:h-[400px] border-0"
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              allowFullScreen
+            />
+          </div>
+        )}
       </div>
     </div>
     </>

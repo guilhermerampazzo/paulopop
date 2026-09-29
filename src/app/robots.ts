@@ -1,6 +1,8 @@
 import { MetadataRoute } from 'next'
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://paulopop.com.br'
+import { SITE_URL } from '@/lib/site'
+
+const BASE_URL = SITE_URL
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -8,7 +10,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/admin/', '/api/'],
+        disallow: ['/admin/', '/api/', '/relatorio/', '/estudo/'],
       },
     ],
     sitemap: `${BASE_URL}/sitemap.xml`,

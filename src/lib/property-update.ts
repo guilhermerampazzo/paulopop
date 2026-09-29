@@ -18,7 +18,7 @@ const RELATION_FIELDS = [
   'owner',
 ] as const
 
-const NULLABLE_DATE_FIELDS = ['expiryDate', 'availabilityDate', 'publishedAt'] as const
+const NULLABLE_DATE_FIELDS = ['expiryDate', 'availabilityDate', 'publishedAt', 'soldAt'] as const
 const NULLABLE_INT_FIELDS = [
   'constructionYear',
   'constructionMonth',
@@ -31,6 +31,8 @@ const NULLABLE_INT_FIELDS = [
   'bedrooms',
   'bathrooms',
   'suites',
+  'balconies',
+  'daysOnMarket',
 ] as const
 const NULLABLE_DECIMAL_FIELDS = [
   'price',
@@ -41,6 +43,10 @@ const NULLABLE_DECIMAL_FIELDS = [
   'captureCommissionAmt',
   'saleCommissionPct',
   'saleCommissionAmt',
+  'listPriceAtSale',
+  'salePrice',
+  'saleDiscountPct',
+  'saleDiscountValue',
   'totalArea',
   'usefulArea',
   'landArea',
@@ -51,11 +57,13 @@ const NULLABLE_DECIMAL_FIELDS = [
   'longitude',
 ] as const
 const NULLABLE_ENUM_FIELDS = ['contractType', 'priceType'] as const
-const NULLABLE_FK_FIELDS = ['condominiumId', 'empreendimentoId', 'ownerId', 'secondaryAgentId'] as const
+const NULLABLE_FK_FIELDS = ['condominiumId', 'empreendimentoId', 'ownerId', 'secondaryAgentId', 'unitId'] as const
 const IMMUTABLE_FIELDS = [
   'createdAt', 'updatedAt', 'id', 'ref', 'slug', 'views', 'favorites',
   // origem da importação: só o importador grava
   'sourcePortal', 'sourceId', 'sourceUrl', 'sourceAgentName', 'sourceOfficeName', 'importedAt',
+  // v1.1: senha do relatório só pela rota do relatório
+  'reportPasswordHash', 'reportPasswordSetAt',
 ] as const
 
 function parseDate(value: unknown): string | null {

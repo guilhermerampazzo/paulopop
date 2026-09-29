@@ -9,6 +9,10 @@ import { GoogleReviews } from '@/components/public/GoogleReviews'
 import { formatCurrency } from '@/lib/formatters'
 import type { Metadata } from 'next'
 import { PropertyGallery } from '@/components/public/PropertyGallery'
+import { EmpreendimentoHub } from '@/components/public/EmpreendimentoHub'
+import { AreaInsightBlock } from '@/components/public/AreaInsightBlock'
+import { PartnersStrip } from '@/components/public/PartnersStrip'
+import { STAGE_LABEL } from '@/lib/empreendimento-units'
 import {
   MapPin, ChevronRight, MessageCircle, Phone,
   Building2, Bed, Bath, Car, Maximize2, Calendar,
@@ -26,6 +30,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: emp.name,
     description: emp.tagline ?? emp.description?.substring(0, 160) ?? emp.name,
+    alternates: { canonical: `/empreendimentos/${params.slug}` },
     openGraph: {
       title: `${emp.name} | Paulo Pop`,
       description: emp.tagline ?? emp.description?.substring(0, 160) ?? '',
@@ -72,15 +77,20 @@ export default async function EmpreendimentoPage({ params }: Props) {
       <div className="min-h-screen bg-[#F0F4F8] pb-24">
 
         {/* ── Hero ── */}
-        <div className="relative h-[65vh] min-h-[440px] overflow-hidden bg-[#0D2F5E]">
+        <div className="relative h-[65vh] min-h-[440px] overflow-hidden bg-[#1e3a8a]">
           {coverImage && (
             <Image src={coverImage} alt={emp.name} fill priority sizes="100vw" className="object-cover opacity-60" />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0D2F5E]/90 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#1e3a8a]/90 via-transparent to-transparent" />
           <div className="absolute bottom-0 left-0 right-0 px-4 sm:px-8 pb-12 max-w-7xl mx-auto">
-            {emp.neighborhood && (
-              <p className="text-[#2E86DE] text-xs font-semibold uppercase tracking-widest mb-2">{emp.neighborhood}</p>
-            )}
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ${emp.stage === 'LANCAMENTO' ? 'bg-[#ea580c] text-white' : emp.stage === 'EM_OBRAS' ? 'bg-amber-400 text-amber-950' : 'bg-white/90 text-[#1e3a8a]'}`}>
+                {STAGE_LABEL[emp.stage] ?? emp.stage}{emp.deliveryYear ? ` · ${emp.stage === 'ENTREGUE' ? 'entregue em' : 'entrega em'} ${emp.deliveryYear}` : ''}
+              </span>
+              {emp.neighborhood && (
+                <p className="text-[#93c5fd] text-xs font-semibold uppercase tracking-widest">{emp.neighborhood}</p>
+              )}
+            </div>
             <h1 className="font-display text-4xl md:text-6xl font-bold text-white mb-3 leading-tight">{emp.name}</h1>
             {emp.tagline && <p className="text-blue-100 text-xl md:text-2xl mb-6">{emp.tagline}</p>}
             <div className="flex flex-wrap gap-4">
@@ -99,17 +109,35 @@ export default async function EmpreendimentoPage({ params }: Props) {
         </div>
 
         {/* ── Ficha rápida ── */}
-        <div className="bg-[#0D2F5E] py-5 border-t border-[#1A4A8A]">
+        <div className="bg-[#1e3a8a] py-5 border-t border-[#1e40af]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap gap-6 justify-center">
             {emp.totalUnits && (
               <div className="flex items-center gap-2 text-white">
-                <Layers className="w-4 h-4 text-[#2E86DE]" />
+                <Layers className="w-4 h-4 text-[#2563eb]" />
                 <span className="text-sm"><strong>{emp.totalUnits}</strong> unidades</span>
+              </div>
+            )}
+            {emp.builder && (
+              <div className="flex items-center gap-2 text-white">
+                <Building2 className="w-4 h-4 text-[#2563eb]" />
+                <span className="text-sm">Construtora <strong>{emp.builder}</strong></span>
+              </div>
+            )}
+            {emp.elevators != null && (
+              <div className="flex items-center gap-2 text-white">
+                <Layers className="w-4 h-4 text-[#2563eb]" />
+                <span className="text-sm">{emp.elevators > 0 ? <><strong>{emp.elevators}</strong> {emp.elevators === 1 ? 'elevador' : 'elevadores'}</> : 'Sem elevador'}</span>
+              </div>
+            )}
+            {emp.condoFeeAvg && (
+              <div className="flex items-center gap-2 text-white">
+                <DollarSign className="w-4 h-4 text-[#2563eb]" />
+                <span className="text-sm">Condomínio médio <strong>{formatCurrency(Number(emp.condoFeeAvg))}</strong></span>
               </div>
             )}
             {(emp.bedroomsMin || emp.bedroomsMax) && (
               <div className="flex items-center gap-2 text-white">
-                <Bed className="w-4 h-4 text-[#2E86DE]" />
+                <Bed className="w-4 h-4 text-[#2563eb]" />
                 <span className="text-sm">
                   <strong>{emp.bedroomsMin === emp.bedroomsMax ? emp.bedroomsMin : `${emp.bedroomsMin ?? '?'} a ${emp.bedroomsMax ?? '?'}`}</strong> quartos
                 </span>
@@ -117,7 +145,7 @@ export default async function EmpreendimentoPage({ params }: Props) {
             )}
             {(emp.suitesMin || emp.suitesMax) && (
               <div className="flex items-center gap-2 text-white">
-                <Bed className="w-4 h-4 text-[#2E86DE]" />
+                <Bed className="w-4 h-4 text-[#2563eb]" />
                 <span className="text-sm">
                   <strong>{emp.suitesMin === emp.suitesMax ? emp.suitesMin : `${emp.suitesMin ?? '?'} a ${emp.suitesMax ?? '?'}`}</strong> suítes
                 </span>
@@ -125,7 +153,7 @@ export default async function EmpreendimentoPage({ params }: Props) {
             )}
             {(emp.areaMin || emp.areaMax) && (
               <div className="flex items-center gap-2 text-white">
-                <Maximize2 className="w-4 h-4 text-[#2E86DE]" />
+                <Maximize2 className="w-4 h-4 text-[#2563eb]" />
                 <span className="text-sm">
                   <strong>{emp.areaMin === emp.areaMax ? `${emp.areaMin}m²` : `${emp.areaMin ?? '?'} – ${emp.areaMax ?? '?'}m²`}</strong> área privativa
                 </span>
@@ -133,13 +161,13 @@ export default async function EmpreendimentoPage({ params }: Props) {
             )}
             {emp.deliveryDate && (
               <div className="flex items-center gap-2 text-white">
-                <Calendar className="w-4 h-4 text-[#2E86DE]" />
+                <Calendar className="w-4 h-4 text-[#2563eb]" />
                 <span className="text-sm">Entrega: <strong>{emp.deliveryDate}</strong></span>
               </div>
             )}
             {emp.priceMin && (
               <div className="flex items-center gap-2 text-white">
-                <DollarSign className="w-4 h-4 text-[#2E86DE]" />
+                <DollarSign className="w-4 h-4 text-[#2563eb]" />
                 <span className="text-sm">
                   A partir de <strong>{formatCurrency(Number(emp.priceMin))}</strong>
                   {emp.priceMax ? ` até ${formatCurrency(Number(emp.priceMax))}` : ''}
@@ -153,9 +181,9 @@ export default async function EmpreendimentoPage({ params }: Props) {
         <div className="bg-white border-b border-gray-100">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
             <nav className="flex items-center gap-1 text-sm text-gray-400 flex-wrap">
-              <Link href="/" className="hover:text-[#0D2F5E] transition-colors">Início</Link>
+              <Link href="/" className="hover:text-[#1e3a8a] transition-colors">Início</Link>
               <ChevronRight className="w-3 h-3" />
-              <Link href="/empreendimentos" className="hover:text-[#0D2F5E] transition-colors">Empreendimentos</Link>
+              <Link href="/empreendimentos" className="hover:text-[#1e3a8a] transition-colors">Empreendimentos</Link>
               <ChevronRight className="w-3 h-3" />
               <span className="text-gray-600">{emp.name}</span>
             </nav>
@@ -177,7 +205,7 @@ export default async function EmpreendimentoPage({ params }: Props) {
                     <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4">
                       {highlights.map((h, i) => (
                         <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
-                          <CheckCircle className="w-4 h-4 text-[#2E86DE] mt-0.5 flex-shrink-0" />
+                          <CheckCircle className="w-4 h-4 text-[#2563eb] mt-0.5 flex-shrink-0" />
                           {h}
                         </li>
                       ))}
@@ -186,6 +214,11 @@ export default async function EmpreendimentoPage({ params }: Props) {
                 </div>
               </section>
             )}
+
+            {/* v1.2: hub do prédio — unidades disponíveis, negociados, números e mapa */}
+            <EmpreendimentoHub empreendimentoId={emp.id} empName={emp.name} stage={emp.stage} whatsapp={ownerWhatsapp} />
+            <AreaInsightBlock kind="empreendimento" id={emp.id} />
+            <PartnersStrip types={['CONSTRUTORA', 'BANCO']} title="Parceiros deste empreendimento" limit={6} />
 
             {/* Galeria fachada */}
             {heroImages.length > 0 && (
@@ -239,10 +272,10 @@ export default async function EmpreendimentoPage({ params }: Props) {
                     <div className="flex flex-wrap gap-4">
                       {(emp.bedroomsMin || emp.bedroomsMax) && (
                         <div className="flex items-center gap-2 p-3 bg-[#F0F4F8] rounded-xl">
-                          <Bed className="w-4 h-4 text-[#2E86DE]" />
+                          <Bed className="w-4 h-4 text-[#2563eb]" />
                           <div>
                             <p className="text-xs text-gray-400">Dormitórios</p>
-                            <p className="font-semibold text-sm text-[#0D2F5E]">
+                            <p className="font-semibold text-sm text-[#1e3a8a]">
                               {emp.bedroomsMin === emp.bedroomsMax ? emp.bedroomsMin : `${emp.bedroomsMin ?? '?'} a ${emp.bedroomsMax ?? '?'}`}
                             </p>
                           </div>
@@ -250,10 +283,10 @@ export default async function EmpreendimentoPage({ params }: Props) {
                       )}
                       {(emp.areaMin || emp.areaMax) && (
                         <div className="flex items-center gap-2 p-3 bg-[#F0F4F8] rounded-xl">
-                          <Maximize2 className="w-4 h-4 text-[#2E86DE]" />
+                          <Maximize2 className="w-4 h-4 text-[#2563eb]" />
                           <div>
                             <p className="text-xs text-gray-400">Área Privativa</p>
-                            <p className="font-semibold text-sm text-[#0D2F5E]">
+                            <p className="font-semibold text-sm text-[#1e3a8a]">
                               {emp.areaMin === emp.areaMax ? `${emp.areaMin}m²` : `${emp.areaMin ?? '?'} – ${emp.areaMax ?? '?'}m²`}
                             </p>
                           </div>
@@ -261,10 +294,10 @@ export default async function EmpreendimentoPage({ params }: Props) {
                       )}
                       {(emp.suitesMin || emp.suitesMax) && (
                         <div className="flex items-center gap-2 p-3 bg-[#F0F4F8] rounded-xl">
-                          <Bed className="w-4 h-4 text-[#2E86DE]" />
+                          <Bed className="w-4 h-4 text-[#2563eb]" />
                           <div>
                             <p className="text-xs text-gray-400">Suítes</p>
-                            <p className="font-semibold text-sm text-[#0D2F5E]">
+                            <p className="font-semibold text-sm text-[#1e3a8a]">
                               {emp.suitesMin === emp.suitesMax ? emp.suitesMin : `${emp.suitesMin ?? '?'} a ${emp.suitesMax ?? '?'}`}
                             </p>
                           </div>
@@ -277,7 +310,7 @@ export default async function EmpreendimentoPage({ params }: Props) {
                   )}
                   {emp.floorPlanImages.length > 0 && (
                     <div>
-                      <p className="font-semibold text-[#0D2F5E] mb-3 text-sm">Plantas</p>
+                      <p className="font-semibold text-[#1e3a8a] mb-3 text-sm">Plantas</p>
                       <PropertyGallery images={emp.floorPlanImages.map(i => ({ url: i.url, alt: i.caption ?? undefined }))} title={emp.name} />
                     </div>
                   )}
@@ -297,7 +330,7 @@ export default async function EmpreendimentoPage({ params }: Props) {
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                       {amenities.map((a, i) => (
                         <div key={i} className="flex items-center gap-2 text-sm text-gray-700">
-                          <span className="w-2 h-2 rounded-full bg-[#2E86DE] flex-shrink-0" />{a}
+                          <span className="w-2 h-2 rounded-full bg-[#2563eb] flex-shrink-0" />{a}
                         </div>
                       ))}
                     </div>
@@ -317,7 +350,7 @@ export default async function EmpreendimentoPage({ params }: Props) {
                   {(emp.priceMin || emp.priceMax) && (
                     <div className="p-4 bg-[#F0F4F8] rounded-xl">
                       <p className="text-sm text-gray-500 mb-1">Valores</p>
-                      <p className="text-2xl font-bold text-[#0D2F5E]">
+                      <p className="text-2xl font-bold text-[#1e3a8a]">
                         {emp.priceMin && emp.priceMax
                           ? `${formatCurrency(Number(emp.priceMin))} a ${formatCurrency(Number(emp.priceMax))}`
                           : emp.priceMin
@@ -358,7 +391,7 @@ export default async function EmpreendimentoPage({ params }: Props) {
                 <div className="bg-white rounded-2xl p-6 shadow-sm space-y-6">
                   {emp.address && (
                     <div className="flex items-start gap-2 text-sm text-gray-600">
-                      <MapPin className="w-4 h-4 text-[#2E86DE] mt-0.5 flex-shrink-0" />
+                      <MapPin className="w-4 h-4 text-[#2563eb] mt-0.5 flex-shrink-0" />
                       <span>{[emp.address, emp.neighborhood, emp.city, emp.state].filter(Boolean).join(', ')}</span>
                     </div>
                   )}
@@ -399,7 +432,7 @@ export default async function EmpreendimentoPage({ params }: Props) {
                     )}
                   </div>
                   <div>
-                    <p className="font-bold text-[#0D2F5E] text-lg">{ownerName}</p>
+                    <p className="font-bold text-[#1e3a8a] text-lg">{ownerName}</p>
                     {ownerCompany && <p className="text-sm text-gray-500">{ownerCompany}</p>}
                     {ownerCreci && <p className="text-xs text-gray-400">CRECI: {ownerCreci}</p>}
                   </div>
@@ -407,7 +440,7 @@ export default async function EmpreendimentoPage({ params }: Props) {
                 <div className="flex gap-3 flex-wrap">
                   {ownerPhone && (
                     <a href={`tel:${ownerPhone}`}
-                      className="flex items-center gap-2 px-4 py-2 border border-[#0D2F5E] text-[#0D2F5E] rounded-xl text-sm font-medium hover:bg-[#0D2F5E] hover:text-white transition-colors">
+                      className="flex items-center gap-2 px-4 py-2 border border-[#1e3a8a] text-[#1e3a8a] rounded-xl text-sm font-medium hover:bg-[#1e3a8a] hover:text-white transition-colors">
                       <Phone className="w-4 h-4" />Ligar
                     </a>
                   )}
@@ -436,15 +469,15 @@ export default async function EmpreendimentoPage({ params }: Props) {
                   )}
                 </div>
                 <div className="min-w-0">
-                  <p className="font-bold text-[#0D2F5E] text-sm truncate">{ownerName}</p>
+                  <p className="font-bold text-[#1e3a8a] text-sm truncate">{ownerName}</p>
                   {ownerCompany && <p className="text-xs text-gray-400 truncate">{ownerCompany}</p>}
                   {ownerCreci && <p className="text-xs text-gray-400">CRECI: {ownerCreci}</p>}
                   {ownerPhone && (
-                    <a href={`tel:${ownerPhone}`} className="text-xs text-[#2E86DE] hover:underline">{ownerPhone}</a>
+                    <a href={`tel:${ownerPhone}`} className="text-xs text-[#2563eb] hover:underline">{ownerPhone}</a>
                   )}
                 </div>
               </div>
-              <h2 className="font-display text-lg font-bold text-[#0D2F5E] mb-1">Tenho interesse!</h2>
+              <h2 className="font-display text-lg font-bold text-[#1e3a8a] mb-1">Tenho interesse!</h2>
               <p className="text-sm text-gray-400 mb-5">Deixe seu contato e entraremos em breve.</p>
               <ContactForm whatsapp={ownerWhatsapp} />
             </div>
@@ -465,14 +498,14 @@ export default async function EmpreendimentoPage({ params }: Props) {
               )}
             </div>
             <div className="min-w-0">
-              <p className="font-semibold text-[#0D2F5E] text-sm truncate">{ownerName}</p>
+              <p className="font-semibold text-[#1e3a8a] text-sm truncate">{ownerName}</p>
               {ownerCompany && <p className="text-xs text-gray-400 truncate">{ownerCompany}</p>}
             </div>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             {ownerPhone && (
               <a href={`tel:${ownerPhone}`}
-                className="flex items-center gap-1.5 px-3 py-2 border border-[#0D2F5E] text-[#0D2F5E] rounded-xl text-sm font-medium hover:bg-[#0D2F5E] hover:text-white transition-colors">
+                className="flex items-center gap-1.5 px-3 py-2 border border-[#1e3a8a] text-[#1e3a8a] rounded-xl text-sm font-medium hover:bg-[#1e3a8a] hover:text-white transition-colors">
                 <Phone className="w-4 h-4" /><span className="hidden sm:inline">Ligar</span>
               </a>
             )}
@@ -491,8 +524,8 @@ export default async function EmpreendimentoPage({ params }: Props) {
 
 function SectionTitle({ children, icon }: { children: React.ReactNode; icon?: React.ReactNode }) {
   return (
-    <h2 className="font-display text-xl font-bold text-[#0D2F5E] mb-4 flex items-center gap-2">
-      {icon && <span className="text-[#2E86DE]">{icon}</span>}
+    <h2 className="font-display text-xl font-bold text-[#1e3a8a] mb-4 flex items-center gap-2">
+      {icon && <span className="text-[#2563eb]">{icon}</span>}
       {children}
     </h2>
   )

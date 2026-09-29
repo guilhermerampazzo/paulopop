@@ -77,7 +77,7 @@ export function ImportarRemaxClient() {
   return (
     <div className="space-y-6">
       <form onSubmit={importFromUrl} className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
-        <label htmlFor="remax-url" className="block text-sm font-semibold text-[#0D2F5E]">Link do anúncio</label>
+        <label htmlFor="remax-url" className="block text-sm font-semibold text-[#1e3a8a]">Link do anúncio</label>
         <div className="flex flex-col sm:flex-row gap-2">
           <div className="relative flex-1">
             <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -88,14 +88,14 @@ export function ImportarRemaxClient() {
               value={url}
               onChange={e => setUrl(e.target.value)}
               placeholder="https://www.remax.com.br/pt-br/imoveis/.../880221062-25"
-              className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0D2F5E]"
+              className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]"
               disabled={loading}
             />
           </div>
           <button
             type="submit"
             disabled={loading || !url.trim()}
-            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#0D2F5E] text-white text-sm font-medium rounded-lg hover:bg-[#081E3F] disabled:opacity-50"
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#1e3a8a] text-white text-sm font-medium rounded-lg hover:bg-[#172554] disabled:opacity-50"
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
             {publish ? 'Importar e publicar' : 'Importar como rascunho'}
@@ -143,7 +143,7 @@ export function ImportarRemaxClient() {
       )}
 
       <details open={blocked} className="bg-white rounded-xl border border-gray-200 p-5">
-        <summary className="cursor-pointer text-sm font-semibold text-[#0D2F5E]">
+        <summary className="cursor-pointer text-sm font-semibold text-[#1e3a8a]">
           A RE/MAX bloqueou? Importe pelo botão de favoritos
         </summary>
         <ol className="mt-3 space-y-2 text-sm text-gray-600 list-decimal pl-5">
@@ -166,14 +166,14 @@ export function ImportarRemaxClient() {
           onChange={e => setPasted(e.target.value)}
           placeholder="Cole aqui o texto copiado da RE/MAX"
           rows={4}
-          className="mt-4 w-full border border-gray-200 rounded-lg p-3 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#0D2F5E]"
+          className="mt-4 w-full border border-gray-200 rounded-lg p-3 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]"
           aria-label="Dados copiados da RE/MAX"
         />
         <button
           type="button"
           onClick={importFromPaste}
           disabled={loading || !pasted.trim()}
-          className="mt-2 inline-flex items-center gap-2 px-4 py-2 bg-[#2E86DE] text-white text-sm font-medium rounded-lg disabled:opacity-50"
+          className="mt-2 inline-flex items-center gap-2 px-4 py-2 bg-[#2563eb] text-white text-sm font-medium rounded-lg disabled:opacity-50"
         >
           <ClipboardPaste className="w-4 h-4" /> Importar dados colados
         </button>

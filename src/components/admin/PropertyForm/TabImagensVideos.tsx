@@ -103,7 +103,7 @@ export function TabImagensVideos({
       {/* Fotos */}
       <section>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold text-[#0D2F5E] uppercase tracking-wider">
+          <h3 className="text-sm font-semibold text-[#1e3a8a] uppercase tracking-wider">
             Fotos <span className="text-gray-400 font-normal">({images.length})</span>
           </h3>
           <div className="flex gap-2">
@@ -115,7 +115,7 @@ export function TabImagensVideos({
                   fileInputRef.current.click()
                 }
               }}
-              className="text-xs text-[#2E86DE] border border-[#2E86DE] px-3 py-1.5 rounded-lg hover:bg-[#2E86DE] hover:text-white transition-colors"
+              className="text-xs text-[#2563eb] border border-[#2563eb] px-3 py-1.5 rounded-lg hover:bg-[#2563eb] hover:text-white transition-colors"
             >
               + Foto 360°
             </button>
@@ -127,7 +127,7 @@ export function TabImagensVideos({
                   fileInputRef.current.click()
                 }
               }}
-              className="text-xs text-[#2E86DE] border border-[#2E86DE] px-3 py-1.5 rounded-lg hover:bg-[#2E86DE] hover:text-white transition-colors"
+              className="text-xs text-[#2563eb] border border-[#2563eb] px-3 py-1.5 rounded-lg hover:bg-[#2563eb] hover:text-white transition-colors"
             >
               + Panorâmica
             </button>
@@ -140,7 +140,7 @@ export function TabImagensVideos({
           onDragOver={e => { e.preventDefault(); setDragOver(true) }}
           onDragLeave={() => setDragOver(false)}
           className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors cursor-pointer ${
-            dragOver ? 'border-[#2E86DE] bg-blue-50' : 'border-gray-300 hover:border-gray-400 bg-gray-50'
+            dragOver ? 'border-[#2563eb] bg-blue-50' : 'border-gray-300 hover:border-gray-400 bg-gray-50'
           }`}
           onClick={() => fileInputRef.current?.click()}
           role="button"
@@ -150,9 +150,9 @@ export function TabImagensVideos({
         >
           <Upload className="mx-auto text-gray-400 mb-2" size={32} aria-hidden="true" />
           <p className="text-sm text-gray-600">Arraste e solte as fotos aqui ou</p>
-          <p className="text-sm font-medium text-[#2E86DE] mt-1">clique para selecionar arquivos</p>
+          <p className="text-sm font-medium text-[#2563eb] mt-1">clique para selecionar arquivos</p>
           <p className="text-xs text-gray-400 mt-2">JPEG, PNG, WEBP — máx. 10MB por arquivo</p>
-          {uploading && <p className="text-sm text-[#2E86DE] mt-2">Enviando...</p>}
+          {uploading && <p className="text-sm text-[#2563eb] mt-2">Enviando...</p>}
           {uploadError && <p className="text-sm text-red-600 mt-2">Erro: {uploadError}</p>}
         </div>
         <input
@@ -179,7 +179,7 @@ export function TabImagensVideos({
                   unoptimized
                 />
                 {img.isCover && (
-                  <div className="absolute top-1 left-1 bg-[#2E86DE] text-white text-xs px-1.5 py-0.5 rounded-full font-medium">
+                  <div className="absolute top-1 left-1 bg-[#2563eb] text-white text-xs px-1.5 py-0.5 rounded-full font-medium">
                     Capa
                   </div>
                 )}
@@ -231,7 +231,7 @@ export function TabImagensVideos({
 
       {/* Vídeo YouTube */}
       <section>
-        <h3 className="text-sm font-semibold text-[#0D2F5E] uppercase tracking-wider border-b border-gray-200 pb-2 mb-4">
+        <h3 className="text-sm font-semibold text-[#1e3a8a] uppercase tracking-wider border-b border-gray-200 pb-2 mb-4">
           Vídeo
         </h3>
         <div className="flex items-center gap-3">
@@ -251,7 +251,7 @@ export function TabImagensVideos({
 
       {/* Tour Virtual */}
       <section>
-        <h3 className="text-sm font-semibold text-[#0D2F5E] uppercase tracking-wider border-b border-gray-200 pb-2 mb-4">
+        <h3 className="text-sm font-semibold text-[#1e3a8a] uppercase tracking-wider border-b border-gray-200 pb-2 mb-4">
           Tour Virtual
         </h3>
         <div className="flex gap-4 mb-3">
@@ -263,7 +263,7 @@ export function TabImagensVideos({
                 value={v}
                 checked={virtualTourType === v}
                 onChange={() => onChange('virtualTourType', v)}
-                className="accent-[#2E86DE]"
+                className="accent-[#2563eb]"
                 aria-label={v === 'NONE' ? 'Nenhum' : v === 'BANIB' ? 'Banib' : 'Outro'}
               />
               <span className="text-sm text-gray-700">
@@ -285,7 +285,7 @@ export function TabImagensVideos({
 
       {/* Link externo */}
       <section>
-        <h3 className="text-sm font-semibold text-[#0D2F5E] uppercase tracking-wider border-b border-gray-200 pb-2 mb-4">
+        <h3 className="text-sm font-semibold text-[#1e3a8a] uppercase tracking-wider border-b border-gray-200 pb-2 mb-4">
           Link Para Outros Sites
         </h3>
         <Input

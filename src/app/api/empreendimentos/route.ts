@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { revalidateSite } from '@/lib/cache'
 
 function slugify(text: string) {
   return text
@@ -63,5 +64,6 @@ export async function POST(request: NextRequest) {
     data: { name: name.trim(), slug },
   })
 
+  revalidateSite('empreendimentos')
   return NextResponse.json(empreendimento, { status: 201 })
 }

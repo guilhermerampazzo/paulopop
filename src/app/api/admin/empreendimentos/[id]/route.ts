@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { revalidateSite } from '@/lib/cache'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -68,6 +69,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
       virtualTourType: body.virtualTourType !== undefined ? (body.virtualTourType ? String(body.virtualTourType) : 'NONE') : undefined,
     },
   })
+  revalidateSite('empreendimentos')
   return NextResponse.json(item)
 }
 
@@ -77,5 +79,6 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
 
   const { id } = await params
   await prisma.empreendimento.delete({ where: { id } })
+  revalidateSite('empreendimentos')
   return NextResponse.json({ success: true })
 }

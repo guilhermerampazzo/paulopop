@@ -25,7 +25,7 @@ export default function LoginPage() {
     })
 
     if (result?.error) {
-      setError('E-mail ou senha inválidos. Tente novamente.')
+      setError(result.error.startsWith('Muitas tentativas') ? result.error : 'E-mail ou senha inválidos. Tente novamente.')
       setLoading(false)
     } else {
       router.replace('/admin')
@@ -37,7 +37,7 @@ export default function LoginPage() {
       {/* Painel esquerdo — branding */}
       <div
         className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12"
-        style={{ background: 'linear-gradient(135deg, #0D2F5E 0%, #1A4A8A 50%, #2E86DE 100%)' }}
+        style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #2563eb 100%)' }}
       >
         <div className="flex items-center gap-3">
           <Building2 className="text-white" size={32} />
@@ -59,12 +59,12 @@ export default function LoginPage() {
         <div className="w-full max-w-sm">
           {/* Logo mobile */}
           <div className="lg:hidden flex items-center gap-2 mb-8 justify-center">
-            <Building2 className="text-[#0D2F5E]" size={28} />
-            <span className="text-[#0D2F5E] text-xl font-bold">Paulo Pop</span>
+            <Building2 className="text-[#1e3a8a]" size={28} />
+            <span className="text-[#1e3a8a] text-xl font-bold">Paulo Pop</span>
           </div>
 
           <div className="bg-white rounded-2xl shadow-lg p-8">
-            <h1 className="text-2xl font-bold text-[#0D2F5E] mb-1">Entrar</h1>
+            <h1 className="text-2xl font-bold text-[#1e3a8a] mb-1">Entrar</h1>
             <p className="text-gray-500 text-sm mb-6">Acesse o painel administrativo</p>
 
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -80,7 +80,7 @@ export default function LoginPage() {
                   required
                   aria-label="E-mail"
                   placeholder="admin@paulopop.com.br"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86DE] focus:border-transparent hover:border-gray-400 transition-colors"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb] focus:border-transparent hover:border-gray-400 transition-colors"
                 />
               </div>
 
@@ -97,7 +97,7 @@ export default function LoginPage() {
                     required
                     aria-label="Senha"
                     placeholder="••••••••"
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86DE] focus:border-transparent hover:border-gray-400 transition-colors"
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb] focus:border-transparent hover:border-gray-400 transition-colors"
                   />
                   <button
                     type="button"
@@ -120,7 +120,7 @@ export default function LoginPage() {
                 type="submit"
                 disabled={loading}
                 aria-label="Entrar no painel"
-                className="w-full bg-[#2E86DE] hover:bg-[#1B6EC2] disabled:opacity-60 text-white font-semibold py-3 rounded-lg transition-colors text-sm"
+                className="w-full bg-[#2563eb] hover:bg-[#1d4ed8] disabled:opacity-60 text-white font-semibold py-3 rounded-lg transition-colors text-sm"
               >
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">

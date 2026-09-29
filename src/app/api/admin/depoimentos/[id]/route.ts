@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { revalidateSite } from '@/lib/cache'
 
 // PUT /api/admin/depoimentos/[id]
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
@@ -22,6 +23,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   if (body.approved !== undefined) data.approved = Boolean(body.approved)
 
   const updated = await prisma.testimonial.update({ where: { id: params.id }, data })
+  revalidateSite('config')
   return NextResponse.json(updated)
 }
 
@@ -31,5 +33,6 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   if (!session) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
   await prisma.testimonial.delete({ where: { id: params.id } })
+  revalidateSite('config')
   return NextResponse.json({ success: true })
 }

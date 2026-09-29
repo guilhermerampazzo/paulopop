@@ -5,12 +5,13 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: paulopop
-      POSTGRES_PASSWORD: paulopop123
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-paulopop123}
       POSTGRES_DB: paulopop
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    # v1.1: a porta do banco só é exposta se POSTGRES_EXPOSE_PORT for definida (ex.: 127.0.0.1:5432)
     ports:
-      - "${POSTGRES_EXPOSE_PORT:-5432}:5432"
+      - "${POSTGRES_EXPOSE_PORT:-127.0.0.1:65432}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U paulopop -d paulopop"]
       interval: 10s
@@ -36,11 +37,14 @@ services:
       NODE_ENV: production
 
       # Banco de dados interno
-      DATABASE_URL: postgresql://paulopop:paulopop123@postgres:5432/paulopop
+      DATABASE_URL: postgresql://paulopop:${POSTGRES_PASSWORD:-paulopop123}@postgres:5432/paulopop
       RUN_SEED: ${RUN_SEED:-false}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      ADMIN_NAME: ${ADMIN_NAME:-}
 
       # NextAuth
-      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-local-dev-nextauth-secret}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:?Defina NEXTAUTH_SECRET no .env (openssl rand -base64 32)}
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
       NEXTAUTH_URL_INTERNAL: http://app:3000
 

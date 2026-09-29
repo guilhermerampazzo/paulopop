@@ -62,7 +62,7 @@ function Field({ label, value, onChange, placeholder, hint, type = 'text' }: {
         value={value}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86DE]"
+        className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
       />
     </div>
   )
@@ -158,7 +158,7 @@ export function EmpreendimentoEditor({ initial }: { initial?: Partial<Empreendim
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <div className="flex-1">
-          <h1 className="text-2xl font-bold text-[#0D2F5E]">{isEdit ? 'Editar Empreendimento' : 'Novo Empreendimento'}</h1>
+          <h1 className="text-2xl font-bold text-[#1e3a8a]">{isEdit ? 'Editar Empreendimento' : 'Novo Empreendimento'}</h1>
           <p className="text-sm text-gray-500">
             {form.status === 'PUBLISHED'
               ? <span className="text-green-600 flex items-center gap-1"><Globe className="w-3 h-3" /> Publicado</span>
@@ -171,7 +171,7 @@ export function EmpreendimentoEditor({ initial }: { initial?: Partial<Empreendim
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Rascunho
           </button>
           <button onClick={() => handleSave('PUBLISHED')} disabled={saving || !form.name}
-            className="flex items-center gap-2 px-4 py-2 bg-[#0D2F5E] text-white rounded-xl text-sm font-medium hover:bg-[#081E3F] disabled:opacity-60 transition-colors">
+            className="flex items-center gap-2 px-4 py-2 bg-[#1e3a8a] text-white rounded-xl text-sm font-medium hover:bg-[#172554] disabled:opacity-60 transition-colors">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Globe className="w-4 h-4" />} Publicar
           </button>
         </div>
@@ -191,20 +191,20 @@ export function EmpreendimentoEditor({ initial }: { initial?: Partial<Empreendim
 
           {/* Identificação */}
           <div className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
-            <h2 className="font-semibold text-[#0D2F5E]">Identificação</h2>
+            <h2 className="font-semibold text-[#1e3a8a]">Identificação</h2>
             <Field label="Nome do empreendimento *" value={form.name} onChange={v => set('name', v)} placeholder="Ex: Paradiso Samambaia" />
             <Field label="Tagline" value={form.tagline} onChange={v => set('tagline', v)} placeholder="Ex: O primeiro lar dos seus sonhos começa aqui!" />
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
               <textarea value={form.description} onChange={e => set('description', e.target.value)} rows={5}
                 placeholder="Descreva o empreendimento..."
-                className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86DE] resize-y" />
+                className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb] resize-y" />
             </div>
           </div>
 
           {/* Localização */}
           <div className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
-            <h2 className="font-semibold text-[#0D2F5E]">Localização</h2>
+            <h2 className="font-semibold text-[#1e3a8a]">Localização</h2>
             <Field label="Endereço" value={form.address} onChange={v => set('address', v)} />
             <div className="grid grid-cols-2 gap-4">
               <Field label="Bairro" value={form.neighborhood} onChange={v => set('neighborhood', v)} />
@@ -215,7 +215,7 @@ export function EmpreendimentoEditor({ initial }: { initial?: Partial<Empreendim
 
           {/* Detalhes técnicos */}
           <div className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
-            <h2 className="font-semibold text-[#0D2F5E]">Detalhes Técnicos</h2>
+            <h2 className="font-semibold text-[#1e3a8a]">Detalhes Técnicos</h2>
             <div className="grid grid-cols-2 gap-4">
               <Field label="Arquiteto" value={form.architect} onChange={v => set('architect', v)} />
               <Field label="Previsão de entrega" value={form.deliveryDate} onChange={v => set('deliveryDate', v)} placeholder="Ex: Dez/2026" />
@@ -233,18 +233,18 @@ export function EmpreendimentoEditor({ initial }: { initial?: Partial<Empreendim
 
           {/* Diferenciais */}
           <div className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
-            <h2 className="font-semibold text-[#0D2F5E]">Diferenciais</h2>
+            <h2 className="font-semibold text-[#1e3a8a]">Diferenciais</h2>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Amenidades / Lazer</label>
               <p className="text-xs text-gray-400 mb-1">Uma por linha. Ex: Piscina, Academia, Playground...</p>
               <textarea value={form.amenities} onChange={e => set('amenities', e.target.value)} rows={5}
-                className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86DE] resize-y" />
+                className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb] resize-y" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Destaques / Pontos fortes</label>
               <p className="text-xs text-gray-400 mb-1">Uma por linha. Ex: Natureza circundante, Mobilidade urbana...</p>
               <textarea value={form.highlights} onChange={e => set('highlights', e.target.value)} rows={4}
-                className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86DE] resize-y" />
+                className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb] resize-y" />
             </div>
           </div>
 
@@ -252,9 +252,9 @@ export function EmpreendimentoEditor({ initial }: { initial?: Partial<Empreendim
           {isEdit && (
             <div className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="font-semibold text-[#0D2F5E]">Galeria de Fotos</h2>
+                <h2 className="font-semibold text-[#1e3a8a]">Galeria de Fotos</h2>
                 <button type="button" onClick={() => galleryRef.current?.click()} disabled={uploading === 'gallery'}
-                  className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 rounded-xl text-sm hover:border-[#2E86DE] transition-colors disabled:opacity-60">
+                  className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 rounded-xl text-sm hover:border-[#2563eb] transition-colors disabled:opacity-60">
                   {uploading === 'gallery' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Adicionar fotos
                 </button>
                 <input ref={galleryRef} type="file" accept="image/*" multiple className="hidden" aria-hidden="true"
@@ -279,9 +279,9 @@ export function EmpreendimentoEditor({ initial }: { initial?: Partial<Empreendim
           {isEdit && (
             <div className="bg-white rounded-2xl p-6 shadow-sm space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="font-semibold text-[#0D2F5E]">Plantas / Floor Plans</h2>
+                <h2 className="font-semibold text-[#1e3a8a]">Plantas / Floor Plans</h2>
                 <button type="button" onClick={() => floorplanRef.current?.click()} disabled={uploading === 'floorplan'}
-                  className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 rounded-xl text-sm hover:border-[#2E86DE] transition-colors disabled:opacity-60">
+                  className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 rounded-xl text-sm hover:border-[#2563eb] transition-colors disabled:opacity-60">
                   {uploading === 'floorplan' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />} Adicionar plantas
                 </button>
                 <input ref={floorplanRef} type="file" accept="image/*" multiple className="hidden" aria-hidden="true"
@@ -324,7 +324,7 @@ export function EmpreendimentoEditor({ initial }: { initial?: Partial<Empreendim
               </div>
             ) : (
               <button type="button" onClick={() => coverRef.current?.click()} disabled={uploading === 'coverUrl'}
-                className="w-full h-32 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-[#2E86DE] hover:text-[#2E86DE] transition-colors">
+                className="w-full h-32 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-[#2563eb] hover:text-[#2563eb] transition-colors">
                 {uploading === 'coverUrl' ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
                 <span className="text-xs">Selecionar capa</span>
               </button>
@@ -346,7 +346,7 @@ export function EmpreendimentoEditor({ initial }: { initial?: Partial<Empreendim
               </div>
             ) : (
               <button type="button" onClick={() => logoRef.current?.click()} disabled={uploading === 'logoUrl'}
-                className="w-full h-20 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-[#2E86DE] hover:text-[#2E86DE] transition-colors">
+                className="w-full h-20 border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center gap-2 text-gray-400 hover:border-[#2563eb] hover:text-[#2563eb] transition-colors">
                 {uploading === 'logoUrl' ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
                 <span className="text-xs">Selecionar logo</span>
               </button>
@@ -374,7 +374,7 @@ export function EmpreendimentoEditor({ initial }: { initial?: Partial<Empreendim
                   <input type="radio" name="emp-status" value={opt.value}
                     checked={form.status === opt.value}
                     onChange={() => set('status', opt.value as 'DRAFT' | 'PUBLISHED')}
-                    className="mt-0.5 accent-[#2E86DE]" />
+                    className="mt-0.5 accent-[#2563eb]" />
                   <div>
                     <p className="text-sm font-medium text-gray-700">{opt.label}</p>
                     <p className="text-xs text-gray-400">{opt.desc}</p>
@@ -386,7 +386,7 @@ export function EmpreendimentoEditor({ initial }: { initial?: Partial<Empreendim
 
           {initial?.id && form.status === 'PUBLISHED' && (
             <a href={`/empreendimentos/${initial.id}`} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-2 w-full px-4 py-2.5 border border-[#0D2F5E] text-[#0D2F5E] rounded-xl text-sm font-medium hover:bg-[#0D2F5E] hover:text-white transition-colors">
+              className="flex items-center gap-2 w-full px-4 py-2.5 border border-[#1e3a8a] text-[#1e3a8a] rounded-xl text-sm font-medium hover:bg-[#1e3a8a] hover:text-white transition-colors">
               <Globe className="w-4 h-4" /> Ver landing page
             </a>
           )}

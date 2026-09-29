@@ -44,7 +44,7 @@ export function TabDescricao({ data, onChange }: TabDescricaoProps) {
     <div className="space-y-6 py-4">
       {/* AI Text Toolkit Banner */}
       <div
-        className="bg-gradient-to-r from-[#0D2F5E] to-[#2E86DE] rounded-xl p-5 flex items-center gap-4 cursor-pointer hover:opacity-95 transition-opacity"
+        className="bg-gradient-to-r from-[#1e3a8a] to-[#2563eb] rounded-xl p-5 flex items-center gap-4 cursor-pointer hover:opacity-95 transition-opacity"
         onClick={() => generateWithAI('all')}
       >
         <div className="bg-white/20 p-3 rounded-xl">
@@ -60,7 +60,7 @@ export function TabDescricao({ data, onChange }: TabDescricaoProps) {
           variant="outline"
           size="sm"
           loading={generating === 'all'}
-          className="bg-white/10 border-white/30 text-white hover:bg-white hover:text-[#0D2F5E]"
+          className="bg-white/10 border-white/30 text-white hover:bg-white hover:text-[#1e3a8a]"
           aria-label="Gerar descrições com IA"
           onClick={e => { e.stopPropagation(); generateWithAI('all') }}
         >
@@ -78,7 +78,7 @@ export function TabDescricao({ data, onChange }: TabDescricaoProps) {
             onClick={() => setLang(l.id as 'pt' | 'en')}
             aria-pressed={lang === l.id}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              lang === l.id ? 'border-[#2E86DE] text-[#2E86DE]' : 'border-transparent text-gray-500 hover:text-gray-700'
+              lang === l.id ? 'border-[#2563eb] text-[#2563eb]' : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
             {l.label}

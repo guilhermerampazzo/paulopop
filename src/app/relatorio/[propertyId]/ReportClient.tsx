@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Lock, FileText, Mail, RefreshCw, Download, Send } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 
@@ -73,13 +73,24 @@ export function ReportClient({ propertyId }: { propertyId: string }) {
   const [ownerName, setOwnerName] = useState('')
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
+  const [generated, setGenerated] = useState<{ password: string; emailed: boolean } | null>(null)
+
+  // Corretor logado com acesso ao imóvel abre direto, sem senha
+  useEffect(() => {
+    let cancelled = false
+    fetch(`/api/relatorio/${propertyId}`)
+      .then(async r => (r.ok ? r.json() : null))
+      .then(d => { if (!cancelled && d?.property) setData(d) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [propertyId])
 
   const handleUnlock = async () => {
     if (password.length !== 5) return
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(`/api/relatorio/${propertyId}?senha=${password}`)
+      const res = await fetch(`/api/relatorio/${propertyId}?senha=${encodeURIComponent(password)}`)
       if (!res.ok) {
         const d = await res.json()
         throw new Error(d.error ?? 'Senha incorreta ou relatório não encontrado')
@@ -96,16 +107,20 @@ export function ReportClient({ propertyId }: { propertyId: string }) {
   const handleSendEmail = async () => {
     if (!ownerEmail) return
     setSending(true)
+    setError(null)
     try {
-      await fetch(`/api/relatorio/${propertyId}`, {
+      // v1.1: o servidor gera uma senha nova, grava o hash e envia o e-mail (exige login do corretor)
+      const res = await fetch(`/api/relatorio/${propertyId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ownerEmail, ownerName, password }),
+        body: JSON.stringify({ ownerEmail, ownerName }),
       })
+      const d = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(d.error ?? 'Não foi possível gerar o acesso')
+      setGenerated({ password: d.password, emailed: !!d.emailed })
       setSent(true)
-      setTimeout(() => { setEmailModal(false); setSent(false) }, 2000)
-    } catch {
-      // silently fails
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Erro ao enviar')
     } finally {
       setSending(false)
     }
@@ -118,9 +133,9 @@ export function ReportClient({ propertyId }: { propertyId: string }) {
       <div className="min-h-screen bg-[#F0F4F8] flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-sm p-8 w-full max-w-sm text-center">
           <div className="w-16 h-16 bg-[#F0F4F8] rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Lock size={28} className="text-[#2E86DE]" />
+            <Lock size={28} className="text-[#2563eb]" />
           </div>
-          <h1 className="font-display text-xl font-bold text-[#0D2F5E] mb-2">Relatório Protegido</h1>
+          <h1 className="font-display text-xl font-bold text-[#1e3a8a] mb-2">Relatório Protegido</h1>
           <p className="text-sm text-gray-400 mb-6">Insira a senha de 5 dígitos para acessar o relatório.</p>
 
           <input
@@ -130,7 +145,7 @@ export function ReportClient({ propertyId }: { propertyId: string }) {
             value={password}
             onChange={e => setPassword(e.target.value.replace(/\D/g, ''))}
             placeholder="00000"
-            className="w-full text-center text-2xl tracking-[0.5em] border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#2E86DE] mb-4 font-mono"
+            className="w-full text-center text-2xl tracking-[0.5em] border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#2563eb] mb-4 font-mono"
             aria-label="Senha do relatório"
             onKeyDown={e => e.key === 'Enter' && handleUnlock()}
           />
@@ -157,7 +172,7 @@ export function ReportClient({ propertyId }: { propertyId: string }) {
   return (
     <div className="min-h-screen bg-[#F0F4F8]">
       {/* Action bar — hidden on print */}
-      <div className="print:hidden bg-[#0D2F5E] py-3 px-4 flex items-center justify-between gap-3">
+      <div className="print:hidden bg-[#1e3a8a] py-3 px-4 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-white">
           <FileText size={18} />
           <span className="font-semibold text-sm">Relatório de Análise de Mercado</span>
@@ -166,7 +181,7 @@ export function ReportClient({ propertyId }: { propertyId: string }) {
           <Button
             size="sm"
             variant="outline"
-            className="border-white/30 text-white hover:bg-white hover:text-[#0D2F5E]"
+            className="border-white/30 text-white hover:bg-white hover:text-[#1e3a8a]"
             onClick={() => setEmailModal(true)}
             aria-label="Enviar por e-mail"
           >
@@ -176,7 +191,7 @@ export function ReportClient({ propertyId }: { propertyId: string }) {
           <Button
             size="sm"
             variant="outline"
-            className="border-white/30 text-white hover:bg-white hover:text-[#0D2F5E]"
+            className="border-white/30 text-white hover:bg-white hover:text-[#1e3a8a]"
             onClick={handlePrint}
             aria-label="Baixar PDF"
           >
@@ -188,8 +203,8 @@ export function ReportClient({ propertyId }: { propertyId: string }) {
 
       <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
         {/* Cover */}
-        <div className="bg-[#0D2F5E] rounded-2xl p-8 text-white">
-          <p className="text-[#2E86DE] text-xs font-semibold uppercase tracking-widest mb-2">Análise de Mercado</p>
+        <div className="bg-[#1e3a8a] rounded-2xl p-8 text-white">
+          <p className="text-[#2563eb] text-xs font-semibold uppercase tracking-widest mb-2">Análise de Mercado</p>
           <h1 className="font-display text-3xl font-bold mb-1">{property.title ?? property.propertyType ?? 'Imóvel'}</h1>
           <p className="text-blue-200 text-sm">
             {property.neighborhood && `${property.neighborhood}, `}{property.city} — {property.state}
@@ -204,7 +219,7 @@ export function ReportClient({ propertyId }: { propertyId: string }) {
 
         {/* Property details */}
         <div className="bg-white rounded-2xl p-6 shadow-sm">
-          <h2 className="font-display text-lg font-bold text-[#0D2F5E] mb-4">Características do Imóvel</h2>
+          <h2 className="font-display text-lg font-bold text-[#1e3a8a] mb-4">Características do Imóvel</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
             {[
               { label: 'Tipo', value: property.propertyType },
@@ -222,7 +237,7 @@ export function ReportClient({ propertyId }: { propertyId: string }) {
             ].filter(i => i.value != null && i.value !== '—').map(item => (
               <div key={item.label}>
                 <p className="text-xs text-gray-400 mb-0.5">{item.label}</p>
-                <p className="font-medium text-[#0D2F5E]">{String(item.value)}</p>
+                <p className="font-medium text-[#1e3a8a]">{String(item.value)}</p>
               </div>
             ))}
           </div>
@@ -238,21 +253,21 @@ export function ReportClient({ propertyId }: { propertyId: string }) {
         {analysis && (
           <>
             <div className="bg-white rounded-2xl p-6 shadow-sm">
-              <h2 className="font-display text-lg font-bold text-[#0D2F5E] mb-4">Análise de Mercado</h2>
+              <h2 className="font-display text-lg font-bold text-[#1e3a8a] mb-4">Análise de Mercado</h2>
               <p className="text-xs text-gray-400 mb-4">Gerada em {new Date(analysis.generatedAt).toLocaleDateString('pt-BR')}</p>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                 <div className="bg-[#F0F4F8] rounded-xl p-4">
                   <p className="text-xs font-semibold text-green-600 uppercase mb-1">Valor Otimista</p>
-                  <p className="font-display text-xl font-bold text-[#0D2F5E]">{fmt(analysis.optimisticValue)}</p>
+                  <p className="font-display text-xl font-bold text-[#1e3a8a]">{fmt(analysis.optimisticValue)}</p>
                 </div>
-                <div className="bg-[#0D2F5E] rounded-xl p-4">
+                <div className="bg-[#1e3a8a] rounded-xl p-4">
                   <p className="text-xs font-semibold text-blue-300 uppercase mb-1">Valor de Mercado</p>
                   <p className="font-display text-xl font-bold text-white">{fmt(analysis.marketValue)}</p>
                 </div>
                 <div className="bg-[#F0F4F8] rounded-xl p-4">
                   <p className="text-xs font-semibold text-orange-600 uppercase mb-1">Valor Competitivo</p>
-                  <p className="font-display text-xl font-bold text-[#0D2F5E]">{fmt(analysis.competitiveValue)}</p>
+                  <p className="font-display text-xl font-bold text-[#1e3a8a]">{fmt(analysis.competitiveValue)}</p>
                 </div>
               </div>
 
@@ -281,7 +296,7 @@ export function ReportClient({ propertyId }: { propertyId: string }) {
 
               {analysis.aiSummary && (
                 <div className="bg-[#F0F4F8] rounded-xl p-4">
-                  <p className="text-xs font-semibold text-[#0D2F5E] mb-2">Resumo da Análise</p>
+                  <p className="text-xs font-semibold text-[#1e3a8a] mb-2">Resumo da Análise</p>
                   <p className="text-sm text-gray-600 leading-relaxed">{analysis.aiSummary}</p>
                 </div>
               )}
@@ -293,7 +308,7 @@ export function ReportClient({ propertyId }: { propertyId: string }) {
                 { title: 'Pontos Fortes', items: toArr(analysis.aiStrengths), color: 'text-green-500' },
                 { title: 'Pontos de Atenção', items: toArr(analysis.aiWeaknesses), color: 'text-red-400' },
                 { title: 'Oportunidades', items: toArr(analysis.aiOpportunities), color: 'text-yellow-500' },
-                { title: 'Recomendações', items: toArr(analysis.aiRecommendations), color: 'text-[#2E86DE]' },
+                { title: 'Recomendações', items: toArr(analysis.aiRecommendations), color: 'text-[#2563eb]' },
               ].filter(s => s.items.length > 0).map(section => (
                 <div key={section.title} className="bg-white rounded-2xl p-5 shadow-sm">
                   <h3 className={`font-semibold text-sm mb-3 ${section.color}`}>{section.title}</h3>
@@ -313,34 +328,34 @@ export function ReportClient({ propertyId }: { propertyId: string }) {
 
         {/* Agent info */}
         <div className="bg-white rounded-2xl p-6 shadow-sm">
-          <h2 className="font-display text-lg font-bold text-[#0D2F5E] mb-3">Corretor Responsável</h2>
+          <h2 className="font-display text-lg font-bold text-[#1e3a8a] mb-3">Corretor Responsável</h2>
           <div className="flex flex-wrap gap-6 text-sm">
             <div>
               <p className="text-xs text-gray-400 mb-0.5">Nome</p>
-              <p className="font-medium text-[#0D2F5E]">{property.agent.name}</p>
+              <p className="font-medium text-[#1e3a8a]">{property.agent.name}</p>
             </div>
             {property.agent.creci && (
               <div>
                 <p className="text-xs text-gray-400 mb-0.5">CRECI</p>
-                <p className="font-medium text-[#0D2F5E]">{property.agent.creci}</p>
+                <p className="font-medium text-[#1e3a8a]">{property.agent.creci}</p>
               </div>
             )}
             {property.agent.company && (
               <div>
                 <p className="text-xs text-gray-400 mb-0.5">Empresa</p>
-                <p className="font-medium text-[#0D2F5E]">{property.agent.company}</p>
+                <p className="font-medium text-[#1e3a8a]">{property.agent.company}</p>
               </div>
             )}
             {property.agent.phone && (
               <div>
                 <p className="text-xs text-gray-400 mb-0.5">Telefone</p>
-                <p className="font-medium text-[#0D2F5E]">{property.agent.phone}</p>
+                <p className="font-medium text-[#1e3a8a]">{property.agent.phone}</p>
               </div>
             )}
             {property.agent.email && (
               <div>
                 <p className="text-xs text-gray-400 mb-0.5">E-mail</p>
-                <p className="font-medium text-[#0D2F5E]">{property.agent.email}</p>
+                <p className="font-medium text-[#1e3a8a]">{property.agent.email}</p>
               </div>
             )}
           </div>
@@ -351,8 +366,15 @@ export function ReportClient({ propertyId }: { propertyId: string }) {
       {emailModal && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 print:hidden">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
-            <h3 className="font-bold text-[#0D2F5E] mb-1">Enviar por E-mail</h3>
-            <p className="text-sm text-gray-400 mb-4">O proprietário receberá o link do relatório com a senha de acesso.</p>
+            <h3 className="font-bold text-[#1e3a8a] mb-1">Enviar por E-mail</h3>
+            <p className="text-sm text-gray-400 mb-4">Uma senha nova de 5 dígitos é gerada e gravada; o proprietário recebe o link e a senha por e-mail. Só o corretor logado consegue gerar.</p>
+            {generated && (
+              <div className="mb-4 rounded-lg bg-green-50 border border-green-200 p-3 text-sm text-green-800">
+                Senha gerada: <strong className="font-mono tracking-widest">{generated.password}</strong>
+                {generated.emailed ? ' — enviada por e-mail.' : ' — o e-mail não está configurado; envie a senha pelo WhatsApp.'}
+              </div>
+            )}
+            {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
 
             <div className="space-y-3 mb-5">
               <div>
@@ -362,7 +384,7 @@ export function ReportClient({ propertyId }: { propertyId: string }) {
                   value={ownerName}
                   onChange={e => setOwnerName(e.target.value)}
                   placeholder="João Silva"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86DE]"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
                 />
               </div>
               <div>
@@ -372,7 +394,7 @@ export function ReportClient({ propertyId }: { propertyId: string }) {
                   value={ownerEmail}
                   onChange={e => setOwnerEmail(e.target.value)}
                   placeholder="proprietario@email.com"
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86DE]"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
                   required
                 />
               </div>

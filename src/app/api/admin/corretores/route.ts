@@ -1,15 +1,14 @@
 export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { requireRole } from '@/lib/authz'
 import bcrypt from 'bcryptjs'
 
 // GET /api/admin/corretores — lista todos os corretores
 export async function GET() {
-  const session = await getServerSession(authOptions)
-  if (!session) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  const auth = await requireRole()
+  if (auth.response) return auth.response
 
   const users = await prisma.user.findMany({
     orderBy: { createdAt: 'desc' },
@@ -34,8 +33,8 @@ export async function GET() {
 
 // POST /api/admin/corretores — cria novo corretor
 export async function POST(request: NextRequest) {
-  const session = await getServerSession(authOptions)
-  if (!session) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  const auth = await requireRole()
+  if (auth.response) return auth.response
 
   const body = await request.json() as {
     name: string
@@ -63,6 +62,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'E-mail já cadastrado' }, { status: 409 })
   }
 
+  if (body.password.length < 8) {
+    return NextResponse.json({ error: 'A senha precisa ter pelo menos 8 caracteres' }, { status: 400 })
+  }
+  // Só o super administrador cria outro super administrador
+  const role = body.role === 'SUPER_ADMIN' && auth.user.role !== 'SUPER_ADMIN' ? 'ADMIN' : (body.role ?? 'AGENT')
   const hashed = await bcrypt.hash(body.password, 12)
 
   const user = await prisma.user.create({
@@ -70,7 +74,7 @@ export async function POST(request: NextRequest) {
       name: body.name,
       email: body.email,
       password: hashed,
-      role: (body.role as 'ADMIN' | 'AGENT') ?? 'AGENT',
+      role: role as 'SUPER_ADMIN' | 'ADMIN' | 'AGENT',
       phone: body.phone,
       whatsapp: body.whatsapp,
       creci: body.creci,

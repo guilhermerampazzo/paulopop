@@ -1,5 +1,7 @@
 'use client'
 
+import { AreaInsightPanel } from '@/components/admin/AreaInsightPanel'
+
 import { useState, useEffect } from 'react'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
@@ -146,7 +148,7 @@ const LIFESTYLES = [
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="text-sm font-semibold text-[#0D2F5E] uppercase tracking-wider border-b border-gray-200 pb-2 mb-4">
+    <h3 className="text-sm font-semibold text-[#1e3a8a] uppercase tracking-wider border-b border-gray-200 pb-2 mb-4">
       {children}
     </h3>
   )
@@ -166,6 +168,7 @@ function FieldRow({ children, cols = 2 }: { children: React.ReactNode; cols?: nu
 }
 
 interface EmpreendimentoOption { id: string; name: string }
+interface UnitOption { id: string; floor: number; number: string; block: { id: string; name: string }; unitType: { name: string } | null; properties: Array<{ id: string; ref: string; status: string }> }
 
 export function TabPrincipal({ data, onChange }: TabPrincipalProps) {
   const features = (data.features as string[]) ?? []
@@ -175,6 +178,8 @@ export function TabPrincipal({ data, onChange }: TabPrincipalProps) {
   const rooms = (data.rooms as RoomRow[]) ?? []
   const [showAllFeatures, setShowAllFeatures] = useState(false)
   const [empreendimentos, setEmpreendimentos] = useState<EmpreendimentoOption[]>([])
+  const [units, setUnits] = useState<UnitOption[]>([])
+  const empreendimentoId = (data.empreendimentoId as string) ?? ''
 
   useEffect(() => {
     fetch('/api/empreendimentos?admin=true&limit=100')
@@ -182,6 +187,15 @@ export function TabPrincipal({ data, onChange }: TabPrincipalProps) {
       .then(d => setEmpreendimentos(d.empreendimentos ?? []))
       .catch(() => {})
   }, [])
+
+  // v1.2: unidades do empreendimento escolhido (bloco / andar / número)
+  useEffect(() => {
+    if (!empreendimentoId) { setUnits([]); return }
+    fetch(`/api/empreendimentos/${empreendimentoId}/unidades`)
+      .then(r => r.json())
+      .then(d => setUnits(d.units ?? []))
+      .catch(() => setUnits([]))
+  }, [empreendimentoId])
 
   const toggleFeature = (val: string) => {
     onChange('features', features.includes(val) ? features.filter(f => f !== val) : [...features, val])
@@ -234,7 +248,7 @@ export function TabPrincipal({ data, onChange }: TabPrincipalProps) {
     <div className="space-y-8 py-4">
 
       {typeof data.sourceUrl === 'string' && data.sourceUrl && (
-        <div className="p-4 rounded-xl bg-[#F0F4F8] border border-[#D6E2F0] text-sm text-[#0D2F5E]">
+        <div className="p-4 rounded-xl bg-[#F0F4F8] border border-[#D6E2F0] text-sm text-[#1e3a8a]">
           Importado da RE/MAX
           {typeof data.importedAt === 'string' && ` em ${new Date(data.importedAt).toLocaleDateString('pt-BR')}`}
           {typeof data.sourceAgentName === 'string' && data.sourceAgentName && (
@@ -290,8 +304,8 @@ export function TabPrincipal({ data, onChange }: TabPrincipalProps) {
               <label className="block text-sm font-medium text-gray-700 mb-1">Vinculado ao empreendimento</label>
               <select
                 value={(data.empreendimentoId as string) ?? ''}
-                onChange={e => onChange('empreendimentoId', e.target.value || null)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86DE]"
+                onChange={e => { onChange('empreendimentoId', e.target.value || null); onChange('unitId', null) }}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
               >
                 <option value="">— Nenhum —</option>
                 {empreendimentos.map(emp => (
@@ -299,6 +313,29 @@ export function TabPrincipal({ data, onChange }: TabPrincipalProps) {
                 ))}
               </select>
             </div>
+            {empreendimentoId && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Unidade (bloco · apartamento)</label>
+                <select
+                  value={(data.unitId as string) ?? ''}
+                  onChange={e => onChange('unitId', e.target.value || null)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
+                >
+                  <option value="">— Sem unidade —</option>
+                  {units.map(u => {
+                    const other = u.properties[0] && u.properties[0].id !== (data.id as string)
+                    return (
+                      <option key={u.id} value={u.id}>
+                        {u.block.name} · {u.number}{u.unitType ? ` · ${u.unitType.name}` : ''}{other ? ` (já anunciado: ${u.properties[0].ref})` : ''}
+                      </option>
+                    )
+                  })}
+                </select>
+                <p className="mt-1 text-xs text-gray-400">
+                  {units.length === 0 ? 'Este empreendimento ainda não tem a estrutura (blocos e unidades) cadastrada. Cadastre em Empreendimentos → Estrutura e unidades.' : 'Ao salvar, o anúncio aparece na página do prédio em “Unidades disponíveis” e herda a tipologia quando os campos estiverem vazios.'}
+                </p>
+              </div>
+            )}
           </FieldRow>
         </section>
       )}
@@ -317,7 +354,7 @@ export function TabPrincipal({ data, onChange }: TabPrincipalProps) {
                   onChange={e => onChange('price', e.target.value)}
                   placeholder="0,00"
                   aria-label="Valor do imóvel"
-                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86DE]"
+                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
                 />
               </div>
             </div>
@@ -342,7 +379,7 @@ export function TabPrincipal({ data, onChange }: TabPrincipalProps) {
                   type="checkbox"
                   checked={(data.hidePrice as boolean) ?? false}
                   onChange={e => onChange('hidePrice', e.target.checked)}
-                  className="accent-[#2E86DE]"
+                  className="accent-[#2563eb]"
                   aria-label="Ocultar preço no site"
                 />
                 <span className="text-xs text-gray-600">Ocultar</span>
@@ -394,7 +431,7 @@ export function TabPrincipal({ data, onChange }: TabPrincipalProps) {
                     value={fee.name}
                     onChange={e => updateFee(i, 'name', e.target.value)}
                     aria-label="Nome da taxa"
-                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86DE]"
+                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
                   />
                   <input
                     type="number"
@@ -402,13 +439,13 @@ export function TabPrincipal({ data, onChange }: TabPrincipalProps) {
                     value={fee.value}
                     onChange={e => updateFee(i, 'value', e.target.value)}
                     aria-label="Valor da taxa"
-                    className="w-28 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86DE]"
+                    className="w-28 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
                   />
                   <select
                     value={fee.period}
                     onChange={e => updateFee(i, 'period', e.target.value)}
                     aria-label="Período da taxa"
-                    className="w-28 border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2E86DE]"
+                    className="w-28 border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
                   >
                     <option value="">Período</option>
                     <option value="Mensal">Mensal</option>
@@ -428,7 +465,7 @@ export function TabPrincipal({ data, onChange }: TabPrincipalProps) {
             <button
               type="button"
               onClick={addFee}
-              className="mt-2 flex items-center gap-1.5 text-sm text-[#2E86DE] hover:text-[#1B6EC2] transition-colors"
+              className="mt-2 flex items-center gap-1.5 text-sm text-[#2563eb] hover:text-[#1d4ed8] transition-colors"
             >
               <Plus size={16} /> Adicionar taxa adicional
             </button>
@@ -449,7 +486,7 @@ export function TabPrincipal({ data, onChange }: TabPrincipalProps) {
                 value={(data.captureCommissionPct as string) ?? ''}
                 onChange={e => onChange('captureCommissionPct', e.target.value)}
                 aria-label="Comissão de captação %"
-                className="w-24 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86DE]"
+                className="w-24 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
               />
               <div className="flex gap-3 text-sm">
                 {['PERCENTAGE', 'AMOUNT'].map(v => (
@@ -460,7 +497,7 @@ export function TabPrincipal({ data, onChange }: TabPrincipalProps) {
                       value={v}
                       checked={(data.captureCommissionType as string) === v}
                       onChange={() => onChange('captureCommissionType', v)}
-                      className="accent-[#2E86DE]"
+                      className="accent-[#2563eb]"
                       aria-label={v === 'PERCENTAGE' ? 'Porcentagem' : 'Montante'}
                     />
                     <span className="text-gray-600">{v === 'PERCENTAGE' ? 'Porcentagem' : 'Montante'}</span>
@@ -478,7 +515,7 @@ export function TabPrincipal({ data, onChange }: TabPrincipalProps) {
                 value={(data.saleCommissionPct as string) ?? ''}
                 onChange={e => onChange('saleCommissionPct', e.target.value)}
                 aria-label="Comissão de venda %"
-                className="w-24 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86DE]"
+                className="w-24 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
               />
               <div className="flex gap-3 text-sm">
                 {['PERCENTAGE', 'AMOUNT'].map(v => (
@@ -489,7 +526,7 @@ export function TabPrincipal({ data, onChange }: TabPrincipalProps) {
                       value={v}
                       checked={(data.saleCommissionType as string) === v}
                       onChange={() => onChange('saleCommissionType', v)}
-                      className="accent-[#2E86DE]"
+                      className="accent-[#2563eb]"
                       aria-label={v === 'PERCENTAGE' ? 'Porcentagem' : 'Montante'}
                     />
                     <span className="text-gray-600">{v === 'PERCENTAGE' ? 'Porcentagem' : 'Montante'}</span>
@@ -652,13 +689,13 @@ export function TabPrincipal({ data, onChange }: TabPrincipalProps) {
                     value={spot.quantity}
                     onChange={e => updateParking(i, 'quantity', e.target.value)}
                     aria-label={`Quantidade de vagas ${i + 1}`}
-                    className="w-20 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86DE]"
+                    className="w-20 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
                   />
                   <select
                     value={spot.type}
                     onChange={e => updateParking(i, 'type', e.target.value)}
                     aria-label={`Tipo de vaga ${i + 1}`}
-                    className="w-40 border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2E86DE]"
+                    className="w-40 border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
                   >
                     {PARKING_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                   </select>
@@ -669,7 +706,7 @@ export function TabPrincipal({ data, onChange }: TabPrincipalProps) {
               <button
                 type="button"
                 onClick={() => onChange('parkingSpots', [...parkingSpots, { quantity: '', type: '' }])}
-                className="mt-2 flex items-center gap-1.5 text-sm text-[#2E86DE] hover:text-[#1B6EC2] transition-colors"
+                className="mt-2 flex items-center gap-1.5 text-sm text-[#2563eb] hover:text-[#1d4ed8] transition-colors"
               >
                 <Plus size={16} /> Adicionar linha
               </button>
@@ -715,6 +752,14 @@ export function TabPrincipal({ data, onChange }: TabPrincipalProps) {
               onChange={e => onChange('suites', e.target.value)}
               placeholder="0"
             />
+            <Input
+              label="Varandas"
+              id="balconies"
+              type="number"
+              value={(data.balconies as string) ?? '0'}
+              onChange={e => onChange('balconies', e.target.value)}
+              placeholder="0"
+            />
           </FieldRow>
 
           {/* Lista de ambientes detalhados */}
@@ -728,7 +773,7 @@ export function TabPrincipal({ data, onChange }: TabPrincipalProps) {
                     value={room.name}
                     onChange={e => updateRoom(i, 'name', e.target.value)}
                     aria-label={`Nome do ambiente ${i + 1}`}
-                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86DE]"
+                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
                   />
                   <input
                     type="number"
@@ -736,7 +781,7 @@ export function TabPrincipal({ data, onChange }: TabPrincipalProps) {
                     value={room.area}
                     onChange={e => updateRoom(i, 'area', e.target.value)}
                     aria-label={`Área do ambiente ${i + 1}`}
-                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86DE]"
+                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
                   />
                   <div className="flex gap-2">
                     <input
@@ -745,7 +790,7 @@ export function TabPrincipal({ data, onChange }: TabPrincipalProps) {
                       value={room.description}
                       onChange={e => updateRoom(i, 'description', e.target.value)}
                       aria-label={`Descrição do ambiente ${i + 1}`}
-                      className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86DE]"
+                      className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
                     />
                     <button
                       type="button"
@@ -762,7 +807,7 @@ export function TabPrincipal({ data, onChange }: TabPrincipalProps) {
             <button
               type="button"
               onClick={addRoom}
-              className="mt-2 flex items-center gap-1.5 text-sm text-[#2E86DE] hover:text-[#1B6EC2] transition-colors"
+              className="mt-2 flex items-center gap-1.5 text-sm text-[#2563eb] hover:text-[#1d4ed8] transition-colors"
             >
               <Plus size={16} /> Adicionar ambiente
             </button>
@@ -780,7 +825,7 @@ export function TabPrincipal({ data, onChange }: TabPrincipalProps) {
                 type="checkbox"
                 checked={features.includes(f.value)}
                 onChange={() => toggleFeature(f.value)}
-                className="accent-[#2E86DE] w-4 h-4"
+                className="accent-[#2563eb] w-4 h-4"
                 aria-label={f.label}
               />
               <span className="text-sm text-gray-700">{f.label}</span>
@@ -791,7 +836,7 @@ export function TabPrincipal({ data, onChange }: TabPrincipalProps) {
           <button
             type="button"
             onClick={() => setShowAllFeatures(!showAllFeatures)}
-            className="mt-3 text-sm text-[#2E86DE] hover:text-[#1B6EC2] transition-colors"
+            className="mt-3 text-sm text-[#2563eb] hover:text-[#1d4ed8] transition-colors"
           >
             {showAllFeatures ? 'Ver menos' : `Ver mais (${FEATURES.length - 8} características)`}
           </button>
@@ -806,7 +851,7 @@ export function TabPrincipal({ data, onChange }: TabPrincipalProps) {
             value={Array.isArray(data.extraFeatures) ? (data.extraFeatures as string[]).join('\n') : ((data.extraFeatures as string) ?? '')}
             onChange={e => onChange('extraFeatures', e.target.value.split('\n'))}
             placeholder={'Perto do metrô\nArmário embutido\nPortaria com câmera'}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86DE]"
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
           />
           <p className="text-xs text-gray-400 mt-1">Aparecem no site junto com as marcadas acima. Os anúncios importados da RE/MAX já vêm preenchidos.</p>
         </div>
@@ -822,7 +867,7 @@ export function TabPrincipal({ data, onChange }: TabPrincipalProps) {
                 type="checkbox"
                 checked={lifestyles.includes(l.value)}
                 onChange={() => toggleLifestyle(l.value)}
-                className="accent-[#2E86DE] w-4 h-4"
+                className="accent-[#2563eb] w-4 h-4"
                 aria-label={l.label}
               />
               <span className="text-sm text-gray-700">{l.label}</span>
@@ -919,6 +964,13 @@ export function TabPrincipal({ data, onChange }: TabPrincipalProps) {
               onChange={e => onChange('keyNumber', e.target.value)}
             />
           </FieldRow>
+          {/* v1.3 — Viver aqui (pesquisa de região) */}
+          {data.id ? (
+            <div className="mt-4">
+              <AreaInsightPanel kind="property" id={String(data.id)} insightId={(data.areaInsightId as string | null) ?? null}
+                address={[data.address, data.number, data.neighborhood, data.city, data.state].filter(Boolean).join(', ')} />
+            </div>
+          ) : null}
           <FieldRow cols={2}>
             <Input
               label="Latitude"
@@ -952,7 +1004,7 @@ export function TabPrincipal({ data, onChange }: TabPrincipalProps) {
               type="checkbox"
               checked={(data.showFullAddress as boolean) ?? false}
               onChange={e => onChange('showFullAddress', e.target.checked)}
-              className="accent-[#2E86DE] w-4 h-4"
+              className="accent-[#2563eb] w-4 h-4"
               aria-label="Mostrar endereço completo no site"
             />
             <span className="text-sm text-gray-700">

@@ -98,7 +98,7 @@ async function LeadsTable({ searchParams }: { searchParams: SearchParams }) {
                       {lead.property ? (
                         <Link
                           href={`/admin/imoveis/${lead.property.id}`}
-                          className="text-[#0D2F5E] hover:underline text-xs"
+                          className="text-[#1e3a8a] hover:underline text-xs"
                         >
                           {lead.property.ref}
                         </Link>
@@ -156,7 +156,7 @@ async function LeadsTable({ searchParams }: { searchParams: SearchParams }) {
                   {lead.property && (
                     <>
                       <span>•</span>
-                      <Link href={`/admin/imoveis/${lead.property.id}`} className="text-[#0D2F5E]">
+                      <Link href={`/admin/imoveis/${lead.property.id}`} className="text-[#1e3a8a]">
                         {lead.property.ref}
                       </Link>
                     </>
@@ -186,8 +186,8 @@ async function LeadsTable({ searchParams }: { searchParams: SearchParams }) {
                 href={`?${new URLSearchParams({ ...searchParams, page: String(p2) })}`}
                 className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${
                   p2 === page
-                    ? 'bg-[#0D2F5E] text-white'
-                    : 'bg-white border border-gray-200 text-gray-600 hover:border-[#0D2F5E] hover:text-[#0D2F5E]'
+                    ? 'bg-[#1e3a8a] text-white'
+                    : 'bg-white border border-gray-200 text-gray-600 hover:border-[#1e3a8a] hover:text-[#1e3a8a]'
                 }`}
               >
                 {p2}
@@ -214,7 +214,7 @@ export default function AdminContatosPage({ searchParams }: { searchParams: Sear
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[#0D2F5E]">Contatos & Leads</h1>
+        <h1 className="text-2xl font-bold text-[#1e3a8a]">Contatos & Leads</h1>
         <p className="text-sm text-gray-500 mt-0.5">CRM de leads e contatos recebidos</p>
       </div>
 
@@ -227,14 +227,14 @@ export default function AdminContatosPage({ searchParams }: { searchParams: Sear
             name="q"
             defaultValue={searchParams.q}
             placeholder="Buscar por nome, email ou telefone..."
-            className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0D2F5E] bg-white"
+            className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a8a] bg-white"
             aria-label="Buscar leads"
           />
         </div>
         <select
           name="status"
           defaultValue={searchParams.status ?? ''}
-          className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#0D2F5E] text-gray-700"
+          className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#1e3a8a] text-gray-700"
           aria-label="Filtrar por status"
         >
           {statusOptions.map(o => (
@@ -243,7 +243,7 @@ export default function AdminContatosPage({ searchParams }: { searchParams: Sear
         </select>
         <button
           type="submit"
-          className="px-4 py-2 bg-[#2E86DE] text-white text-sm font-medium rounded-lg hover:bg-[#1B6EC2] transition-colors"
+          className="px-4 py-2 bg-[#2563eb] text-white text-sm font-medium rounded-lg hover:bg-[#1d4ed8] transition-colors"
         >
           Filtrar
         </button>

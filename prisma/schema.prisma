@@ -35,6 +35,7 @@ model User {
   leads         Lead[]
   activities    Activity[]
   blogPosts     BlogPost[]
+  marketStudies MarketStudy[]
 
   @@map("users")
 }
@@ -126,6 +127,11 @@ model Property {
   longitude             Decimal?          @db.Decimal(10, 7)
   showFullAddress       Boolean           @default(false)
   keyNumber             String?
+  // v1.3 — histórico de preço, redirecionamento de slug antigo e insight de região
+  priceHistory          Json?
+  previousSlugs         String[]          @default([])
+  areaInsightId         String?
+  areaInsight           AreaInsight?      @relation(fields: [areaInsightId], references: [id], onDelete: SetNull)
 
   title                 String?
   description           String?           @db.Text
@@ -142,6 +148,9 @@ model Property {
 
   empreendimentoId      String?
   empreendimento        Empreendimento?   @relation(fields: [empreendimentoId], references: [id])
+  // v1.2 – unidade do empreendimento (bloco / andar / número)
+  unitId                String?
+  unit                  EmpreendimentoUnit? @relation(fields: [unitId], references: [id], onDelete: SetNull)
 
   ownerId               String?
   owner                 Contact?          @relation(fields: [ownerId], references: [id])
@@ -162,6 +171,7 @@ model Property {
   externalLink          String?
 
   marketAnalyses        MarketAnalysis[]
+  marketStudies         MarketStudy[]
   leads                 Lead[]
   activities            Activity[]
 
@@ -177,6 +187,24 @@ model Property {
   sourceOfficeName      String?
   importedAt            DateTime?
 
+  // v1.1 – varandas (pedido do relatório de correções)
+  balconies             Int?
+
+  // v1.1 – venda ou locação concluída: valor final, desconto e tempo de mercado
+  soldAt                DateTime?
+  listPriceAtSale       Decimal?          @db.Decimal(15, 2)
+  salePrice             Decimal?          @db.Decimal(15, 2)
+  saleDiscountPct       Decimal?          @db.Decimal(6, 2)
+  saleDiscountValue     Decimal?          @db.Decimal(15, 2)
+  saleSource            String?
+  saleNotes             String?           @db.Text
+  showSalePrice         Boolean           @default(false)
+  daysOnMarket          Int?
+
+  // v1.1 – senha do relatório do proprietário (hash) e data em que foi gerada
+  reportPasswordHash    String?
+  reportPasswordSetAt   DateTime?
+
   views                 Int               @default(0)
   favorites             Int               @default(0)
   createdAt             DateTime          @default(now())
@@ -184,6 +212,7 @@ model Property {
   publishedAt           DateTime?
 
   @@index([status, transactionType, purpose])
+  @@index([status, soldAt])
   @@index([city, state])
   @@index([price])
   @@index([slug])
@@ -499,6 +528,116 @@ enum AnalysisStatus {
   FAILED
 }
 
+// ─── Estudo de Mercado (v1.2, padrão RE/MAX) ─────────────────────────────────
+
+model MarketStudy {
+  id              String   @id @default(cuid())
+  agentId         String
+  agent           User     @relation(fields: [agentId], references: [id])
+  propertyId      String?
+  property        Property? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  status          String   @default("DRAFT") // DRAFT | DONE
+  title           String
+  preparedFor     String?
+  ownerEmail      String?
+  ownerPhone      String?
+  studyDate       DateTime @default(now())
+  radiusKm        Decimal? @db.Decimal(5,2)
+  intro           String?  @db.Text
+  methodology     String?  @db.Text
+  // imóvel avaliado
+  advertiser      String?
+  address         String?
+  neighborhood    String?
+  city            String?
+  state           String?
+  zipCode         String?
+  latitude        Decimal? @db.Decimal(10,7)
+  longitude       Decimal? @db.Decimal(10,7)
+  propertyType    String?
+  purpose         String?
+  transactionType String?  @default("SALE")
+  areaPrivate     Decimal? @db.Decimal(10,2)
+  areaTotal       Decimal? @db.Decimal(10,2)
+  bedrooms        Int?
+  suites          Int?
+  bathrooms       Int?
+  parking         Int?
+  parkingType     String?
+  floor           String?
+  buildingFloors  Int?
+  elevator        Boolean?
+  sunPosition     String?
+  condition       String?
+  renovation      String?
+  renovationNotes String?
+  age             Int?
+  condoFee        Decimal? @db.Decimal(10,2)
+  iptu            Decimal? @db.Decimal(10,2)
+  leisure         String?
+  demand          String?
+  demandNotes     String?
+  finishes        Json?
+  notes           String?  @db.Text
+  photos          Json?
+  // cálculo
+  competitivePct  Decimal  @default(15) @db.Decimal(5,2)
+  optimisticPct   Decimal  @default(10) @db.Decimal(5,2)
+  outlierPct      Decimal  @default(30) @db.Decimal(5,2)
+  scenario        String   @default("MARKET") // COMPETITIVE | MARKET | OPTIMISTIC
+  adjustPct       Decimal? @db.Decimal(6,2)
+  adjustNote      String?
+  results         Json?
+  // acesso público
+  publicToken     String?  @unique
+  tokenExpiresAt  DateTime?
+  samples         MarketStudySample[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([agentId, status])
+  @@map("market_studies")
+}
+
+model MarketStudySample {
+  id            String      @id @default(cuid())
+  studyId       String
+  study         MarketStudy @relation(fields: [studyId], references: [id], onDelete: Cascade)
+  order         Int         @default(0)
+  portal        String?
+  url           String?
+  advertiser    String?
+  location      String?
+  sameCondo     Boolean     @default(false)
+  price         Decimal?    @db.Decimal(15,2)
+  areaPrivate   Decimal?    @db.Decimal(10,2)
+  areaTotal     Decimal?    @db.Decimal(10,2)
+  bedrooms      Int?
+  bathrooms     Int?
+  parking       Int?
+  floor         String?
+  sunPosition   String?
+  renovation    String?
+  condoFee      Decimal?    @db.Decimal(10,2)
+  age           Int?
+  distanceKm    Decimal?    @db.Decimal(6,2)
+  publishedAt   DateTime?
+  daysListed    Int?
+  photoUrl      String?
+  finishes      Json?
+  aiAnalysis    Json?
+  notes         String?     @db.Text
+  status        String      @default("VALID") // VALID | DISCARDED
+  discardReason String?
+  tags          String[]    @default([])
+  latitude      Decimal?    @db.Decimal(10,7)
+  longitude     Decimal?    @db.Decimal(10,7)
+  createdAt     DateTime    @default(now())
+
+  @@index([studyId])
+  @@map("market_study_samples")
+}
+
 // ─── Atividades ───────────────────────────────────────────────────────────────
 
 model Activity {
@@ -566,6 +705,16 @@ model SiteConfig {
   showApartamentos  Boolean   @default(true)
   showCasas         Boolean   @default(true)
   showTerrenos      Boolean   @default(true)
+  // v1.1 – rastreamento pelo painel (sem deploy)
+  ga4Id             String?
+  metaPixelId       String?
+  gtmId             String?
+  // v1.1 – páginas legais editáveis e dados de contato extras
+  privacyPolicy     String?   @db.Text
+  termsOfUse        String?   @db.Text
+  businessHours     String?
+  googleBusinessUrl String?
+  mapEmbedUrl       String?
   updatedAt         DateTime  @updatedAt
 
   @@map("site_config")
@@ -586,10 +735,20 @@ model BlogPost {
   authorId    String
   author      User           @relation(fields: [authorId], references: [id])
   publishedAt DateTime?
+  // v1.3 — blog moderno
+  sections        Json?
+  seoTitle        String?
+  seoDescription  String?
+  ogImageUrl      String?
+  readingMinutes  Int?
+  citySlug        String?
+  series          String?
+  featured        Boolean        @default(false)
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
 
   @@index([status, publishedAt])
+  @@index([citySlug])
   @@map("blog_posts")
 }
 
@@ -615,6 +774,8 @@ model Empreendimento {
   zipCode         String?
   latitude        Float?
   longitude       Float?
+  areaInsightId   String?
+  areaInsight     AreaInsight? @relation(fields: [areaInsightId], references: [id], onDelete: SetNull)
   locationDescription String? @db.Text
   // Detalhes técnicos
   architect       String?
@@ -654,10 +815,75 @@ model Empreendimento {
 
   properties      Property[]
 
+  // v1.2 – hub do prédio
+  stage           String   @default("ENTREGUE") // LANCAMENTO | EM_OBRAS | ENTREGUE
+  deliveryYear    Int?
+  builder         String?
+  elevators       Int?
+  condoFeeAvg     Decimal? @db.Decimal(10,2)
+  petsAllowed     Boolean?
+  rules           String?  @db.Text
+  blocks          EmpreendimentoBlock[]
+  unitTypes       EmpreendimentoUnitType[]
+  units           EmpreendimentoUnit[]
+
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
   @@map("empreendimentos")
+}
+
+// v1.2 – Estrutura do empreendimento: blocos, tipologias e unidades
+model EmpreendimentoBlock {
+  id                String          @id @default(cuid())
+  empreendimentoId  String
+  empreendimento    Empreendimento  @relation(fields: [empreendimentoId], references: [id], onDelete: Cascade)
+  name              String          // "Bloco A", "Torre 1"
+  floors            Int             @default(1)
+  unitsPerFloor     Int             @default(4)
+  firstFloor        Int             @default(1)   // 0 = térreo
+  numbering         String          @default("FLOOR_SEQ") // FLOOR_SEQ: 101,102… | SEQ: 1,2,3…
+  order             Int             @default(0)
+  units             EmpreendimentoUnit[]
+
+  @@map("empreendimento_blocks")
+}
+
+model EmpreendimentoUnitType {
+  id                String          @id @default(cuid())
+  empreendimentoId  String
+  empreendimento    Empreendimento  @relation(fields: [empreendimentoId], references: [id], onDelete: Cascade)
+  name              String          // "2 quartos com suíte"
+  bedrooms          Int?
+  suites            Int?
+  bathrooms         Int?
+  area              Decimal?        @db.Decimal(10,2)
+  parking           Int?
+  sunPosition       String?         // nascente, poente…
+  floorPlanUrl      String?
+  finals            String?         // finais de apartamento: "01,02,05"
+  order             Int             @default(0)
+  units             EmpreendimentoUnit[]
+
+  @@map("empreendimento_unit_types")
+}
+
+model EmpreendimentoUnit {
+  id                String          @id @default(cuid())
+  empreendimentoId  String
+  empreendimento    Empreendimento  @relation(fields: [empreendimentoId], references: [id], onDelete: Cascade)
+  blockId           String
+  block             EmpreendimentoBlock @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  floor             Int
+  number            String
+  unitTypeId        String?
+  unitType          EmpreendimentoUnitType? @relation(fields: [unitTypeId], references: [id], onDelete: SetNull)
+  notes             String?
+  properties        Property[]
+
+  @@unique([blockId, number])
+  @@index([empreendimentoId])
+  @@map("empreendimento_units")
 }
 
 model EmpreendimentoImage {
@@ -700,4 +926,109 @@ model Testimonial {
   updatedAt DateTime @updatedAt
 
   @@map("testimonials")
+}
+
+// ─── v1.3: páginas editáveis (Cidades, Parceiros), Viver aqui, alertas ─────────
+
+model CityPage {
+  id            String   @id @default(cuid())
+  slug          String   @unique
+  name          String
+  tagline       String?
+  summary       String?  @db.Text
+  coverUrl      String?
+  videoUrl      String?
+  status        String   @default("DRAFT") // DRAFT | PUBLISHED
+  order         Int      @default(0)
+  // Dados fixos da cidade / região administrativa
+  raNumber      String?
+  foundedAt     String?
+  founderGovernor String?
+  population    String?
+  populationSource String?
+  areaKm2       String?
+  distanceKm    String?
+  latitude      Float?
+  longitude     Float?
+  matchNames    String[] @default([]) // nomes de cidade/bairro dos imóveis que pertencem a esta página
+  sections      Json?    // blocos do editor de seções
+  seoTitle      String?
+  seoDescription String?
+  ogImageUrl    String?
+  areaInsightId String?
+  areaInsight   AreaInsight? @relation(fields: [areaInsightId], references: [id], onDelete: SetNull)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([status, order])
+  @@map("city_pages")
+}
+
+model Partner {
+  id            String   @id @default(cuid())
+  slug          String   @unique
+  name          String
+  type          String   @default("OUTRO") // CONSTRUTORA | BANCO | CARTORIO | REFORMA | MUDANCA | SEGUROS | OUTRO
+  tagline       String?
+  summary       String?  @db.Text
+  logoUrl       String?
+  coverUrl      String?
+  benefit       String?  @db.Text
+  website       String?
+  phone         String?
+  whatsapp      String?
+  email         String?
+  address       String?
+  mapEmbedUrl   String?
+  instagram     String?
+  status        String   @default("DRAFT")
+  order         Int      @default(0)
+  featured      Boolean  @default(false)
+  sections      Json?
+  seoTitle      String?
+  seoDescription String?
+  empreendimentoIds String[] @default([])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([status, type, order])
+  @@map("partners")
+}
+
+/** "Viver aqui": pesquisa de região por endereço (cache por endereço, editável). */
+model AreaInsight {
+  id           String   @id @default(cuid())
+  addressKey   String   @unique   // endereço normalizado
+  address      String
+  latitude     Float?
+  longitude    Float?
+  data         Json?    // { categorias: [{ key, label, places: [{ name, address, distanceM, walkMin, rating, lat, lng, types }] }], routes: [...], highlights: [...], summary }
+  manual       Json?    // ajustes/destaques do corretor
+  provider     String?  // google | manual
+  fetchedAt    DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  properties      Property[]
+  empreendimentos Empreendimento[]
+  cityPages       CityPage[]
+
+  @@map("area_insights")
+}
+
+/** Alerta de imóvel (busca salva) e avaliação online. */
+model PropertyAlert {
+  id           String   @id @default(cuid())
+  name         String?
+  phone        String
+  email        String?
+  criteria     Json     // { transactionType, propertyType, city, neighborhood, empreendimentoId, minPrice, maxPrice, bedrooms, text }
+  source       String   @default("site")
+  active       Boolean  @default(true)
+  lastNotifiedAt DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([active])
+  @@map("property_alerts")
 }

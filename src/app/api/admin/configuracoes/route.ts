@@ -1,22 +1,23 @@
 export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { revalidateSite } from '@/lib/cache'
 import { stripHtml, limitString } from '@/lib/sanitize'
+import { requireRole } from '@/lib/authz'
+import { revalidatePath } from 'next/cache'
 
 export async function GET() {
-  const session = await getServerSession(authOptions)
-  if (!session) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  const auth = await requireRole()
+  if (auth.response) return auth.response
 
   const config = await prisma.siteConfig.findFirst()
   return NextResponse.json(config ?? {})
 }
 
 export async function PUT(request: NextRequest) {
-  const session = await getServerSession(authOptions)
-  if (!session) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+  const auth = await requireRole()
+  if (auth.response) return auth.response
 
   const body = await request.json() as Record<string, string | boolean>
 
@@ -50,6 +51,15 @@ export async function PUT(request: NextRequest) {
     metaTitle: safe(body.metaTitle, 200),
     metaDescription: safe(body.metaDescription, 500),
     footerText: safe(body.footerText, 500),
+    // v1.1
+    ga4Id: safe(body.ga4Id, 40),
+    metaPixelId: safe(body.metaPixelId, 40),
+    gtmId: safe(body.gtmId, 40),
+    privacyPolicy: safe(body.privacyPolicy, 30000),
+    termsOfUse: safe(body.termsOfUse, 30000),
+    businessHours: safe(body.businessHours, 200),
+    googleBusinessUrl: safe(body.googleBusinessUrl, 500),
+    mapEmbedUrl: safe(body.mapEmbedUrl, 1000),
     showDestaques:   typeof body.showDestaques   === 'boolean' ? body.showDestaques   : undefined,
     showCompra:      typeof body.showCompra      === 'boolean' ? body.showCompra      : undefined,
     showLocacao:     typeof body.showLocacao     === 'boolean' ? body.showLocacao     : undefined,
@@ -70,5 +80,10 @@ export async function PUT(request: NextRequest) {
     await prisma.siteConfig.create({ data: cleanData as Parameters<typeof prisma.siteConfig.create>[0]['data'] })
   }
 
+  // v1.1: páginas públicas em cache são renovadas na hora
+  for (const p of ['/', '/contato', '/sobre', '/politica-de-privacidade', '/termos-de-uso', '/imoveis', '/empreendimentos', '/blog']) revalidatePath(p)
+  revalidatePath('/', 'layout')
+
+  revalidateSite('config')
   return NextResponse.json({ success: true })
 }

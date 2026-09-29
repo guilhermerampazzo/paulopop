@@ -1,61 +1,449 @@
-# Corretor Paulo Pop — Alterações v1.0
+# Corretor Paulo Pop — Pacote completo v1.3 (inclui 1.1 e 1.2)
 
-**Versão:** 1.0 · **Data:** 24/09/2026 · **Base:** código `paulopop-master` recebido em 24/09/2026 (sem número de versão)
+**Versão:** 1.3 · **Data:** 29/09/2026 · **Base:** `paulopop-v1.0.zip` (site no ar, 24/09/2026) · **Pacote único:** `paulopop-v1.3-completo.zip`
 
-**Novo na 1.0:** importação de anúncios da RE/MAX pelo link (com publicação automática) e página do imóvel no padrão RE/MAX, com a marca Paulo Pop.
+Este pacote reúne as três versões (1.1, 1.2 e 1.3) num só código, para **uma única publicação**. As três migrações de banco (`20260929…_v1_1`, `20260930…_v1_2`, `20261001…_v1_3`) rodam sozinhas, em ordem, na subida do contêiner; todas só adicionam colunas e tabelas e podem ser executadas mais de uma vez sem erro. Não é preciso publicar 1.1 e 1.2 antes.
+
+**O que o pacote traz, em uma linha por versão:**
+- **1.1** — segurança das APIs e permissões por perfil, identidade visual do AcademyPop, registro de venda/locação (desconto, valor, tempo de mercado), rastreamento (GA4/Pixel/GTM) e páginas legais pelo painel, lead direto ao corretor, SEO, Meu perfil, cache. *(detalhes na seção "Histórico — 1.1")*
+- **1.2** — hub de empreendimentos (blocos, tipologias, mapa de unidades ligado aos anúncios, estágio Lançamento/Em obras/Pronto) e Estudo de Mercado no padrão RE/MAX (amostras, estatística, cenários, link público, PDF em lâminas). *(seção "Histórico — 1.2")*
+- **1.3** — hub Cidades do DF, hub Parceiros, editor de seções, blog moderno, "Viver aqui" (pesquisa de região por endereço), página do imóvel nova (galeria por cômodo, barra fixa, simulador, histórico de preço, alertas), home nova com busca única e busca com IA, "Vender meu imóvel" com avaliação online, URLs com bairro, PWA, IA nas fotos do estudo de mercado. *(este documento)*
+
+## 1. Resumo da 1.3
+
+| Área | Como era | Como ficou |
+|---|---|---|
+| Cidades do DF | Só links de região que filtravam imóveis. | Painel → **Cidades do DF**: página por cidade/RA (30 sugestões prontas) com dados fixos (RA, fundação, governador fundador, população + fonte, área, distância ao Plano), capa, vídeo, nomes que casam com os anúncios, SEO e **seções editáveis** no modelo pedido: história, linha do tempo, nomes importantes (governadores, administradores, deputados), números, locais para visitar, academias, escolas, supermercados/comércio, ônibus/metrô/vias, mapa, empreendimentos e imóveis da cidade (automáticos), "Quer vender ou alugar seu imóvel em {cidade}?", blog e perguntas frequentes. Botão **Gerar rascunho com IA** (Gemini) preenche história, linha do tempo, nomes, números e locais para o Paulo revisar. Site: `/cidades` (hub) e `/cidades/{slug}` com índice lateral, preço médio do m² e nº de imóveis calculados, JSON-LD Place, coluna "Cidades do DF" no rodapé e link no menu. |
+| Editor de seções | Não existia. | Componente único do painel usado por Cidades, Parceiros e Blog: 13 tipos de bloco (título+texto, galeria, vídeo, lista de itens com foto/endereço/telefone, linha do tempo, pessoas, números, mapa com pontos, imóveis, empreendimentos, chamada para ação com formulário, FAQ, posts do blog), arrastar/ordenar, ocultar, duplicar, upload de imagens, "Gerar com IA" em texto/FAQ/itens. Tudo sanitizado ao salvar e ao exibir. |
+| Parceiros | Não existia. | Painel → **Parceiros**: tipo (construtora, banco, cartório/despachante, reforma, mudança, seguros, outro), logo, capa, benefício para clientes do Paulo, contatos, mapa, empreendimentos ligados, seções, SEO. Site: `/parceiros` com filtro por tipo, `/parceiros/{slug}`, faixa "Parceiros que ajudam você a comprar" na página do imóvel e "Parceiros deste empreendimento" no prédio. |
+| Blog | 3 posts em texto corrido, sem autor, índice, agendamento ou SEO. | Editor com abas Conteúdo / Publicação / SEO / **Escrever com IA**; categorias fixas (Guia do comprador, Guia do proprietário, Mercado, Cidades…), tags, série, cidade ligada, destaque, blocos extras (galeria, vídeo, imóvel, CTA, FAQ), **agendamento** no horário de Brasília, pré-visualização logado, duplicar, tempo de leitura. Site: hub com destaque, filtros por categoria/cidade/tag/busca, séries, aviso por WhatsApp; post com capa, autor (foto/CRECI), índice lateral gerado dos títulos, compartilhar, "Imóveis nesta região", relacionados, próximo da série, CTA, JSON-LD BlogPosting, RSS (`/blog/rss.xml`). |
+| Viver aqui | Só o mapa. | Botão **Analisar região** na ficha do imóvel, no empreendimento e na cidade: geocodifica o endereço e consulta Google Places (New) e Routes: metrô/ônibus, supermercados/comércio, escolas (marcadas como públicas ou particulares pelo nome), saúde, academias/parques, com distância e minutos a pé/de carro, e trajetos no pico das 7h30 para Esplanada, Taguatinga Centro, Águas Claras e Aeroporto. Resultado em cache por 90 dias, editável (ocultar lugares, destaques, lugares à mão, resumo). Site: bloco "Viver aqui" com abas e mapa. Sem a chave do Google, funciona só com os destaques manuais. |
+| Página do imóvel | Ficha em lista longa; galeria de miniaturas; sem simulador, favoritos ou histórico. | Galeria com abas Fotos / Vídeo / Tour 360 / Plantas / Mapa, fotos agrupadas por cômodo (pela legenda), mosaico no desktop e carrossel no celular, lightbox com swipe/zoom, vídeo vertical; **barra de resumo fixa** (preço, parcela estimada, quartos/vagas/área, WhatsApp, Agendar visita, favoritar, comparar, compartilhar, imprimir); "Quanto custa por mês" (simulador Price com condomínio e IPTU); preço/m² comparado com a média do bairro e do prédio; "Sobre este imóvel"; características agrupadas; "Publicado em / há N dias / preço reduzido em R$ X"; "Avise-me se baixar o preço" (alerta gravado; painel → Alertas de imóveis); Viver aqui; Conheça o prédio; parceiros. JSON-LD RealEstateListing. |
+| Home | H1 só para proprietário, busca depois, várias seções repetidas. | Busca grande (bairro, quadra, prédio ou código) com abas Comprar / Alugar / Empreendimentos, chips de região e **Buscar com IA** (frase livre → filtros, Gemini); bloco "Quer vender? Avaliação grátis"; números (anos, vendidos, disponíveis); vitrine única com chips (Todos / Apartamentos / Casas / Lançamentos / Preço reduzido) e cards ricos (carrossel de fotos, R$/m², código, vagas, selos, favorito, WhatsApp); vendidos; prédios; "Onde eu atuo no DF" (cidades publicadas com R$/m²); como funciona (comprador/proprietário); depoimentos; sobre; blog; contato. Barra fixa inferior no celular (WhatsApp, Ligar, Buscar). |
+| Busca | Só filtros. | `/imoveis?busca=` procura em código, título, bairro, cidade, endereço e nome do prédio (código exato primeiro); `/empreendimentos?busca=`; `GET /api/imoveis?q=` para o painel; `POST /api/busca-ia`. |
+| Vender meu imóvel | Frase na home. | `/vender`: formulário em 4 etapas (onde fica com autocomplete de prédio, o imóvel, fotos, contato) → **faixa de preço na hora** com base no R$/m² dos anúncios do site (prédio → bairro → cidade, mínimo 2, ajuste por estado de conservação) + relatório do prédio (negociados, tempo médio, R$/m² vendido); lead gravado com todos os dados e e-mail ao admin; botão para enviar o resumo pelo WhatsApp. "Como o Paulo vende", depoimentos e FAQ. |
+| URLs dos imóveis | `apartamento-residencial-245856515-098`. | Slug `tipo-transação-bairro-cidade-código` na criação e ao editar bairro/cidade (slug antigo guardado e redirecionado de forma permanente). Script `scripts/reslug-imoveis.ts` para converter os existentes. |
+| Estudo de mercado | Acabamentos digitados. | Botão **Analisar fotos com IA** (Gemini com visão) no imóvel avaliado e em cada amostra: piso, forro, pintura, armários, esquadrias, estado geral, reforma, resumo e confiança; preenche os campos vazios. |
+| PWA / desempenho | — | `manifest.webmanifest` (instalar como app, ícones 192/512/maskable, atalhos Imóveis e Vender), `theme-color`, `next/image` com tamanhos por tela, fotos além das 5 primeiras em lazy, CSS de impressão da ficha. |
+| Banco de dados | — | Migração `20261001000000_v1_3_cidades_parceiros_viver_aqui` (seção 4). Só adiciona. |
+
+## 2. Como publicar — passo a passo único (1.1 + 1.2 + 1.3)
+
+### 2.1 Backup
+
+```bash
+docker compose exec postgres pg_dump -U paulopop paulopop > backup-antes-v1.3.sql
+docker compose exec app tar czf - -C /app/public/uploads . > uploads-antes-v1.3.tgz
+```
+
+### 2.2 Código e `.env`
+
+1. Substitua o código pela pasta `paulopop-master/` do pacote `paulopop-v1.3-completo.zip` (mantenha o `.env` do servidor e a pasta de uploads).
+2. Confira o `.env` do servidor:
+   - `NEXTAUTH_SECRET` com 32+ caracteres (`openssl rand -base64 32`). **Obrigatório** — o compose não sobe sem ele.
+   - `NEXT_PUBLIC_SITE_URL=https://corretorpaulopop.com`.
+   - `GEMINI_API_KEY` (já usada pela IA de descrições): habilita Gerar com IA, rascunho de cidade, Escrever com IA no blog, Buscar com IA e a IA nas fotos do estudo. Sem ela, esses botões avisam "indisponível" e o resto funciona.
+   - **Nova (opcional):** `GOOGLE_MAPS_SERVER_KEY` — chave de servidor da Google Maps Platform com *Geocoding API*, *Places API (New)* e *Routes API* ativadas, para o "Viver aqui". Só é consultada quando o corretor clica em "Analisar região" (cache de 90 dias). Sem ela, o bloco funciona com os destaques preenchidos à mão.
+   - Só na primeira instalação: `ADMIN_EMAIL`, `ADMIN_PASSWORD` (mín. 8), `ADMIN_NAME` com `RUN_SEED=true`.
+3. Suba: `docker compose up -d --build` — o `scripts/docker-start.sh` aplica as três migrações antes de iniciar.
+4. Opcional, uma vez: converter os endereços antigos dos imóveis: `docker compose exec app npx ts-node --compiler-options '{"module":"CommonJS","moduleResolution":"node"}' scripts/reslug-imoveis.ts --dry` (mostra o que mudaria) e depois sem `--dry`. Os endereços antigos continuam redirecionando.
+
+### 2.3 Conferência depois de publicar
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" https://corretorpaulopop.com/api/leads                 # 401
+curl -s -o /dev/null -w "%{http_code}\n" https://corretorpaulopop.com/politica-de-privacidade     # 200
+curl -s -o /dev/null -w "%{http_code}\n" https://corretorpaulopop.com/empreendimentos             # 200
+curl -s -o /dev/null -w "%{http_code}\n" https://corretorpaulopop.com/cidades                     # 200
+curl -s -o /dev/null -w "%{http_code}\n" https://corretorpaulopop.com/parceiros                   # 200
+curl -s -o /dev/null -w "%{http_code}\n" https://corretorpaulopop.com/vender                      # 200
+curl -s -o /dev/null -w "%{http_code}\n" https://corretorpaulopop.com/manifest.webmanifest        # 200
+curl -s -o /dev/null -w "%{http_code}\n" https://corretorpaulopop.com/api/admin/estudos           # 401
+curl -s https://corretorpaulopop.com/robots.txt                                                   # Disallow: /estudo/ e Sitemap com o domínio certo
+```
+
+- ☐ Home nova: busca grande com abas, chips de região, "Buscar com IA" (com `GEMINI_API_KEY`), vitrine com chips, barra inferior no celular.
+- ☐ Página de um imóvel: galeria com abas, barra fixa, simulador, "Avise-me se baixar o preço".
+- ☐ Painel: menus **Cidades do DF**, **Parceiros**, **Estudos de mercado**, **Alertas de imóveis**, **Meu perfil**; Empreendimentos → aba Estrutura e unidades; Imóveis → seletor de unidade e painel "Viver aqui".
+- ☐ Criar a cidade Samambaia (Nova cidade → sugestão) → Gerar rascunho com IA → revisar → Publicada → `/cidades/samambaia`.
+- ☐ `/vender`: preencher e ver a faixa (precisa de pelo menos 2 anúncios ativos do mesmo tipo na cidade/bairro; senão mostra "avaliar pessoalmente" e grava o lead).
+- ☐ Ficha de um imóvel → botão Vendido → registro; Admin → Relatórios com o resumo (1.1).
+- ☐ Estudos de mercado → novo → amostras → Publicar → Baixar PDF (1.2).
+- ☐ Celular (390 px): home, imóvel, cidade, blog, vender sem rolagem lateral.
+
+### 2.4 Conteúdo que o Paulo preenche no painel
+
+- **Meu perfil** (CRECI, foto, WhatsApp, RE/MAX Inovelar) — usado nos anúncios, e-mails, blog e estudo de mercado.
+- **Configurações**: Rastreamento (GA4/Pixel/GTM), Páginas legais, SEO (imagem 1200×630), horário e mapa do contato.
+- **Cidades do DF**: criar as cidades onde atua (Samambaia, Taguatinga, Águas Claras…), revisar o rascunho da IA, subir fotos, publicar.
+- **Parceiros**: construtoras dos empreendimentos, correspondente bancário, despachante, etc.
+- **Empreendimentos**: estágio, construtora, tipologias e blocos; ligar os anúncios às unidades; "Analisar região".
+- **Imóveis**: registrar as vendas antigas; legendas nas fotos (Sala, Cozinha, Suíte…) para a galeria agrupar; "Analisar região".
+- **Blog**: revisar os posts existentes no editor novo (categoria, capa, cidade); usar "Escrever com IA" para as séries Guia do comprador / Guia do proprietário.
+
+### 2.5 Voltar atrás (rollback)
+
+Suba o código 1.0. As tabelas e colunas novas podem ficar (o código antigo as ignora). Para remover tudo: os comandos de rollback de cada versão estão nas seções "Histórico" (1.1 e 1.2) e, para a 1.3: `DROP TABLE "property_alerts", "partners", "city_pages", "area_insights" CASCADE; ALTER TABLE "blog_posts" DROP COLUMN "sections", DROP COLUMN "seoTitle", DROP COLUMN "seoDescription", DROP COLUMN "ogImageUrl", DROP COLUMN "readingMinutes", DROP COLUMN "citySlug", DROP COLUMN "series", DROP COLUMN "featured"; ALTER TABLE "properties" DROP COLUMN "priceHistory", DROP COLUMN "previousSlugs", DROP COLUMN "areaInsightId"; ALTER TABLE "empreendimentos" DROP COLUMN "areaInsightId"; ALTER TABLE "market_study_samples" DROP COLUMN "aiAnalysis";` e apagar as três linhas de `_prisma_migrations`.
+
+## 3. Mudanças por área (1.3)
+
+### 3.1 Editor de seções, Cidades e Parceiros
+`src/lib/sections.ts` (tipos, modelos de página `cityTemplate`/`partnerTemplate`), `sections-sanitize.ts`, `section-data.ts` (consultas de imóveis/empreendimentos/blog por cidade), `city-pages.ts`, `partners.ts`, `df-cities.ts`, `ai-sections.ts` (Gemini). Painel: `src/components/admin/sections/*` (editor), `src/app/admin/cidades/**`, `src/app/admin/parceiros/**`. API: `/api/admin/cidades`, `/api/admin/cidades/[id]`, `/api/admin/cidades/[id]/rascunho-ia`, `/api/admin/parceiros`, `/api/admin/parceiros/[id]`, `/api/admin/ia/secao` (ADMIN/SUPER_ADMIN). Público: `src/components/public/SectionRenderer.tsx`, `GalleryLightbox.tsx`, `PartnersStrip.tsx`, `src/app/cidades/**`, `src/app/parceiros/**`; `Header.tsx` (links), `Footer.tsx`/`PublicShell.tsx`/`layout.tsx` (coluna de cidades).
+
+### 3.2 Blog
+`src/lib/blog.ts` (visibilidade rascunho/agendado/publicado, índice a partir dos títulos, tempo de leitura, datas de Brasília, Markdown legado), `ai-blog.ts`; API `/api/admin/blog` (GET/POST), `[id]` (GET/PUT/DELETE), `[id]/duplicar`, `ia`; painel `BlogPostEditor.tsx` (abas), `BlogListClient.tsx`; público `src/app/blog/page.tsx`, `[slug]/page.tsx`, `rss.xml/route.ts`, `BlogCard.tsx`, `BlogShare.tsx`, `BlogToc.tsx`. `BlogContent.tsx` removido (renderização passou para o servidor).
+
+### 3.3 Viver aqui
+`src/lib/area-insight.ts` (Geocoding, Places New `searchNearby` por categoria, raio 1,5 km, Routes `computeRoutes` com trânsito no pico, cache 90 dias) e `area-insight-shared.ts` (tipos, categorias, escola pública/particular, minutos, junção com ajustes manuais); API `POST /api/admin/regiao`, `GET/PUT /api/admin/regiao/[id]`; painel `AreaInsightPanel.tsx` (inserido em `PropertyForm/TabPrincipal.tsx`, `admin/empreendimentos/[id]`, `admin/cidades/[id]`); público `AreaInsightBlock.tsx` + `AreaInsightTabs.tsx` (imóvel, empreendimento e cidade). Modelo `AreaInsight` compartilhado por endereço.
+
+### 3.4 Página do imóvel, home, busca, slugs, PWA
+`src/lib/finance.ts`, `property-slug.ts`, `price-history.ts`, `property-search.ts`, `property-compare.ts`, `property-features.ts`, `gallery-groups.ts`, `favorites.ts`, `share.ts`, `youtube.ts`; componentes `PropertyGallery.tsx` (reescrita), `PropertySummaryBar.tsx`, `FinanceSimulator.tsx`, `FeatureGroups.tsx`, `PriceDropAlert.tsx`, `HomeSearch.tsx`, `HomeShowcase.tsx`, `HomeSections.tsx`, `MobileActionBar.tsx`, `PropertyCard.tsx` (carrossel, selos, código e vagas sempre visíveis; card virou `<article>` com link de cobertura para não aninhar links); páginas `src/app/page.tsx`, `imoveis/page.tsx`, `imoveis/[slug]/page.tsx`, `empreendimentos/page.tsx`; API `/api/imoveis` (`q`, slug novo na criação), `/api/imoveis/[id]` (histórico de preço, troca de slug com redirecionamento), `/api/alertas`, `/api/busca-ia`; `src/app/manifest.ts`, `public/icons/*`, `scripts/gen-pwa-icons.ts`, `scripts/reslug-imoveis.ts`; `src/app/admin/alertas/page.tsx`.
+
+### 3.5 Vender meu imóvel e IA nas fotos
+`src/lib/valuation.ts` (faixa por escopo prédio/bairro/cidade, média aparada, ajuste por conservação), `src/app/api/vender/route.ts`, `src/app/vender/page.tsx`, `SellWizard.tsx`; `src/lib/ai-vision.ts` e rotas `/api/admin/estudos/[id]/analisar-fotos` e `/api/admin/estudos/[id]/amostras/[sampleId]/analisar-fotos`; botões no editor do estudo.
+
+## 4. Banco de dados (1.3)
+
+Migração `prisma/migrations/20261001000000_v1_3_cidades_parceiros_viver_aqui/migration.sql` (idempotente).
+
+| Tabela | Colunas | Uso |
+|---|---|---|
+| `city_pages` (nova) | slug, name, tagline, summary, coverUrl, videoUrl, status, order, raNumber, foundedAt, founderGovernor, population, populationSource, areaKm2, distanceKm, latitude, longitude, matchNames[], sections JSON, seoTitle, seoDescription, ogImageUrl, areaInsightId | Páginas de cidade |
+| `partners` (nova) | slug, name, type, tagline, summary, logoUrl, coverUrl, benefit, website, phone, whatsapp, email, address, mapEmbedUrl, instagram, status, order, featured, sections JSON, seoTitle, seoDescription, empreendimentoIds[] | Parceiros |
+| `area_insights` (nova) | addressKey (único), address, latitude, longitude, data JSON, manual JSON, provider, fetchedAt | Viver aqui (cache por endereço) |
+| `property_alerts` (nova) | name, phone, email, criteria JSON, source, active, lastNotifiedAt | Alertas do site |
+| `blog_posts` | sections JSON, seoTitle, seoDescription, ogImageUrl, readingMinutes, citySlug, series, featured | Blog moderno |
+| `properties` | priceHistory JSON, previousSlugs[], areaInsightId | Histórico de preço, redirecionamento, região |
+| `empreendimentos` | areaInsightId | Região |
+| `market_study_samples` | aiAnalysis JSON | IA nas fotos |
+
+## 5. API (1.3)
+
+| Método | Rota | Acesso | Observação |
+|---|---|---|---|
+| GET/POST | `/api/admin/cidades` · GET/PUT/DELETE `/api/admin/cidades/[id]` · POST `.../rascunho-ia` | ADMIN | Páginas de cidade; rascunho por IA não grava (o painel mescla). |
+| GET/POST | `/api/admin/parceiros` · GET/PUT/DELETE `/api/admin/parceiros/[id]` | ADMIN | Parceiros. |
+| POST | `/api/admin/ia/secao` | Login | `{ type, title?, context? }` → conteúdo de seção (503 sem chave). |
+| GET/POST | `/api/admin/blog` · GET/PUT/DELETE `[id]` · POST `[id]/duplicar` · POST `ia` | Login | Blog (status `SCHEDULED` no filtro; `publishedAt` no horário de Brasília). |
+| POST | `/api/admin/regiao` · GET/PUT `/api/admin/regiao/[id]` | Login (imóvel: quem pode editá-lo; cidade/prédio: ADMIN) | Viver aqui. |
+| POST | `/api/admin/estudos/[id]/analisar-fotos` · `.../amostras/[sampleId]/analisar-fotos` | Login + dono/admin | IA nas fotos (503 sem chave). |
+| GET | `/api/imoveis?q=` | Público/painel | Busca por texto. |
+| POST | `/api/alertas` | Público (5/IP/h) | `{ name?, phone, email?, criteria }`. |
+| POST | `/api/busca-ia` | Público (20/IP/h) | `{ text }` → `{ filters, url }`; 503 sem chave. |
+| POST | `/api/vender` | Público (5/IP/h) | Dados do imóvel + contato → faixa, relatório do prédio; grava lead. |
+| GET | `/blog/rss.xml`, `/manifest.webmanifest`, `/cidades`, `/cidades/[slug]`, `/parceiros`, `/parceiros/[slug]`, `/vender` | Público | Páginas novas (no sitemap). |
+
+## 6. Variáveis de ambiente
+
+| Variável | Obrigatória | Uso |
+|---|---|---|
+| `NEXTAUTH_SECRET` | **Sim** | Sessão do painel (desde a 1.1). |
+| `NEXT_PUBLIC_SITE_URL` | Recomendada | Domínio real. |
+| `GEMINI_API_KEY`, `GEMINI_MODEL` | Não (recomendada) | Todos os botões de IA. |
+| `GOOGLE_MAPS_SERVER_KEY` | Não | Viver aqui (Geocoding + Places New + Routes). **Nova na 1.3.** |
+| `SMTP_*`, `NOTIFICATION_EMAIL` | Não | E-mails de lead e avaliação online. |
+
+## 7. Testes (1.3)
+
+**Testado (29/09/2026):** `tsc` limpo; `next build` completo; Vitest **104 testes** (51 anteriores + seções, blog, finanças, slug, histórico de preço, Viver aqui, avaliação); migração 1.3 aplicada sobre 1.0 + 1.1 + 1.2 (PostgreSQL 16); Playwright em 1366 px e 390 px: criação de cidade (Samambaia, 15 seções, publicada), parceiro (banco, publicado), post do blog (série, cidade), painel "Viver aqui" (sem chave → modo manual, destaques e lugares salvos e exibidos na página do imóvel), páginas home, busca, imóvel, cidades, cidade, parceiros, parceiro, blog, post e vender — todas 200, sem erros de console e sem rolagem lateral; formulário "Vender meu imóvel" de ponta a ponta (lead gravado; sem amostras suficientes no banco de teste → mensagem "avaliar pessoalmente").
+
+**Não testado (ambiente sem chaves/internet):** consultas reais ao Google Maps (Viver aqui), Gemini (rascunho de cidade, Escrever com IA, Buscar com IA, IA nas fotos), envio de e-mail. Conferir no servidor com as chaves.
+
+## 8. Pendências (fora deste pacote)
+
+- Busca automática de amostras nos portais para o estudo (hoje: colar link) e notificação automática dos alertas de preço (hoje: lista no painel para retorno manual).
+- Modo mapa com desenho de área na busca (precisa de SDK de mapas pago); tour 360 de provedores fora do YouTube/Google precisa do domínio na CSP.
+- DNS do `www.corretorpaulopop.com` (fora do código).
+
+## 9. Arquivos da 1.3
+
+**Novos (88):** migração `20261001000000_v1_3_cidades_parceiros_viver_aqui`; `public/icons/*`; `scripts/gen-pwa-icons.ts`, `scripts/reslug-imoveis.ts`; `src/lib/` sections, sections-sanitize, section-data, city-pages, partners, df-cities, ai-sections, ai-blog, ai-vision, blog, area-insight, area-insight-shared, valuation, finance, property-slug, price-history, property-search, property-compare, property-features, gallery-groups, favorites, share, youtube; `src/app/admin/` cidades, parceiros, alertas; `src/app/api/admin/` cidades, parceiros, ia/secao, regiao, blog/[id]/duplicar, blog/ia, blog/shared.ts, estudos/[id]/analisar-fotos, estudos/[id]/amostras/[sampleId]/analisar-fotos; `src/app/api/` alertas, busca-ia, vender; `src/app/` cidades, parceiros, vender, blog/rss.xml, manifest.ts; `src/components/admin/` SectionEditor, sections/*, AreaInsightPanel; `src/components/public/` SectionRenderer, GalleryLightbox, PartnersStrip, BlogCard, BlogShare, BlogToc, AreaInsightBlock, AreaInsightTabs, FeatureGroups, FinanceSimulator, HomeSearch, HomeSections, HomeShowcase, MobileActionBar, PriceDropAlert, PropertySummaryBar, SellWizard; testes `sections`, `blog`, `finance`, `property-slug`, `price-history`, `v1_3`.
+
+**Alterados (34):** `package.json` (1.3.0), `prisma/schema.prisma`, `.env.example`, `ALTERACOES.md`; `src/app/` layout, page, sitemap, globals.css, imoveis/page, imoveis/[slug]/page, empreendimentos/page, empreendimentos/[slug]/page, blog/page, blog/[slug]/page, admin/layout, admin/blog/*, admin/empreendimentos/[id]/page, admin/estudos/[id]/page; `src/app/api/` imoveis/route, imoveis/[id]/route, admin/blog/route, admin/blog/[id]/route; `src/components/admin/` AdminSidebar, BlogPostEditor, PropertyForm/TabPrincipal; `src/components/public/` Header, Footer, PublicShell, ContactForm, PropertyCard, PropertyCarousel, PropertyFilters, PropertyGallery, WhatsAppButton.
+
+**Removido:** `src/app/blog/[slug]/BlogContent.tsx`.
+
+---
+
+# Histórico — Alterações v1.2
+
+**Versão:** 1.2 · **Data:** 29/09/2026 · **Base:** `paulopop-v1.1.zip` · **Pacote:** `paulopop-v1.2.zip`
+
+**Novo na 1.2:** hub de empreendimentos (blocos, andares, tipologias e mapa de unidades gerados no painel; anúncios ligados à unidade aparecem na página do prédio como disponíveis, vendidos ou alugados; estágio Lançamento / Em obras / Pronto para morar) e o **Estudo de Mercado refeito no padrão RE/MAX** (amostras dos portais, estatística, cenários competitivo/mercado/otimista, parecer, link público e PDF em lâminas 16:9 com os dados do corretor logado). Publique depois da 1.1: a migração desta versão roda sozinha na subida do contêiner.
+
+> Esta versão faz parte da sequência 1.1 → 1.2 → 1.3. As três podem ser publicadas uma após a outra no mesmo dia; cada uma tem a sua migração e nenhuma depende de preencher conteúdo antes da próxima. O histórico da 1.1 continua no fim deste arquivo.
 
 ## 1. Resumo
 
 | Área | Como era | Como ficou |
 |---|---|---|
-| Painel → Imóveis (1.0) | Só dava para cadastrar à mão, campo por campo. | Botão **Importar da RE/MAX**: cola o link do anúncio e o site copia fotos, preço, custos, endereço, mapa, descrição, ficha e características, e publica. Importar o mesmo link de novo atualiza o imóvel, sem duplicar. |
-| Painel → Importar (1.0) | — | Se a RE/MAX bloquear o servidor, um botão de favoritos ("Copiar para o Paulo Pop") lê o anúncio no navegador e o texto é colado no painel. |
-| Página do imóvel (1.0) | Título livre, sem condomínio, IPTU e data disponível; ficha só com ícones; só as características fixas. | Mesma estrutura da RE/MAX: tipo · transação · bairro, título "Apartamento - Venda - Cidade, UF", preço e ID, endereço, caixas de Condomínio / IPTU / Data disponível, selo de mercado (ex.: "Ótimo Preço") na galeria, descrição primeiro, ficha completa (ambientes, dormitórios, banheiros, m², ano/mês de construção, pisos, uso do terreno, categoria), todas as características, mapa, aviso legal e links relacionados (faixa de preço ±25% na cidade, venda e aluguel na cidade). |
-| Cadastro do imóvel (1.0) | Características limitadas a 25 opções fixas; sem mês de construção. | Campo **Outras características** (uma por linha) e **Mês de Construção**. Imóvel importado mostra a origem, o corretor captador e o link do anúncio original. |
-| Banco de dados (1.0) | — | 8 colunas novas em `properties` (seção 4). |
+| Empreendimentos — cadastro | Só nome, endereço, descrição, fotos, faixas de quartos/área e lista solta de anúncios. | Campos novos: **estágio** (Lançamento, Em obras, Pronto para morar), ano de entrega, construtora, elevadores por bloco, condomínio médio, aceita pets, regras. Nova aba **Estrutura e unidades**: tipologias (nome, quartos, suítes, banheiros, área, vagas, posição solar, planta, finais de apartamento) e blocos (andares, unidades por andar, primeiro andar, numeração andar+sequência ou sequencial). O painel gera a matriz de unidades (ex.: 101…104, 201…204) e atribui a tipologia pelo final; unidades já ligadas a um anúncio nunca são apagadas ao regenerar. |
+| Empreendimentos — anúncio ligado à unidade | Anúncio só apontava para o empreendimento. | Na ficha do imóvel (aba Principal) escolhe-se **bloco e unidade**; ao escolher, o anúncio herda empreendimento, andar e, se estiverem vazios, quartos/suítes/banheiros/área/vagas da tipologia. Cada unidade aceita um anúncio ativo por vez. |
+| Página pública do prédio | Descrição, galeria e carrossel de anúncios. | Hub novo antes da galeria: "Este prédio em números" (estágio, à venda agora, para alugar agora, preço médio do m² dos anúncios ou vendidos), **Unidades disponíveis** (carrossel dos anúncios ativos), **Negociados neste prédio** (vendidos/alugados com tempo médio de venda), **Mapa de unidades** por bloco e andar (verde = anunciado, clicável; vermelho = vendido; laranja = alugado; cinza = sem anúncio) e dois CTAs de WhatsApp: "Avise-me quando surgir unidade" e "Tem apartamento neste prédio? Avalie grátis". Selo do estágio e fatos (construtora, elevadores, condomínio) no topo. Lista `/empreendimentos` ordenada por estágio (lançamentos primeiro) com contagem de unidades à venda. A página do imóvel ganhou o bloco "Conheça o prédio" com link para o hub. |
+| Estudo de mercado | Tela "Análise de Mercado" com cálculo simples em memória, sem amostras salvas, sem PDF e sem dados do corretor. | Menu **Estudos de mercado** (`/admin/estudos`): lista com busca; novo estudo em branco ou a partir de um imóvel cadastrado (copia endereço, áreas, quartos, fotos e proprietário). Editor em abas: **Estudo** (para quem, data, raio, textos de introdução e metodologia já preenchidos no padrão RE/MAX), **Imóvel avaliado** (endereço, áreas, quartos, suítes, banheiros, vagas, andar, posição solar, idade, condomínio, elevador, conservação, acabamentos: piso, forro, pintura, esquadrias, armários…, fotos), **Amostras** (colar o link do anúncio — DF Imóveis, WImóveis, OLX, VivaReal, ZAP, Imovelweb, Chaves na Mão — e o sistema tenta ler preço, área, quartos, foto e portal; ou preencher à mão; mesmo condomínio, distância, dias anunciado, reforma, acabamentos, válida/descartada com motivo), **Cálculo e parecer** (média/mediana/desvio padrão/coeficiente de variação do R$/m², desvio de cada amostra com aviso de discrepante ±30 % e de anúncio antigo > 180 dias; valores competitivo −15 %, mercado e otimista +10 % — percentuais ajustáveis; cenário escolhido e ajuste manual com justificativa) e **Publicar / PDF** (link público com validade, botão Baixar PDF). Os dados do corretor (nome, CRECI, foto, telefones, imobiliária, CRECI-J) saem do **usuário logado** (Meu perfil). Corretor comum vê só os próprios estudos; admin vê todos. |
+| Relatório do estudo | — | `/estudo/[token]`: 14+ lâminas 16:9 no modelo do PDF RE/MAX (capa com "preparado para", imóvel e data; preço × tempo de venda; metodologia; imóvel avaliado com valor de mercado e média do m²; registro fotográfico; uma lâmina por amostra com selo válida/descartada/mesmo condomínio/anúncio antigo e botão "Ver anúncio no portal"; resumo comparativo; análise estatística; comparativo final com barras e valor sugerido; contracapa com os dados do corretor e RE/MAX). Página sem cabeçalho/rodapé do site, `noindex`, fora do robots; "Baixar PDF" usa a impressão do navegador com página 297 × 167 mm, uma lâmina por página. |
+| Banco de dados | — | Migração `20260930000000_v1_2_empreendimentos_estudo` (seção 4): 7 colunas em `empreendimentos`, tabelas `empreendimento_blocks`, `empreendimento_unit_types`, `empreendimento_units`, `market_studies`, `market_study_samples`, coluna `properties.unitId`. Só adiciona; idempotente. |
 
 ## 2. Como publicar (passo a passo)
 
-> A versão 1.0 inclui uma migração de banco. Ela roda sozinha na subida do contêiner (`prisma migrate deploy` no `scripts/docker-start.sh`). É só adicionar colunas: nada é apagado.
+> Pré-requisito: a 1.1 já publicada (ou publique a 1.1 e logo em seguida a 1.2 — as migrações rodam em ordem). Nenhuma variável de ambiente nova.
 
 ### 2.1 Backup
 
 ```bash
-docker compose exec postgres pg_dump -U paulopop paulopop > backup-antes-v1.0.sql
-docker compose exec app tar czf - -C /app/public/uploads . > uploads-antes-v1.0.tgz
+docker compose exec postgres pg_dump -U paulopop paulopop > backup-antes-v1.2.sql
 ```
 
-### 2.2 Atualizar o código e subir
+### 2.2 Atualizar o código
 
-1. Substitua o código pela pasta `paulopop-master/` do pacote `paulopop-v1.0.zip` (mantenha o `.env` do servidor).
-2. Nenhuma variável de ambiente nova.
-3. Suba: `docker compose up -d --build`. **Nunca** use `RUN_SEED=true` em produção (o seed troca a senha do admin).
-4. Se houver nginx na frente, a importação pode levar até 1 minuto em anúncios com muitas fotos. Garanta `proxy_read_timeout 120s;` no bloco do site.
+1. Substitua o código pela pasta `paulopop-master/` do pacote `paulopop-v1.2.zip` (mantenha o `.env` do servidor).
+2. `docker compose up -d --build` — o `scripts/docker-start.sh` aplica a migração da 1.2 antes de subir.
 
 ### 2.3 Conferência depois de publicar
 
 ```bash
-curl -s -o /dev/null -w "%{http_code}\n" https://corretorpaulopop.com/admin/imoveis/importar   # 307 para o login (ok)
-curl -s -o /dev/null -w "%{http_code}\n" -X POST https://corretorpaulopop.com/api/admin/importar-remax  # 401 sem login (ok)
+curl -s -o /dev/null -w "%{http_code}\n" https://corretorpaulopop.com/empreendimentos            # 200
+curl -s -o /dev/null -w "%{http_code}\n" https://corretorpaulopop.com/api/admin/estudos         # 401 (sem login)
+curl -s -o /dev/null -w "%{http_code}\n" https://corretorpaulopop.com/estudo/qualquercoisa      # 404
+curl -s https://corretorpaulopop.com/robots.txt | grep estudo                                    # Disallow: /estudo/
 ```
 
-- ☐ Painel → Imóveis mostra o botão **Importar da RE/MAX**.
-- ☐ Importar um anúncio de teste (ex.: `https://www.remax.com.br/pt-br/imoveis/apartamento/venda/samambaia/404-qs-120-conjunto-2/880221062-25`): aparece "Imóvel importado · publicado no site", com o número de fotos.
-- ☐ Se aparecer "A RE/MAX respondeu 403" ou "proteção anti-robô", o servidor está bloqueado pela RE/MAX: use o botão de favoritos (a caixa abre sozinha) e avise o Claude para registrar.
-- ☐ A página do imóvel mostra Condomínio, IPTU, Data disponível, ficha, características, mapa e links relacionados; no celular não há rolagem lateral.
-- ☐ Importar o mesmo link de novo diz "Imóvel atualizado" e não cria outro imóvel.
+- ☐ Painel → Empreendimentos → abrir um → aba **Estrutura e unidades** → cadastrar 1 tipologia (finais "1,2,3,4") e 1 bloco (4 andares × 4 por andar) → **Salvar estrutura** → aparece a matriz 101…404.
+- ☐ Painel → Imóveis → um apartamento desse prédio → aba Principal → escolher **Bloco/Unidade** → salvar. No site, a página do prédio mostra o apartamento em "Unidades disponíveis" e a unidade em verde no mapa.
+- ☐ Painel → **Estudos de mercado** → Novo estudo a partir de um imóvel → aba Amostras → colar 3 links de anúncios (ou preencher à mão) → aba Cálculo mostra média, cenários e valor sugerido → **Publicar** → abrir o link → **Baixar PDF** (Chrome: destino "Salvar como PDF", margens padrão, "Gráficos de fundo" ligado).
+- ☐ Meu perfil com CRECI, foto, WhatsApp e RE/MAX Inovelar preenchidos — a capa e a contracapa do estudo usam esses dados.
+- ☐ Celular (390 px): `/empreendimentos/[slug]` e `/estudo/[token]` sem rolagem lateral.
 
 ### 2.4 Conteúdo que o Paulo preenche no painel
 
-- Nada obrigatório. Nos imóveis já cadastrados, dá para preencher **Mês de Construção** e **Outras características** na aba Principal.
+- **Empreendimentos:** estágio, construtora, ano de entrega, condomínio médio; tipologias e blocos dos prédios que ele mais trabalha (Parque Riacho 21 etc.); ligar os anúncios às unidades.
+- **Estudos de mercado:** os estudos antigos feitos em PDF pela Remarkt podem ser recadastrados; os novos saem direto do painel.
 
 ### 2.5 Voltar atrás (rollback)
 
-Suba o código anterior. As colunas novas podem ficar no banco (o código antigo as ignora). Para remover: `ALTER TABLE properties DROP COLUMN "extraFeatures", DROP COLUMN "constructionMonth", DROP COLUMN "sourcePortal", DROP COLUMN "sourceId", DROP COLUMN "sourceUrl", DROP COLUMN "sourceAgentName", DROP COLUMN "sourceOfficeName", DROP COLUMN "importedAt";` e apague a linha `20260924000000_remax_import` da tabela `_prisma_migrations`.
+Suba o código 1.1. As tabelas novas podem ficar (o código 1.1 as ignora). Para remover: `ALTER TABLE "properties" DROP COLUMN "unitId"; DROP TABLE "market_study_samples", "market_studies", "empreendimento_units", "empreendimento_unit_types", "empreendimento_blocks"; ALTER TABLE "empreendimentos" DROP COLUMN "stage", DROP COLUMN "deliveryYear", DROP COLUMN "builder", DROP COLUMN "elevators", DROP COLUMN "condoFeeAvg", DROP COLUMN "petsAllowed", DROP COLUMN "rules";` e apague a linha `20260930000000_v1_2_empreendimentos_estudo` de `_prisma_migrations`.
 
 ## 3. Mudanças por área
 
-### 3.1 Importador da RE/MAX (1.0)
+### 3.1 Hub de empreendimentos (1.2)
+
+**Como era:** empreendimento era só uma "etiqueta" com fotos; os apartamentos não tinham relação com bloco/andar/unidade.
+
+**Como ficou:** modelos `EmpreendimentoBlock`, `EmpreendimentoUnitType` e `EmpreendimentoUnit` (única por bloco + número) e `Property.unitId`. `src/lib/empreendimento-units.ts` gera a numeração (`generateUnitNumbers`), extrai o final (`unitFinal`) e escolhe a tipologia (`pickUnitType`); limites de 200 andares × 60 unidades. Rota `PUT /api/admin/empreendimentos/[id]/estrutura` salva tipologias e blocos numa transação, gera/regenera a matriz sem apagar unidades ligadas a anúncio e atualiza `totalUnits`. `GET /api/empreendimentos/[id]/unidades` alimenta o seletor da ficha do imóvel. `PUT /api/imoveis/[id]` valida a unidade (pertence ao empreendimento, não está ocupada por outro anúncio ativo) e herda os campos da tipologia. Componente público `EmpreendimentoHub` (server component, consultas em paralelo) e `EstruturaEditor` no painel. Lista e página do prédio com selo de estágio (`STAGE_LABEL`/`STAGE_ORDER`).
+
+**Arquivos:** `prisma/schema.prisma`, `src/lib/empreendimento-units.ts` (novo), `src/app/api/admin/empreendimentos/[id]/estrutura/route.ts` (novo), `src/app/api/empreendimentos/[id]/unidades/route.ts` (novo), `src/app/api/empreendimentos/[id]/route.ts`, `src/app/api/imoveis/[id]/route.ts`, `src/lib/property-update.ts`, `src/components/admin/EstruturaEditor.tsx` (novo), `src/app/admin/empreendimentos/[id]/page.tsx`, `src/components/admin/PropertyForm/TabPrincipal.tsx`, `src/components/public/EmpreendimentoHub.tsx` (novo), `src/app/empreendimentos/page.tsx`, `src/app/empreendimentos/[slug]/page.tsx`, `src/app/imoveis/[slug]/page.tsx`.
+
+### 3.2 Estudo de mercado no padrão RE/MAX (1.2)
+
+**Como era:** `/admin/analise-mercado` calculava uma média em memória a partir dos imóveis cadastrados; nada era salvo nem impresso.
+
+**Como ficou:** modelos `MarketStudy` (imóvel avaliado, textos, parâmetros, cenário, resultados em JSON, token público com validade) e `MarketStudySample` (uma linha por anúncio de portal, com status válida/descartada). `src/lib/market-study.ts` faz a estatística (`computeStudy`: média, mediana, desvio padrão, CV, mín/máx, desvio de cada amostra, discrepantes, anúncios antigos, valores por cenário e valor sugerido com ajuste), `distanceKm` (Haversine), `portalFromUrl`, textos padrão. Rotas: `GET/POST /api/admin/estudos`, `GET/PUT/DELETE /api/admin/estudos/[id]` (PUT substitui as amostras e recalcula numa transação), `POST /api/admin/estudos/[id]/amostra-link` (baixa a página do anúncio e lê Open Graph, JSON-LD e padrões de texto; se o portal bloquear, cria a amostra só com o link e o portal), `POST/DELETE /api/admin/estudos/[id]/publicar` (token de 16 caracteres, validade padrão 60 dias, status Concluído). Página `/estudo/[token]` com `StudyReport` (lâminas) e `PrintButton`; CSS de impressão em `globals.css` (`@page 297mm 167mm`, `.study-slide` = 1 página). `PublicShell` não renderiza cabeçalho/rodapé em `/estudo/`. A antiga `/admin/analise-mercado` redireciona para `/admin/estudos`; os botões "Análise" da ficha do imóvel e de Relatórios abrem "Novo estudo" já com o imóvel selecionado (`/admin/estudos?propertyId=`).
+
+**Arquivos:** `prisma/schema.prisma`, `src/lib/market-study.ts` (novo), `src/lib/market-study-db.ts` (novo), `src/app/api/admin/estudos/**` (novos), `src/app/admin/estudos/page.tsx` e `[id]/page.tsx` (novos), `src/app/estudo/[token]/page.tsx` (novo), `src/components/public/StudyReport.tsx` (novo), `src/components/public/PrintButton.tsx` (novo), `src/components/public/PublicShell.tsx`, `src/app/globals.css`, `src/app/robots.ts`, `src/app/admin/analise-mercado/page.tsx` (agora só redireciona; `MarketAnalysisClient.tsx` removido), `src/components/admin/AdminSidebar.tsx`, `src/app/admin/layout.tsx`, `src/components/admin/PropertyForm/index.tsx`, `src/app/admin/relatorios/page.tsx`.
+
+## 4. Banco de dados
+
+Migração `prisma/migrations/20260930000000_v1_2_empreendimentos_estudo/migration.sql` (idempotente: `IF NOT EXISTS` e bloco `DO` para a chave estrangeira).
+
+| Tabela | Colunas | Uso |
+|---|---|---|
+| `empreendimentos` | `stage` TEXT (padrão `ENTREGUE`), `deliveryYear` INT, `builder` TEXT, `elevators` INT, `condoFeeAvg` DECIMAL(10,2), `petsAllowed` BOOLEAN, `rules` TEXT | Estágio e fatos do prédio |
+| `empreendimento_blocks` (nova) | `name`, `floors`, `unitsPerFloor`, `firstFloor`, `numbering`, `order` | Blocos |
+| `empreendimento_unit_types` (nova) | `name`, `bedrooms`, `suites`, `bathrooms`, `area`, `parking`, `sunPosition`, `floorPlanUrl`, `finals`, `order` | Tipologias |
+| `empreendimento_units` (nova) | `blockId`, `floor`, `number`, `unitTypeId`, `notes`; única (`blockId`,`number`) | Matriz de unidades |
+| `properties` | `unitId` TEXT → `empreendimento_units` (ON DELETE SET NULL) | Anúncio ligado à unidade |
+| `market_studies` (nova) | corretor, imóvel opcional, status, textos, campos do imóvel avaliado, `finishes`/`photos`/`results` JSON, percentuais, cenário, ajuste, `publicToken` único, `tokenExpiresAt` | Estudo |
+| `market_study_samples` (nova) | portal, link, anunciante, local, mesmo condomínio, preço, áreas, quartos, banheiros, vagas, andar, posição, reforma, condomínio, idade, distância, publicado em, dias, foto, acabamentos, observações, status, motivo, lat/lng | Amostras |
+
+Índices: `empreendimento_units_empreendimentoId_idx`, `market_studies_agentId_status_idx`, `market_study_samples_studyId_idx`. As migrações da 1.0 e 1.1 continuam no pacote.
+
+## 5. API
+
+| Método | Rota | Acesso | Observação |
+|---|---|---|---|
+| GET/PUT | `/api/admin/empreendimentos/[id]/estrutura` | Login | PUT `{ unitTypes[], blocks[], regenerate? }` → devolve blocos, tipologias e unidades (com o anúncio ligado). **Novo.** |
+| GET | `/api/empreendimentos/[id]/unidades` | Login | Unidades com bloco, tipologia e anúncio atual (para o seletor). **Novo.** |
+| PUT | `/api/empreendimentos/[id]` | Login | Aceita `stage`, `deliveryYear`, `builder`, `elevators`, `condoFeeAvg`, `petsAllowed`, `rules`. |
+| PUT | `/api/imoveis/[id]` | Login + permissão | Aceita `unitId` (valida e herda campos da tipologia). |
+| GET/POST | `/api/admin/estudos` | Login (corretor: só os seus) | `?q=` busca; POST `{ propertyId?, title?, preparedFor? }`. **Novo.** |
+| GET/PUT/DELETE | `/api/admin/estudos/[id]` | Login + dono ou admin | PUT com todos os campos + `samples[]` (substitui e recalcula). **Novo.** |
+| POST | `/api/admin/estudos/[id]/amostra-link` | Login + dono ou admin | `{ url }` → amostra criada com o que foi possível ler. **Novo.** |
+| POST/DELETE | `/api/admin/estudos/[id]/publicar` | Login + dono ou admin | `{ days? }` (1–365, padrão 60) → `{ token, url, expiresAt }`; DELETE revoga. **Novo.** |
+| GET | `/estudo/[token]` | Público com o link | Página do relatório; expira na data; `noindex`. **Novo.** |
+
+## 6. Variáveis de ambiente
+
+Nenhuma nova. A leitura de links de portais (`amostra-link`) precisa de saída HTTPS do contêiner para os portais; sem isso, a amostra é criada só com o link.
+
+## 7. Testes
+
+**Testado (29/09/2026):**
+- `npx tsc --noEmit` sem erros e `next build` completo.
+- Vitest: 51 testes (45 da 1.1 + 6 novos em `tests/unit/v1_2.test.ts`: matriz de unidades, finais/tipologia, estatística do estudo, cenários e ajuste, discrepantes/anúncios antigos, utilitários).
+- Migração aplicada sobre um banco com 1.0 + 1.1 (PostgreSQL 16).
+- Playwright (Chromium, 1366 px e 390 px): criação de empreendimento com 2 tipologias e 2 blocos (32 unidades) pela API, 3 anúncios ligados a unidades (2 ativos, 1 vendido), página do prédio com números, unidades disponíveis, negociados e mapa colorido; estudo criado a partir de um imóvel, 5 amostras (1 descartada) → média R$ 4.297,46/m², mercado R$ 268.591, competitivo R$ 228.303, otimista R$ 295.450, sugerido com ajuste −2 %; link publicado; `/estudo/[token]` sem rolagem lateral; impressão em PDF com 14 páginas (1 lâmina por página); painel: editor do empreendimento (aba Estrutura), lista e editor de estudos (5 abas), ficha do imóvel com seletor de unidade — tudo sem erros de console.
+
+**Não testado:**
+- Leitura real de anúncios dos portais (ambiente sem acesso aos portais): conferir no servidor colando um link do DF Imóveis e outro da OLX; se vier só o link, preencher à mão.
+- Envio do link do estudo por e-mail/WhatsApp (o link é copiado do painel).
+
+## 8. Pendências (não incluídas nesta versão)
+
+- v1.3: hub Cidades do DF, Parceiros, blog moderno, bloco "Viver aqui" por endereço (chave Google Maps Platform), página do imóvel e galeria novas, home nova, busca por mapa/IA, PWA, página "Vender meu imóvel", endereços com bairro, editor de seções reutilizável.
+- Estudo de mercado: busca automática de amostras nos portais (hoje é por link colado) e leitura de piso/forro/pintura pelas fotos (IA) — dependem de serviço externo e ficam para uma versão seguinte.
+- Fora do código: DNS do `www.corretorpaulopop.com`.
+
+## 9. Arquivos
+
+**Novos**
+- `prisma/migrations/20260930000000_v1_2_empreendimentos_estudo/migration.sql`
+- `src/lib/empreendimento-units.ts`, `src/lib/market-study.ts`, `src/lib/market-study-db.ts`
+- `src/app/api/admin/empreendimentos/[id]/estrutura/route.ts`, `src/app/api/empreendimentos/[id]/unidades/route.ts`
+- `src/app/api/admin/estudos/route.ts`, `src/app/api/admin/estudos/[id]/route.ts`, `.../[id]/amostra-link/route.ts`, `.../[id]/publicar/route.ts`
+- `src/app/admin/estudos/page.tsx`, `src/app/admin/estudos/[id]/page.tsx`, `src/app/estudo/[token]/page.tsx`
+- `src/components/admin/EstruturaEditor.tsx`, `src/components/public/EmpreendimentoHub.tsx`, `src/components/public/StudyReport.tsx`, `src/components/public/PrintButton.tsx`
+- `tests/unit/v1_2.test.ts`
+
+**Alterados**
+- `package.json` (1.2.0), `prisma/schema.prisma`, `ALTERACOES.md`
+- `src/app/globals.css`, `src/app/robots.ts`, `src/app/admin/layout.tsx`, `src/app/admin/analise-mercado/page.tsx`, `src/app/admin/empreendimentos/[id]/page.tsx`, `src/app/admin/relatorios/page.tsx`
+- `src/app/api/empreendimentos/[id]/route.ts`, `src/app/api/imoveis/[id]/route.ts`, `src/lib/property-update.ts`
+- `src/app/empreendimentos/page.tsx`, `src/app/empreendimentos/[slug]/page.tsx`, `src/app/imoveis/[slug]/page.tsx`
+- `src/components/admin/AdminSidebar.tsx`, `src/components/admin/PropertyForm/index.tsx`, `src/components/admin/PropertyForm/TabPrincipal.tsx`, `src/components/public/PublicShell.tsx`
+
+**Removidos**
+- `src/app/admin/analise-mercado/MarketAnalysisClient.tsx`
+
+---
+
+# Histórico — Alterações v1.1
+
+**Versão:** 1.1 · **Data:** 29/09/2026 · **Base:** `paulopop-v1.0.zip` (24/09/2026) · **Pacote:** `paulopop-v1.1.zip`
+
+**Novo na 1.1:** segurança do painel e das APIs, identidade visual do AcademyPop (azul-marinho + laranja, fonte Inter), registro de venda/locação com desconto e tempo de mercado, rastreamento (GA4, Meta Pixel, GTM) e páginas legais editáveis pelo painel, lead direto para o corretor do imóvel, SEO (domínio real, canonical, títulos, og:image), Meu perfil, cache das páginas públicas e várias correções do diagnóstico de 24/09.
+
+> **Versão 1.0 (24/09/2026):** importação de anúncios da RE/MAX pelo link e página do imóvel no padrão RE/MAX. As mudanças da 1.0 continuam descritas na seção 3 (itens marcados com 1.0).
+
+## 1. Resumo
+
+| Área | Como era | Como ficou |
+|---|---|---|
+| Segurança das APIs (1.1) | `GET /api/leads` e `GET /api/imoveis?admin=true` respondiam sem login (lista de contatos e imóveis com comissões e proprietário). `GET /api/imoveis/[id]` trazia proprietário (CPF), leads e atividades. `limit` sem teto. | Login obrigatório; corretor comum vê só os próprios imóveis e leads. Sem login, o detalhe do imóvel sai no formato público (sem comissões, proprietário, documentos internos, financeiro). `limit` máximo 50. |
+| Permissões por perfil (1.1) | Qualquer usuário logado criava administradores, mudava o próprio papel e editava/apagava imóveis dos outros. | `requireRole()`/`canManageProperty()` em `src/lib/authz.ts`: só ADMIN/SUPER_ADMIN gerenciam corretores e configurações; AGENT edita só os próprios imóveis (lista, ficha, ações em lote); menu do painel esconde Corretores e Configurações para AGENT; só SUPER_ADMIN cria outro SUPER_ADMIN; ninguém desativa a si mesmo; senha mínima de 8 caracteres. |
+| Relatório do proprietário (1.1) | Qualquer senha de 5 caracteres abria o relatório; o envio por e-mail não pedia login e enviava para qualquer endereço. | Senha gerada pelo corretor logado, gravada como hash (`reportPasswordHash`), enviada por e-mail; o GET só devolve os campos do relatório; corretor com acesso ao imóvel abre sem senha; 20 tentativas por IP a cada 15 min. |
+| HTML do blog e e-mails (1.1) | Conteúdo do blog gravado e exibido sem limpeza; dados do formulário entravam direto no HTML do e-mail. | `sanitizeHtml()` com lista de tags/atributos (mantém links, imagens e tabelas do editor), aplicado ao salvar e ao exibir; `escapeHtml()` em todos os campos dos e-mails; depoimentos públicos sem HTML e com limite de 3 por IP/hora. |
+| Senhas e login (1.1) | Segredo de sessão padrão no código, seed que redefinia a senha do admin para `admin123` a cada execução, banco exposto na porta 5432, login sem limite de tentativas. | `NEXTAUTH_SECRET` obrigatório (o compose não sobe sem ele); seed cria o admin só se não existir, com `ADMIN_PASSWORD`; banco só em `127.0.0.1:65432` (variável `POSTGRES_EXPOSE_PORT`); 5 tentativas por IP e por e-mail a cada 15 min, com aviso na tela de login. |
+| Identidade visual (1.1) | Azul `#0D2F5E`/`#2E86DE`, títulos em Playfair (serif) e DM Sans via Google Fonts. | Paleta do AcademyPop: azul-marinho `#1e3a8a` (tema), azul `#2563eb` (links), laranja `#ea580c` (botões de ação), fonte Inter servida pelo próprio site (`@fontsource-variable/inter`), classes `.btn-primary`, `.card`, `.section-title` iguais às do AcademyPop. Build não depende mais do Google Fonts. |
+| Venda / locação concluída (1.1) | Só existia o status Vendido/Alugado, sem data, valor final, desconto ou tempo. | Botão **Vendido/Alugado** na ficha do imóvel: data, valor final, desconto em % e R$ (calculado), origem do comprador, observação, opção de mostrar o valor no site. Tempo de mercado calculado da publicação até a venda e exibido como "23 dias" ou "1 ano, 2 meses e 5 dias". Selo "Vendido em X" nos cards, seção "Vendidos e alugados recentemente" na home, carrossel de vendidos na página do imóvel, resumo em Admin → Relatórios (ticket médio, desconto médio, tempo médio, por cidade). |
+| Rastreamento (1.1) | Só GTM por variável de ambiente; CSP bloqueava o Pixel. | Configurações → **Rastreamento**: GA4, Meta Pixel e GTM. Eventos `page_view`, `view_item` (imóvel), `generate_lead` (formulário), `whatsapp_click` (qualquer link do WhatsApp). Nada carrega em /admin. CSP liberada para GA4/Pixel. |
+| Lead para o corretor (1.1) | Todo contato ia para um e-mail fixo, sem link do imóvel. | E-mail vai para o corretor do imóvel (admin em cópia) com link do anúncio, código e botão "Responder no WhatsApp"; o lead grava `agentId`; corretor comum vê só os seus leads. |
+| Páginas legais e contato (1.1) | `/politica-de-privacidade` e `/termos-de-uso` davam 404. | Páginas criadas com texto editável em Configurações → **Páginas legais** (texto padrão com nome, CRECI e e-mail quando em branco); aviso LGPD no formulário; Contato com horário de atendimento, link do perfil no Google e mapa incorporado (todos pelo painel). |
+| SEO (1.1) | robots apontava para `paulopop.com.br`; og:image com `localhost`; sem canonical; título "Imóveis \| Paulo Pop \| Paulo Pop"; textos sem acento. | `src/lib/site.ts` com o domínio real; `metadataBase`, canonical em todas as páginas públicas, título/descrição do painel na home, og:image padrão (`/og-default.jpg`, trocável no painel), títulos sem repetição, acentos corrigidos, `/relatorio/` fora do robots. |
+| Cards e ficha (1.1) | Cards sem varandas; capa em branco quando ninguém marcava a foto de capa. | Campo **Varandas**; cards mostram m² útil, suítes, vagas e varandas; capa = foto marcada ou a primeira; ao salvar, a primeira foto vira capa se nenhuma estiver marcada. |
+| Empreendimentos (1.1) | Vídeo, tour virtual e suítes não eram salvos pela tela de edição. | Rota `/api/empreendimentos/[id]` grava `youtubeUrl`, `virtualTourUrl`, `virtualTourType`, `suitesMin/Max`. |
+| Salvar imóvel (1.1) | Fotos, vídeos e características gravados um a um, sem transação. | `prisma.$transaction` + `createMany`; erro no meio não deixa o imóvel pela metade. |
+| Cache e velocidade (1.1) | Tudo gerado do zero a cada visita; script do Elfsight em todas as páginas. | Configuração, cidades e consultas da home em cache de 60 s (`unstable_cache`), renovado na hora ao salvar no painel (`revalidateSite`); Elfsight só nas páginas com o widget e depois do carregamento. |
+| Home e rodapé (1.1) | Telefones cortados ("(61) 9..."); "Área do Corretor" no rodapé público; cidade duplicada ("Samambaia" e "Samambaia - DF"); filtro com 27 estados. | Telefones completos e clicáveis; link do painel removido do rodapé; cidades unificadas; filtro por cidade e bairro a partir dos imóveis publicados; depoimentos aprovados exibidos na home e no Sobre; logomarca do painel no cabeçalho. |
+| Meu perfil (1.1) | Corretor não editava os próprios dados. | Painel → **Meu perfil**: nome, CRECI, foto, telefones, imobiliária, apresentação, redes e troca de senha. Usado nos anúncios, e-mails e relatórios (e no estudo de mercado da v1.2). |
+| Banco de dados (1.1) | — | Migração `20260929000000_v1_1_seguranca_vendas` (seção 4). |
+
+## 2. Como publicar (passo a passo)
+
+> A versão 1.1 inclui uma migração de banco (só adiciona colunas; roda sozinha na subida do contêiner) e **exige** as variáveis `NEXTAUTH_SECRET` e, na primeira instalação, `ADMIN_PASSWORD`. Se você já está na 1.0 e vai só para a 1.1: substitua o código, confira o `.env` (passo 2.2) e suba.
+
+### 2.1 Backup
+
+```bash
+docker compose exec postgres pg_dump -U paulopop paulopop > backup-antes-v1.1.sql
+docker compose exec app tar czf - -C /app/public/uploads . > uploads-antes-v1.1.tgz
+```
+
+### 2.2 Atualizar o código e o .env
+
+1. Substitua o código pela pasta `paulopop-master/` do pacote `paulopop-v1.1.zip` (mantenha o `.env`/`.env.local` do servidor).
+2. No `.env` do servidor, confira:
+   - `NEXTAUTH_SECRET` com pelo menos 32 caracteres (`openssl rand -base64 32`). **Sem ele o `docker compose up` para com erro** (proposital).
+   - `NEXT_PUBLIC_SITE_URL=https://corretorpaulopop.com` (usado nas metatags, e-mails e sitemap).
+   - Opcional: `POSTGRES_PASSWORD` (padrão antigo `paulopop123`; se mudar, mude também no volume do banco), `POSTGRES_EXPOSE_PORT=127.0.0.1:5432` se algum programa externo acessa o banco (padrão novo: só `127.0.0.1:65432`).
+   - Só na primeira instalação (`RUN_SEED=true`): `ADMIN_EMAIL`, `ADMIN_PASSWORD` (mín. 8) e `ADMIN_NAME`. O seed **não** mexe em administrador que já existe.
+3. Suba: `docker compose up -d --build`.
+
+### 2.3 Conferência depois de publicar
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" https://corretorpaulopop.com/api/leads              # 401 (antes era 200)
+curl -s -o /dev/null -w "%{http_code}\n" "https://corretorpaulopop.com/api/imoveis?admin=true" # 401
+curl -s -o /dev/null -w "%{http_code}\n" https://corretorpaulopop.com/politica-de-privacidade  # 200
+curl -s -o /dev/null -w "%{http_code}\n" https://corretorpaulopop.com/termos-de-uso            # 200
+curl -s https://corretorpaulopop.com/robots.txt                                                # Sitemap: https://corretorpaulopop.com/sitemap.xml
+curl -s https://corretorpaulopop.com/ | grep -o 'og:image" content="[^"]*"'                    # https://corretorpaulopop.com/og-default.jpg (ou a imagem do painel)
+```
+
+- ☐ Home com as cores novas (azul-marinho e botões laranja) e fonte Inter; telefones completos no bloco do corretor; sem "Área do Corretor" no rodapé.
+- ☐ Painel → Meu perfil abre e salva; Configurações tem as abas Rastreamento e Páginas legais (só para administrador).
+- ☐ Ficha de um imóvel → botão **Vendido** → registrar com valor final: a ficha mostra "Vendido · em N dias · desconto X%", a home ganha a seção "Vendidos e alugados recentemente" e Admin → Relatórios mostra o resumo. Depois, se quiser, **Registro da venda → Desfazer e reativar**.
+- ☐ Formulário de contato de um imóvel: o e-mail chega ao corretor do imóvel com link e botão de WhatsApp (precisa de SMTP configurado).
+- ☐ Login com senha errada 6 vezes mostra "Muitas tentativas".
+- ☐ Celular (390 px): home, lista, imóvel e contato sem rolagem lateral.
+
+### 2.4 Conteúdo que o Paulo preenche no painel
+
+- **Configurações → Rastreamento:** ID do GA4 (G-…), ID do Meta Pixel e/ou GTM.
+- **Configurações → Páginas legais:** revisar os textos padrão de Política de Privacidade e Termos de Uso; horário de atendimento; link do perfil no Google; mapa incorporado.
+- **Configurações → SEO:** imagem de compartilhamento 1200×630 (senão o site usa `/og-default.jpg`).
+- **Meu perfil:** CRECI, foto, WhatsApp, RE/MAX Inovelar e CRECI-J.
+- **Imóveis já vendidos:** abrir cada um e registrar a venda (data, valor, origem) para alimentar os números.
+- **Depoimentos:** aprovar em Admin → Depoimentos os que devem aparecer na home e no Sobre.
+
+### 2.5 Voltar atrás (rollback)
+
+Suba o código anterior (1.0). As colunas novas podem ficar no banco (o código antigo as ignora). Para remover: `ALTER TABLE "properties" DROP COLUMN "balconies", DROP COLUMN "soldAt", DROP COLUMN "listPriceAtSale", DROP COLUMN "salePrice", DROP COLUMN "saleDiscountPct", DROP COLUMN "saleDiscountValue", DROP COLUMN "saleSource", DROP COLUMN "saleNotes", DROP COLUMN "showSalePrice", DROP COLUMN "daysOnMarket", DROP COLUMN "reportPasswordHash", DROP COLUMN "reportPasswordSetAt"; ALTER TABLE "site_config" DROP COLUMN "ga4Id", DROP COLUMN "metaPixelId", DROP COLUMN "gtmId", DROP COLUMN "privacyPolicy", DROP COLUMN "termsOfUse", DROP COLUMN "businessHours", DROP COLUMN "googleBusinessUrl", DROP COLUMN "mapEmbedUrl";` e apague a linha `20260929000000_v1_1_seguranca_vendas` de `_prisma_migrations`. O código 1.0 volta a aceitar `NEXTAUTH_SECRET` padrão, então mantenha o segredo no `.env` mesmo assim.
+
+## 3. Mudanças por área
+
+### 3.1 Segurança (1.1)
+
+**Como era:** rotas do painel só checavam se havia alguém logado; várias rotas públicas devolviam dados internos.
+
+**Como ficou:** helper `src/lib/authz.ts` (`getSessionUser`, `requireSession`, `requireRole`, `canManageProperty`, `propertyScope`) usado em `/api/leads` (GET), `/api/imoveis` (GET admin, POST), `/api/imoveis/[id]` (GET/PUT/DELETE), `/api/imoveis/bulk`, `/api/admin/corretores/*`, `/api/admin/configuracoes`, `/api/relatorio/[propertyId]`, `/api/imoveis/[id]/venda`, `/api/admin/perfil`. Formato público do imóvel em `src/lib/property-public.ts`. Menu e redirecionamento por papel em `src/app/admin/layout.tsx` e `AdminSidebar.tsx`. Lista de imóveis do painel filtrada por corretor (`admin/imoveis/page.tsx`). `sanitize.ts` reescrito (tags e atributos permitidos, `escapeHtml`). `auth.ts` com segredo obrigatório e limite de tentativas; `docker-compose.yml` e `prisma/seed.ts` sem senhas padrão; `src/lib/seed.ts` (antigo, com senha fixa) removido.
+
+**Arquivos:** `src/lib/authz.ts` (novo), `src/lib/property-public.ts` (novo), `src/lib/sanitize.ts`, `src/lib/auth.ts`, `src/lib/email.ts`, `src/app/api/**` citados, `src/app/admin/layout.tsx`, `src/components/admin/AdminSidebar.tsx`, `src/app/admin/login/page.tsx`, `src/app/blog/[slug]/BlogContent.tsx`, `docker-compose.yml`, `prisma/seed.ts`.
+
+### 3.2 Identidade visual do AcademyPop (1.1)
+
+**Como era:** paleta própria e fontes do Google.
+
+**Como ficou:** `tailwind.config.ts` com as escalas `primary` (azul) e `accent` (laranja) iguais às do AcademyPop, `globals.css` com as variáveis e classes de componente, fonte Inter pelo pacote npm, `Button` primário laranja, todas as cores fixas trocadas (71 arquivos): `#0D2F5E→#1e3a8a`, `#081E3F→#172554`, `#1A4A8A→#1e40af`, `#2E86DE→#2563eb`, `#1B6EC2→#1d4ed8`, `#5BA4F5→#60a5fa`. O vermelho RE/MAX fica só onde a marca aparece.
+
+**Arquivos:** `tailwind.config.ts`, `src/app/globals.css`, `src/app/layout.tsx`, `src/components/ui/Button.tsx`, `package.json` (`@fontsource-variable/inter`), e os arquivos recoloridos em `src/`.
+
+### 3.3 Venda e locação concluída (1.1)
+
+**Como era:** status SOLD/RENTED sem dados.
+
+**Como ficou:** `src/lib/sales.ts` (`daysOnMarket`, `discount`, `formatDuration`), rota `POST/DELETE /api/imoveis/[id]/venda`, modal `SaleModal` chamado pelo botão na ficha, atividade `PROPERTY_SOLD` registrada, campos protegidos contra edição direta pelo formulário. Exibição: `PropertyCard` (selo "Vendido em …", valor final só se liberado), home (seção "Vendidos e alugados recentemente"), página do imóvel (carrossel de vendidos/alugados da cidade), Admin → Relatórios (resumo e tabela). "Salvar Alterações" em imóvel vendido mantém o status.
+
+**Arquivos:** `src/lib/sales.ts` (novo), `src/app/api/imoveis/[id]/venda/route.ts` (novo), `src/components/admin/SaleModal.tsx` (novo), `src/components/admin/PropertyForm/index.tsx`, `src/components/public/PropertyCard.tsx`, `src/components/public/PropertyCarousel.tsx`, `src/app/page.tsx`, `src/app/imoveis/[slug]/page.tsx`, `src/app/admin/relatorios/page.tsx`, `src/lib/property-update.ts`.
+
+### 3.4 Rastreamento, leads e e-mail (1.1)
+
+**Como ficou:** `components/public/Analytics.tsx` (GA4/Pixel/GTM pelos IDs do painel, `trackEvent`, clique em links do WhatsApp), eventos em `ContactForm` e `ViewCounter`; CSP em `next.config.mjs`; `/api/leads` acha o corretor do imóvel e envia o e-mail para ele (`sendLeadNotificationToAgent` com `agentEmail`, `propertyUrl` e botão de WhatsApp); aviso LGPD e código do imóvel no formulário.
+
+**Arquivos:** `src/components/public/Analytics.tsx` (novo), `src/components/public/ContactForm.tsx`, `src/components/public/ViewCounter.tsx`, `src/components/public/GoogleReviews.tsx`, `src/app/api/leads/route.ts`, `src/lib/email.ts`, `next.config.mjs`, `src/app/admin/configuracoes/page.tsx`, `src/app/api/admin/configuracoes/route.ts`.
+
+### 3.5 SEO, páginas legais, contato e home (1.1)
+
+**Como ficou:** `src/lib/site.ts` (`SITE_URL`, `absUrl`), `generateMetadata` no layout raiz (metadataBase, título/descrição do painel, og:image padrão), canonical e títulos nas páginas públicas, `robots.ts` e `sitemap.ts` com o domínio real; páginas `/politica-de-privacidade` e `/termos-de-uso` (`LegalText`, textos padrão em `legal-defaults.ts`); contato com horário, Google e mapa; home com telefones completos, seção de depoimentos (`Testimonials`), acentos corrigidos; rodapé sem link do painel e cidades unificadas; cabeçalho com a logomarca do painel; filtro de imóveis por cidade/bairro; cards com m² útil, suítes, vagas e varandas; capa automática.
+
+**Arquivos:** `src/lib/site.ts` (novo), `src/lib/legal-defaults.ts` (novo), `src/components/public/LegalText.tsx` (novo), `src/components/public/Testimonials.tsx` (novo), `src/app/politica-de-privacidade/page.tsx` (novo), `src/app/termos-de-uso/page.tsx` (novo), `public/og-default.jpg` (novo), `src/app/layout.tsx`, `src/app/robots.ts`, `src/app/sitemap.ts`, `src/app/page.tsx`, `src/app/imoveis/page.tsx`, `src/app/imoveis/[slug]/page.tsx`, `src/app/contato/page.tsx`, `src/app/sobre/page.tsx`, `src/app/blog/page.tsx`, `src/app/blog/[slug]/page.tsx`, `src/app/empreendimentos/page.tsx`, `src/app/empreendimentos/[slug]/page.tsx`, `src/components/public/Header.tsx`, `Footer.tsx`, `PublicShell.tsx`, `SearchBar.tsx`, `PropertyFilters.tsx`, `PropertyCard.tsx`, `src/components/admin/PropertyForm/TabPrincipal.tsx`.
+
+### 3.6 Cache, empreendimentos, salvar imóvel e Meu perfil (1.1)
+
+**Como ficou:** `src/lib/cache.ts` (`getSiteConfigCached`, `getActiveCitiesCached`, `revalidateSite`), consultas da home em `unstable_cache`, `revalidateSite()` em todas as rotas de gravação; `/api/empreendimentos/[id]` grava vídeo, tour e suítes; `PUT /api/imoveis/[id]` em transação com `createMany`; `/admin/perfil` + `/api/admin/perfil`.
+
+**Arquivos:** `src/lib/cache.ts` (novo), `src/app/admin/perfil/page.tsx` (novo), `src/app/api/admin/perfil/route.ts` (novo), `src/app/api/empreendimentos/[id]/route.ts`, `src/app/api/imoveis/[id]/route.ts`, rotas de gravação em `src/app/api/**`.
+
+### 3.7 Importador da RE/MAX (1.0)
 
 **Como era:** todo imóvel da RE/MAX era redigitado no painel.
 
@@ -69,7 +457,7 @@ Suba o código anterior. As colunas novas podem ficar no banco (o código antigo
 
 **Arquivos:** `src/lib/remax/map.ts`, `src/lib/remax/client.ts`, `src/lib/remax/import.ts`, `src/lib/remax/bookmarklet.ts`, `src/app/api/admin/importar-remax/route.ts`, `src/app/admin/imoveis/importar/page.tsx`, `src/app/admin/imoveis/importar/ImportarRemaxClient.tsx`, `src/app/admin/imoveis/page.tsx`, `src/lib/upload.ts` (`saveImageBuffer`).
 
-### 3.2 Página do imóvel no padrão RE/MAX (1.0)
+### 3.8 Página do imóvel no padrão RE/MAX (1.0)
 
 **Como era:** título livre como H1, sem condomínio/IPTU/data disponível, ficha só com ícones, descrição depois dos ícones, sem links relacionados.
 
@@ -77,7 +465,7 @@ Suba o código anterior. As colunas novas podem ficar no banco (o código antigo
 
 **Arquivos:** `src/app/imoveis/[slug]/page.tsx`.
 
-### 3.3 Cadastro (1.0)
+### 3.9 Cadastro (1.0)
 
 **Como era:** sem campo livre de características e sem mês de construção.
 
@@ -87,58 +475,90 @@ Suba o código anterior. As colunas novas podem ficar no banco (o código antigo
 
 ## 4. Banco de dados
 
-Migração `prisma/migrations/20260924000000_remax_import/migration.sql` (idempotente, com `IF NOT EXISTS`), tabela `properties`:
+Migração `prisma/migrations/20260929000000_v1_1_seguranca_vendas/migration.sql` (idempotente, `IF NOT EXISTS`):
 
-| Coluna | Tipo | Uso |
-|---|---|---|
-| `extraFeatures` | `TEXT[]` (padrão vazio) | Características livres |
-| `constructionMonth` | `INTEGER` | Mês de construção |
-| `sourcePortal` | `TEXT` | "remax" |
-| `sourceId` | `TEXT` único | "remax:880221062-25" (evita duplicar) |
-| `sourceUrl` | `TEXT` | Link do anúncio original |
-| `sourceAgentName`, `sourceOfficeName` | `TEXT` | Corretor captador e imobiliária |
-| `importedAt` | `TIMESTAMP(3)` | Data da última importação |
+| Tabela | Coluna | Tipo | Uso |
+|---|---|---|---|
+| `properties` | `balconies` | `INTEGER` | Varandas |
+| `properties` | `soldAt` | `TIMESTAMP(3)` | Data da venda/locação |
+| `properties` | `listPriceAtSale`, `salePrice`, `saleDiscountValue` | `DECIMAL(15,2)` | Valor anunciado, valor final e desconto em R$ |
+| `properties` | `saleDiscountPct` | `DECIMAL(6,2)` | Desconto em % |
+| `properties` | `saleSource`, `saleNotes` | `TEXT` | Origem do comprador e observação |
+| `properties` | `showSalePrice` | `BOOLEAN` (false) | Mostrar o valor final no site |
+| `properties` | `daysOnMarket` | `INTEGER` | Dias entre publicação e venda |
+| `properties` | `reportPasswordHash`, `reportPasswordSetAt` | `TEXT`, `TIMESTAMP(3)` | Senha (hash) do relatório do proprietário |
+| `site_config` | `ga4Id`, `metaPixelId`, `gtmId` | `TEXT` | Rastreamento |
+| `site_config` | `privacyPolicy`, `termsOfUse` | `TEXT` | Páginas legais |
+| `site_config` | `businessHours`, `googleBusinessUrl`, `mapEmbedUrl` | `TEXT` | Contato |
+
+Índice novo: `properties_status_soldAt_idx`. A migração da 1.0 (`20260924000000_remax_import`) continua no pacote.
 
 ## 5. API
 
 | Método | Rota | Acesso | Observação |
 |---|---|---|---|
-| POST | `/api/admin/importar-remax` | Usuário logado e ativo | Corpo `{ url }` ou `{ payload }` (texto do botão de favoritos) e `publish` (padrão `true`). Responde 201 (criado), 200 (atualizado), 400 (link/dados inválidos), 401 (sem login), 502 (RE/MAX indisponível ou bloqueando; `blocked: true`). |
+| GET | `/api/leads` | Login (admin: todos; corretor: os seus) | Antes era público. Até 500 registros. |
+| GET | `/api/imoveis?admin=true` | Login | Corretor comum vê só os próprios; `limit` ≤ 50. |
+| GET | `/api/imoveis/[id]` | Público (só ACTIVE, formato público) / Login (completo, só quem pode editar) | 403 para corretor de outro imóvel. |
+| PUT/DELETE | `/api/imoveis/[id]` | Login + permissão no imóvel | Gravação em transação; capa automática. |
+| POST | `/api/imoveis/bulk` | Login | Ações restritas ao escopo do corretor. |
+| POST | `/api/imoveis/[id]/venda` | Login + permissão | `{ soldAt, salePrice, listPrice?, source, notes, showSalePrice, kind }` → marca vendido/alugado. **Novo.** |
+| DELETE | `/api/imoveis/[id]/venda` | Login + permissão | Desfaz a venda (volta a ACTIVE). **Novo.** |
+| GET/POST/PUT/DELETE | `/api/admin/corretores*` | ADMIN/SUPER_ADMIN (PUT do próprio perfil: qualquer logado, sem `role`/`active`/`email`) | 403 sem permissão. |
+| GET/PUT | `/api/admin/configuracoes` | ADMIN/SUPER_ADMIN | Campos novos de rastreamento e páginas legais; renova o cache. |
+| GET/PUT | `/api/admin/perfil` | Login | Próprio perfil; troca de senha exige a senha atual. **Novo.** |
+| GET | `/api/relatorio/[propertyId]?senha=` | Senha gravada ou corretor logado | 401 senha errada, 403 sem senha gerada, 429 excesso. |
+| POST | `/api/relatorio/[propertyId]` | Login + permissão | Gera senha nova, grava hash e envia e-mail; devolve `{ password, reportUrl, emailed }`. |
+| POST | `/api/depoimentos` | Público | 3 por IP/hora, sem HTML. |
 
 ## 6. Variáveis de ambiente
 
-Nenhuma nova.
+| Variável | Obrigatória | Uso |
+|---|---|---|
+| `NEXTAUTH_SECRET` | **Sim** (≥ 16 caracteres; use 32+) | O compose e o servidor recusam subir sem ela. |
+| `NEXT_PUBLIC_SITE_URL` | Recomendada | Domínio real nas metatags, e-mails e sitemap (padrão: `https://corretorpaulopop.com`). |
+| `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_NAME` | Só com `RUN_SEED=true` | Administrador inicial (nunca sobrescreve um existente). |
+| `POSTGRES_PASSWORD` | Não | Senha do banco (padrão mantido para não quebrar o volume atual). |
+| `POSTGRES_EXPOSE_PORT` | Não | Padrão novo `127.0.0.1:65432`. |
+| `NEXT_PUBLIC_GA4_ID`, `NEXT_PUBLIC_META_PIXEL_ID`, `NEXT_PUBLIC_GTM_ID` | Não | Reserva; o painel tem prioridade. |
 
 ## 7. Testes
 
-**Testado:**
-- `npx tsc --noEmit` sem erros e `next build` completo (com as fontes do Google trocadas só na cópia de teste, porque o ambiente de teste não acessa o Google Fonts).
-- Vitest: 45 testes passando, incluindo `tests/unit/remax-import.test.ts` (mapeamento com os dados reais do anúncio 880221062-25) e `tests/unit/remax-import.db.test.ts` (com PostgreSQL 16: cria e publica, reimporta sem duplicar, rascunho, fotos gravadas em disco, foto quebrada pulada). O teste de banco só roda com `DATABASE_URL`.
-- Migração aplicada num banco criado com as migrações anteriores e rodada 2 vezes (idempotente).
-- Navegador (Playwright, 1366 px e 390 px): login, botão na lista, tela de importação, erro de link inválido, caixa do plano B abrindo sozinha quando o servidor é bloqueado, importação pelos dados colados (publicada, captador exibido), quadro de origem no cadastro, página pública com ficha, custos, 28 características e links relacionados, sem rolagem lateral no celular e sem erros no console.
+**Testado (29/09/2026):**
+- `npx tsc --noEmit` sem erros e `next build` completo (sem acesso ao Google Fonts, agora desnecessário).
+- Vitest: 45 testes passando (os mesmos da 1.0).
+- Migração aplicada num banco criado com as migrações da 1.0 (PostgreSQL 16) e seed novo com `ADMIN_PASSWORD`.
+- Sem login: `/api/leads` → 401, `/api/imoveis?admin=true` → 401, `/api/imoveis/[id]` público sem comissões/proprietário, `/api/relatorio/[id]?senha=12345` → 403.
+- Navegador (Playwright, Chromium, 1366 px e 390 px): home, lista, página de imóvel, contato, sobre, política e termos sem rolagem lateral e sem erros de console; login → Meu perfil, Configurações (abas Rastreamento e Páginas legais), Relatórios, ficha do imóvel → **Vendido** → registro com valor final → ficha mostra "Vendido · em 9 meses e 1 dia · desconto 58,82%", Relatórios com o resumo e home com a seção "Vendidos e alugados recentemente".
 
 **Não testado:**
-- Busca direta na RE/MAX pelo servidor e download das fotos do CDN: o ambiente de teste não tem acesso à internet. A RE/MAX usa Cloudflare; se ela bloquear o IP do servidor, use o botão de favoritos.
-- O botão de favoritos rodando dentro de remax.com.br (a leitura dos dados foi validada manualmente no navegador do Paulo em 24/09/2026, com as mesmas chamadas).
+- Envio real de e-mail (SMTP) e disparo real de GA4/Pixel (ambiente sem internet): conferir no site com os IDs do painel e o relatório Tempo real do GA4.
+- Importação da RE/MAX (inalterada desde a 1.0).
+- Perfil AGENT de ponta a ponta no navegador (as regras foram testadas nas rotas).
 
 ## 8. Pendências (não incluídas nesta versão)
 
-- As 18 sugestões do diagnóstico de 24/09/2026 (backlog), principalmente segurança: `/api/leads` e `/api/imoveis?admin=true` abertos sem login, permissões por perfil, senha do relatório, páginas de Privacidade/Termos, og:image com `localhost`.
-- Atualização automática periódica dos imóveis importados (hoje é reimportando o link).
-- Importar direto do iList (precisa de acesso oficial à API da Gryphtech).
+- v1.2 (próxima): hub de empreendimentos com blocos, unidades e tipologias ligados aos anúncios; estudo de mercado refeito no padrão RE/MAX (amostras, estatística, PDF) usando o corretor logado; editor de seções reutilizável; empreendimentos com status Lançamento/Em obras/Entregue.
+- v1.3: hub Cidades do DF, Parceiros, blog moderno, bloco "Viver aqui" por endereço (precisa da chave Google Maps Platform), página do imóvel e galeria novas, home nova, busca por mapa/IA, PWA, página "Vender meu imóvel", endereços dos imóveis com bairro.
+- Fora do código: DNS do `www.corretorpaulopop.com` (não resolve); preencher Rastreamento, Páginas legais, Meu perfil e registrar as vendas antigas; aprovar depoimentos.
+- 2FA opcional no login; envio de e-mail em fila.
 
 ## 9. Arquivos
 
 **Novos**
-- `prisma/migrations/20260924000000_remax_import/migration.sql`
-- `src/lib/remax/map.ts`, `src/lib/remax/client.ts`, `src/lib/remax/import.ts`, `src/lib/remax/bookmarklet.ts`
-- `src/app/api/admin/importar-remax/route.ts`
-- `src/app/admin/imoveis/importar/page.tsx`, `src/app/admin/imoveis/importar/ImportarRemaxClient.tsx`
-- `tests/unit/remax-import.test.ts`, `tests/unit/remax-import.db.test.ts`
-- `ALTERACOES.md`
+- `prisma/migrations/20260929000000_v1_1_seguranca_vendas/migration.sql`
+- `public/og-default.jpg`
+- `src/lib/authz.ts`, `src/lib/property-public.ts`, `src/lib/site.ts`, `src/lib/cache.ts`, `src/lib/sales.ts`, `src/lib/legal-defaults.ts`
+- `src/app/api/imoveis/[id]/venda/route.ts`, `src/app/api/admin/perfil/route.ts`
+- `src/app/admin/perfil/page.tsx`, `src/app/politica-de-privacidade/page.tsx`, `src/app/termos-de-uso/page.tsx`
+- `src/components/admin/SaleModal.tsx`, `src/components/public/Analytics.tsx`, `src/components/public/LegalText.tsx`, `src/components/public/Testimonials.tsx`
 
 **Alterados**
-- `prisma/schema.prisma`
-- `src/app/imoveis/[slug]/page.tsx`, `src/app/admin/imoveis/page.tsx`
-- `src/components/admin/PropertyForm/TabPrincipal.tsx`
-- `src/lib/property-update.ts`, `src/lib/upload.ts`
+- Raiz: `package.json`, `package-lock.json`, `tailwind.config.ts`, `next.config.mjs`, `docker-compose.yml`, `prisma/schema.prisma`, `prisma/seed.ts`, `ALTERACOES.md`
+- `src/lib/`: `auth.ts`, `email.ts`, `sanitize.ts`, `property-update.ts`
+- `src/app/`: `layout.tsx`, `globals.css`, `page.tsx`, `robots.ts`, `sitemap.ts`, `imoveis/page.tsx`, `imoveis/[slug]/page.tsx`, `contato/page.tsx`, `sobre/page.tsx`, `blog/page.tsx`, `blog/[slug]/page.tsx`, `blog/[slug]/BlogContent.tsx`, `empreendimentos/page.tsx`, `empreendimentos/[slug]/page.tsx`, `relatorio/[propertyId]/ReportClient.tsx`, `admin/layout.tsx`, `admin/login/page.tsx`, `admin/imoveis/page.tsx`, `admin/configuracoes/page.tsx`, `admin/relatorios/page.tsx`
+- `src/app/api/`: `leads/route.ts`, `imoveis/route.ts`, `imoveis/[id]/route.ts`, `imoveis/bulk/route.ts`, `relatorio/[propertyId]/route.ts`, `depoimentos/route.ts`, `empreendimentos/route.ts`, `empreendimentos/[id]/route.ts`, `admin/corretores/route.ts`, `admin/corretores/[id]/route.ts`, `admin/configuracoes/route.ts`, `admin/blog/route.ts`, `admin/blog/[id]/route.ts`, `admin/depoimentos/route.ts`, `admin/depoimentos/[id]/route.ts`, `admin/empreendimentos/route.ts`, `admin/empreendimentos/[id]/route.ts`, `admin/importar-remax/route.ts`
+- `src/components/`: `admin/AdminSidebar.tsx`, `admin/PropertyForm/index.tsx`, `admin/PropertyForm/TabPrincipal.tsx`, `public/Header.tsx`, `public/Footer.tsx`, `public/PublicShell.tsx`, `public/ContactForm.tsx`, `public/ViewCounter.tsx`, `public/GoogleReviews.tsx`, `public/PropertyCard.tsx`, `public/PropertyCarousel.tsx`, `public/PropertyFilters.tsx`, `public/SearchBar.tsx`, `ui/Button.tsx`
+
+**Removido**
+- `src/lib/seed.ts` (seed antigo com senha fixa; o seed oficial é `prisma/seed.ts`)

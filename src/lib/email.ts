@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer'
+import { escapeHtml as e } from '@/lib/sanitize'
 
 function getTransporter() {
   return nodemailer.createTransport({
@@ -20,9 +21,15 @@ export async function sendLeadNotificationToAgent(lead: {
   message?: string | null
   propertyTitle?: string | null
   propertyRef?: string | null
+  // v1.1: e-mail do corretor do imóvel (o admin vai em cópia) e link direto do anúncio
+  agentEmail?: string | null
+  agentName?: string | null
+  propertyUrl?: string | null
 }) {
   const notificationEmail = process.env.NOTIFICATION_EMAIL
-  if (!notificationEmail || !process.env.SMTP_HOST) return
+  const to = lead.agentEmail || notificationEmail
+  if (!to || !process.env.SMTP_HOST) return
+  const cc = lead.agentEmail && notificationEmail && notificationEmail !== lead.agentEmail ? notificationEmail : undefined
 
   const from = process.env.EMAIL_FROM ?? 'noreply@paulopop.com.br'
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
@@ -41,7 +48,7 @@ export async function sendLeadNotificationToAgent(lead: {
             <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;max-width:600px;">
               <!-- Header -->
               <tr>
-                <td style="background:#0D2F5E;padding:24px 32px;">
+                <td style="background:#1e3a8a;padding:24px 32px;">
                   <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:bold;">Paulo Pop</h1>
                   <p style="margin:4px 0 0;color:#93C5FD;font-size:13px;">Novo Lead Recebido</p>
                 </td>
@@ -49,37 +56,40 @@ export async function sendLeadNotificationToAgent(lead: {
               <!-- Content -->
               <tr>
                 <td style="padding:32px;">
-                  <h2 style="color:#0D2F5E;margin:0 0 8px;font-size:18px;">Novo contato recebido</h2>
+                  <h2 style="color:#1e3a8a;margin:0 0 8px;font-size:18px;">Novo contato recebido</h2>
                   <p style="color:#64748B;margin:0 0 24px;font-size:14px;">Um novo lead entrou em contato pelo site.</p>
 
                   <table width="100%" cellpadding="8" cellspacing="0" style="border:1px solid #E2E8F0;border-radius:8px;margin-bottom:24px;">
                     <tr style="background:#F0F4F8;">
-                      <td style="color:#0D2F5E;font-weight:bold;font-size:13px;width:40%;">Nome</td>
-                      <td style="color:#1E293B;font-size:13px;">${lead.name}</td>
+                      <td style="color:#1e3a8a;font-weight:bold;font-size:13px;width:40%;">Nome</td>
+                      <td style="color:#1E293B;font-size:13px;">${e(lead.name)}</td>
                     </tr>
                     <tr>
-                      <td style="color:#0D2F5E;font-weight:bold;font-size:13px;">Telefone</td>
-                      <td style="color:#1E293B;font-size:13px;">${lead.phone}</td>
+                      <td style="color:#1e3a8a;font-weight:bold;font-size:13px;">Telefone</td>
+                      <td style="color:#1E293B;font-size:13px;">${e(lead.phone)}</td>
                     </tr>
                     ${lead.email ? `
                     <tr style="background:#F0F4F8;">
-                      <td style="color:#0D2F5E;font-weight:bold;font-size:13px;">E-mail</td>
-                      <td style="color:#1E293B;font-size:13px;">${lead.email}</td>
+                      <td style="color:#1e3a8a;font-weight:bold;font-size:13px;">E-mail</td>
+                      <td style="color:#1E293B;font-size:13px;">${e(lead.email)}</td>
                     </tr>` : ''}
                     ${lead.propertyTitle || lead.propertyRef ? `
                     <tr ${lead.email ? '' : 'style="background:#F0F4F8;"'}>
-                      <td style="color:#0D2F5E;font-weight:bold;font-size:13px;">Imóvel</td>
-                      <td style="color:#1E293B;font-size:13px;">${lead.propertyTitle ?? ''} ${lead.propertyRef ? `(Ref: ${lead.propertyRef})` : ''}</td>
+                      <td style="color:#1e3a8a;font-weight:bold;font-size:13px;">Imóvel</td>
+                      <td style="color:#1E293B;font-size:13px;">${e(lead.propertyTitle ?? '')} ${lead.propertyRef ? `(Ref: ${e(lead.propertyRef)})` : ''}${lead.propertyUrl ? `<br><a href="${e(lead.propertyUrl)}" style="color:#2563eb;">${e(lead.propertyUrl)}</a>` : ''}</td>
                     </tr>` : ''}
                     ${lead.message ? `
                     <tr style="background:#F0F4F8;">
-                      <td style="color:#0D2F5E;font-weight:bold;font-size:13px;vertical-align:top;">Mensagem</td>
-                      <td style="color:#1E293B;font-size:13px;">${lead.message}</td>
+                      <td style="color:#1e3a8a;font-weight:bold;font-size:13px;vertical-align:top;">Mensagem</td>
+                      <td style="color:#1E293B;font-size:13px;">${e(lead.message)}</td>
                     </tr>` : ''}
                   </table>
 
-                  <a href="${siteUrl}/admin/contatos" style="display:inline-block;background:#2E86DE;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:bold;">
+                  <a href="${siteUrl}/admin/contatos" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:bold;">
                     Ver no Painel Admin
+                  </a>
+                  <a href="https://wa.me/${e(String(lead.phone).replace(/\D/g, '').replace(/^(?!55)(\d{10,11})$/, '55$1'))}?text=${encodeURIComponent(`Olá ${lead.name.split(' ')[0]}, aqui é ${lead.agentName ?? 'Paulo Pop'}. Recebi seu contato pelo site${lead.propertyRef ? ` sobre o imóvel ${lead.propertyRef}` : ''}. Podemos conversar?`)}" style="display:inline-block;background:#25D366;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:bold;margin-left:8px;">
+                    Responder no WhatsApp
                   </a>
                 </td>
               </tr>
@@ -101,8 +111,9 @@ export async function sendLeadNotificationToAgent(lead: {
     const transporter = getTransporter()
     await transporter.sendMail({
       from,
-      to: notificationEmail,
-      subject: `Novo lead: ${lead.name} — Paulo Pop`,
+      to,
+      cc,
+      subject: `Novo lead: ${lead.name}${lead.propertyRef ? ` — imóvel ${lead.propertyRef}` : ''} — Paulo Pop`,
       html,
     })
   } catch (err) {
@@ -135,23 +146,23 @@ export async function sendLeadConfirmationToContact(lead: {
           <td align="center">
             <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;max-width:600px;">
               <tr>
-                <td style="background:#0D2F5E;padding:24px 32px;">
-                  <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:bold;">${ownerName}</h1>
+                <td style="background:#1e3a8a;padding:24px 32px;">
+                  <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:bold;">${e(ownerName)}</h1>
                   <p style="margin:4px 0 0;color:#93C5FD;font-size:13px;">Mensagem recebida com sucesso</p>
                 </td>
               </tr>
               <tr>
                 <td style="padding:32px;">
-                  <h2 style="color:#0D2F5E;margin:0 0 16px;font-size:18px;">Olá, ${lead.name}!</h2>
+                  <h2 style="color:#1e3a8a;margin:0 0 16px;font-size:18px;">Olá, ${e(lead.name)}!</h2>
                   <p style="color:#64748B;font-size:14px;line-height:1.6;margin:0 0 16px;">
-                    Recebemos sua mensagem${lead.propertyTitle ? ` sobre o imóvel <strong style="color:#0D2F5E;">${lead.propertyTitle}</strong>` : ''} e entraremos em contato em breve.
+                    Recebemos sua mensagem${lead.propertyTitle ? ` sobre o imóvel <strong style="color:#1e3a8a;">${e(lead.propertyTitle)}</strong>` : ''} e entraremos em contato em breve.
                   </p>
                   <p style="color:#64748B;font-size:14px;line-height:1.6;margin:0 0 24px;">
                     Fique à vontade para entrar em contato diretamente pelo WhatsApp caso prefira uma resposta mais rápida.
                   </p>
                   <p style="color:#94A3B8;font-size:13px;margin:0;">
                     Atenciosamente,<br>
-                    <strong style="color:#0D2F5E;">${ownerName}</strong>
+                    <strong style="color:#1e3a8a;">${e(ownerName)}</strong>
                   </p>
                 </td>
               </tr>
@@ -173,7 +184,7 @@ export async function sendLeadConfirmationToContact(lead: {
     await transporter.sendMail({
       from,
       to: lead.email,
-      subject: `Recebemos sua mensagem — ${ownerName}`,
+      subject: `Recebemos sua mensagem — ${e(ownerName)}`,
       html,
     })
   } catch (err) {
@@ -207,17 +218,17 @@ export async function sendReportToOwner(options: {
           <td align="center">
             <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:16px;overflow:hidden;max-width:600px;">
               <tr>
-                <td style="background:#0D2F5E;padding:24px 32px;">
-                  <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:bold;">${agentName}</h1>
+                <td style="background:#1e3a8a;padding:24px 32px;">
+                  <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:bold;">${e(agentName)}</h1>
                   <p style="margin:4px 0 0;color:#93C5FD;font-size:13px;">Relatório de Análise de Mercado</p>
                 </td>
               </tr>
               <tr>
                 <td style="padding:32px;">
-                  <h2 style="color:#0D2F5E;margin:0 0 16px;font-size:18px;">Olá, ${options.ownerName}!</h2>
+                  <h2 style="color:#1e3a8a;margin:0 0 16px;font-size:18px;">Olá, ${e(options.ownerName)}!</h2>
                   <p style="color:#64748B;font-size:14px;line-height:1.6;margin:0 0 16px;">
                     Preparamos um relatório completo de análise de mercado para o seu imóvel:
-                    <strong style="color:#0D2F5E;">${options.propertyTitle}</strong>.
+                    <strong style="color:#1e3a8a;">${e(options.propertyTitle)}</strong>.
                   </p>
                   <p style="color:#64748B;font-size:14px;line-height:1.6;margin:0 0 24px;">
                     Acesse o relatório pelo link abaixo usando a senha fornecida:
@@ -225,12 +236,12 @@ export async function sendReportToOwner(options: {
 
                   <table width="100%" cellpadding="12" cellspacing="0" style="border:1px solid #E2E8F0;border-radius:8px;margin-bottom:24px;">
                     <tr style="background:#F0F4F8;">
-                      <td style="color:#0D2F5E;font-weight:bold;font-size:13px;width:30%;">Senha</td>
-                      <td style="color:#1E293B;font-size:16px;font-family:monospace;letter-spacing:4px;font-weight:bold;">${options.password}</td>
+                      <td style="color:#1e3a8a;font-weight:bold;font-size:13px;width:30%;">Senha</td>
+                      <td style="color:#1E293B;font-size:16px;font-family:monospace;letter-spacing:4px;font-weight:bold;">${e(options.password)}</td>
                     </tr>
                   </table>
 
-                  <a href="${options.reportUrl}" style="display:inline-block;background:#2E86DE;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:bold;margin-bottom:16px;">
+                  <a href="${options.reportUrl}" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:bold;margin-bottom:16px;">
                     Acessar Relatório
                   </a>
 
@@ -257,7 +268,7 @@ export async function sendReportToOwner(options: {
     await transporter.sendMail({
       from,
       to: options.ownerEmail,
-      subject: `Relatório de análise de mercado — ${options.propertyTitle}`,
+      subject: `Relatório de análise de mercado — ${e(options.propertyTitle)}`,
       html,
     })
   } catch (err) {

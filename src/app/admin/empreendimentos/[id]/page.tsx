@@ -1,7 +1,10 @@
 'use client'
 
+import { AreaInsightPanel } from '@/components/admin/AreaInsightPanel'
+
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import { EstruturaEditor } from '@/components/admin/EstruturaEditor'
 import { Building2, ImagePlus, Trash2, Save, Eye, ArrowLeft, Plus, X } from 'lucide-react'
 
 interface EmpImage { id?: string; url: string; thumbnailUrl?: string; caption?: string; order: number; category: string }
@@ -18,6 +21,7 @@ interface FormData {
   amenities: string; highlights: string
   ctaLabel: string; ctaWhatsapp: string
   youtubeUrl: string; virtualTourUrl: string; virtualTourType: string
+  stage: string; deliveryYear: string; builder: string; elevators: string; condoFeeAvg: string; petsAllowed: string; rules: string
 }
 
 const TABS = [
@@ -27,10 +31,11 @@ const TABS = [
   { id: 'localizacao', label: 'Localização' },
   { id: 'financeiro', label: 'Financeiro' },
   { id: 'midia', label: 'Vídeos' },
+  { id: 'estrutura', label: 'Estrutura e unidades' },
 ]
 
 const STATES = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO']
-const inputCls = 'w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0D2F5E] bg-white'
+const inputCls = 'w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#1e3a8a] bg-white'
 
 export default function EmpreendimentoEditPage() {
   const { id } = useParams<{ id: string }>()
@@ -58,14 +63,17 @@ export default function EmpreendimentoEditPage() {
     amenities: '', highlights: '',
     ctaLabel: '', ctaWhatsapp: '',
     youtubeUrl: '', virtualTourUrl: '', virtualTourType: 'NONE',
+    stage: 'ENTREGUE', deliveryYear: '', builder: '', elevators: '', condoFeeAvg: '', petsAllowed: '', rules: '',
   }
 
   const [form, setForm] = useState<FormData>(emptyForm)
+  const [areaInsightId, setAreaInsightId] = useState<string | null>(null)
 
   useEffect(() => {
     fetch(`/api/empreendimentos/${id}`)
       .then(r => r.json())
       .then(data => {
+        setAreaInsightId(data.areaInsightId ?? null)
         setForm({
           name: data.name ?? '', tagline: data.tagline ?? '',
           description: data.description ?? '', status: data.status ?? 'DRAFT',
@@ -94,6 +102,9 @@ export default function EmpreendimentoEditPage() {
           ctaLabel: data.ctaLabel ?? '', ctaWhatsapp: data.ctaWhatsapp ?? '',
           youtubeUrl: data.youtubeUrl ?? '', virtualTourUrl: data.virtualTourUrl ?? '',
           virtualTourType: data.virtualTourType ?? 'NONE',
+          stage: data.stage ?? 'ENTREGUE', deliveryYear: data.deliveryYear ? String(data.deliveryYear) : '',
+          builder: data.builder ?? '', elevators: data.elevators ? String(data.elevators) : '',
+          condoFeeAvg: data.condoFeeAvg ? String(data.condoFeeAvg) : '', petsAllowed: data.petsAllowed === true ? 'sim' : data.petsAllowed === false ? 'nao' : '', rules: data.rules ?? '',
         })
         setImages(data.images ?? [])
         setFloorPlanImages(data.floorPlanImages ?? [])
@@ -159,7 +170,7 @@ export default function EmpreendimentoEditPage() {
 
   if (loading) return (
     <div className="flex items-center justify-center h-64">
-      <div className="animate-spin rounded-full h-8 w-8 border-4 border-[#2E86DE] border-t-transparent" />
+      <div className="animate-spin rounded-full h-8 w-8 border-4 border-[#2563eb] border-t-transparent" />
     </div>
   )
 
@@ -173,7 +184,7 @@ export default function EmpreendimentoEditPage() {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-xl font-bold text-[#0D2F5E]">{form.name || 'Empreendimento'}</h1>
+            <h1 className="text-xl font-bold text-[#1e3a8a]">{form.name || 'Empreendimento'}</h1>
             <p className="text-xs text-gray-400">Editar empreendimento</p>
           </div>
         </div>
@@ -185,7 +196,7 @@ export default function EmpreendimentoEditPage() {
             </a>
           )}
           <button onClick={handleSave} disabled={saving}
-            className="flex items-center gap-1.5 px-4 py-2 bg-[#0D2F5E] text-white text-sm font-medium rounded-lg hover:bg-[#081E3F] disabled:opacity-50">
+            className="flex items-center gap-1.5 px-4 py-2 bg-[#1e3a8a] text-white text-sm font-medium rounded-lg hover:bg-[#172554] disabled:opacity-50">
             <Save className="w-4 h-4" />{saving ? 'Salvando...' : saved ? 'Salvo!' : 'Salvar'}
           </button>
         </div>
@@ -196,7 +207,7 @@ export default function EmpreendimentoEditPage() {
       <div className="flex gap-1 bg-gray-100 p-1 rounded-xl mb-6 overflow-x-auto">
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
-            className={`flex-shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === t.id ? 'bg-white text-[#0D2F5E] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+            className={`flex-shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === t.id ? 'bg-white text-[#1e3a8a] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
             {t.label}
           </button>
         ))}
@@ -205,7 +216,7 @@ export default function EmpreendimentoEditPage() {
       {tab === 'geral' && (
         <div className="space-y-6">
           <div className="bg-white rounded-2xl p-6 border border-gray-200 space-y-4">
-            <h2 className="font-semibold text-[#0D2F5E]">Identificação</h2>
+            <h2 className="font-semibold text-[#1e3a8a]">Identificação</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Nome do empreendimento *</label>
@@ -238,6 +249,43 @@ export default function EmpreendimentoEditPage() {
                   <option value="PUBLISHED">Publicado (visível no site)</option>
                 </select>
               </div>
+              {/* v1.2: estágio e dados do prédio */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Estágio</label>
+                <select value={form.stage} onChange={set('stage')} className={inputCls}>
+                  <option value="LANCAMENTO">Lançamento (na planta)</option>
+                  <option value="EM_OBRAS">Em obras</option>
+                  <option value="ENTREGUE">Pronto para morar (entregue)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Ano de entrega</label>
+                <input type="number" value={form.deliveryYear} onChange={set('deliveryYear')} className={inputCls} placeholder="2015" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Construtora</label>
+                <input value={form.builder} onChange={set('builder')} className={inputCls} placeholder="Ex.: Ebm, MRV, Emplavi" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Elevadores por bloco</label>
+                <input type="number" value={form.elevators} onChange={set('elevators')} className={inputCls} placeholder="0 = sem elevador" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Condomínio médio (R$/mês)</label>
+                <input type="number" step="0.01" value={form.condoFeeAvg} onChange={set('condoFeeAvg')} className={inputCls} placeholder="350" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Aceita pets?</label>
+                <select value={form.petsAllowed} onChange={set('petsAllowed')} className={inputCls}>
+                  <option value="">Não informado</option>
+                  <option value="sim">Sim</option>
+                  <option value="nao">Não</option>
+                </select>
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Regras e observações do condomínio</label>
+                <textarea rows={3} value={form.rules} onChange={set('rules')} className={inputCls} placeholder="Portaria 24h, vaga demarcada, horário de mudança…" />
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">WhatsApp para contato</label>
                 <input value={form.ctaWhatsapp} onChange={set('ctaWhatsapp')} className={inputCls} placeholder="5511999999999" />
@@ -245,7 +293,7 @@ export default function EmpreendimentoEditPage() {
             </div>
           </div>
           <div className="bg-white rounded-2xl p-6 border border-gray-200 space-y-4">
-            <h2 className="font-semibold text-[#0D2F5E]">Sobre o empreendimento</h2>
+            <h2 className="font-semibold text-[#1e3a8a]">Sobre o empreendimento</h2>
             <textarea value={form.description} onChange={set('description')} rows={6} className={inputCls}
               placeholder="Fale sobre o empreendimento, sua proposta, diferenciais..." />
             <div>
@@ -264,7 +312,7 @@ export default function EmpreendimentoEditPage() {
       {tab === 'tipologias' && (
         <div className="space-y-6">
           <div className="bg-white rounded-2xl p-6 border border-gray-200 space-y-4">
-            <h2 className="font-semibold text-[#0D2F5E]">Apartamentos e Tipologias</h2>
+            <h2 className="font-semibold text-[#1e3a8a]">Apartamentos e Tipologias</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div><label className="block text-sm font-medium text-gray-700 mb-1">Quartos (mín)</label>
                 <input type="number" value={form.bedroomsMin} onChange={set('bedroomsMin')} className={inputCls} placeholder="2" /></div>
@@ -294,7 +342,7 @@ export default function EmpreendimentoEditPage() {
       {tab === 'lazer' && (
         <div className="space-y-6">
           <div className="bg-white rounded-2xl p-6 border border-gray-200 space-y-4">
-            <h2 className="font-semibold text-[#0D2F5E]">Área de Lazer</h2>
+            <h2 className="font-semibold text-[#1e3a8a]">Área de Lazer</h2>
             <textarea value={form.lazerDescription} onChange={set('lazerDescription')} rows={8} className={inputCls}
               placeholder="Piscina adulto e infantil, academia, salão de festas, playground, churrasqueiras..." />
             <div>
@@ -311,7 +359,7 @@ export default function EmpreendimentoEditPage() {
       {tab === 'localizacao' && (
         <div className="space-y-6">
           <div className="bg-white rounded-2xl p-6 border border-gray-200 space-y-4">
-            <h2 className="font-semibold text-[#0D2F5E]">Endereço</h2>
+            <h2 className="font-semibold text-[#1e3a8a]">Endereço</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Endereço</label>
@@ -335,29 +383,31 @@ export default function EmpreendimentoEditPage() {
             </div>
           </div>
           <div className="bg-white rounded-2xl p-6 border border-gray-200 space-y-4">
-            <h2 className="font-semibold text-[#0D2F5E]">Vizinhança e Entorno</h2>
+            <h2 className="font-semibold text-[#1e3a8a]">Vizinhança e Entorno</h2>
             <textarea value={form.locationDescription} onChange={set('locationDescription')} rows={7} className={inputCls}
               placeholder="A 300m do Supermercado Extra, a 500m da estação de metrô..." />
           </div>
           <ImageSection title="Fotos da Região" description="Supermercado, metrô, parques próximos..."
             images={imagesOf('LOCALIZACAO')} category="LOCALIZACAO" onUpload={triggerUpload} onRemove={removeImage} uploading={uploadingFor === 'LOCALIZACAO'} />
+          {/* v1.3 — Viver aqui */}
+          <AreaInsightPanel kind="empreendimento" id={id} insightId={areaInsightId} address={[form.address, form.neighborhood, form.city, form.state].filter(Boolean).join(', ')} />
         </div>
       )}
 
       {tab === 'financeiro' && (
         <div className="space-y-6">
           <div className="bg-white rounded-2xl p-6 border border-gray-200 space-y-4">
-            <h2 className="font-semibold text-[#0D2F5E]">Preços</h2>
+            <h2 className="font-semibold text-[#1e3a8a]">Preços</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Preço a partir de (R$)</label>
                 <input type="number" value={form.priceMin} onChange={set('priceMin')} className={inputCls} placeholder="350000" />
-                {form.priceMin && <p className="text-xs text-[#2E86DE] mt-1">{fmtCurrency(form.priceMin)}</p>}
+                {form.priceMin && <p className="text-xs text-[#2563eb] mt-1">{fmtCurrency(form.priceMin)}</p>}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Preço até (R$)</label>
                 <input type="number" value={form.priceMax} onChange={set('priceMax')} className={inputCls} placeholder="680000" />
-                {form.priceMax && <p className="text-xs text-[#2E86DE] mt-1">{fmtCurrency(form.priceMax)}</p>}
+                {form.priceMax && <p className="text-xs text-[#2563eb] mt-1">{fmtCurrency(form.priceMax)}</p>}
               </div>
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de financiamento</label>
@@ -366,7 +416,7 @@ export default function EmpreendimentoEditPage() {
             </div>
           </div>
           <div className="bg-white rounded-2xl p-6 border border-gray-200 space-y-4">
-            <h2 className="font-semibold text-[#0D2F5E]">Formas de Pagamento</h2>
+            <h2 className="font-semibold text-[#1e3a8a]">Formas de Pagamento</h2>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Informações de pagamento</label>
               <textarea value={form.paymentInfo} onChange={set('paymentInfo')} rows={5} className={inputCls}
@@ -381,10 +431,12 @@ export default function EmpreendimentoEditPage() {
         </div>
       )}
 
+      {tab === 'estrutura' && <EstruturaEditor empreendimentoId={id} />}
+
       {tab === 'midia' && (
         <div className="space-y-6">
           <div className="bg-white rounded-2xl p-6 border border-gray-200 space-y-6">
-            <h2 className="font-semibold text-[#0D2F5E]">Vídeo YouTube</h2>
+            <h2 className="font-semibold text-[#1e3a8a]">Vídeo YouTube</h2>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Link do YouTube</label>
               <input value={form.youtubeUrl} onChange={set('youtubeUrl')} className={inputCls}
@@ -408,14 +460,14 @@ export default function EmpreendimentoEditPage() {
           </div>
 
           <div className="bg-white rounded-2xl p-6 border border-gray-200 space-y-4">
-            <h2 className="font-semibold text-[#0D2F5E]">Tour Virtual</h2>
+            <h2 className="font-semibold text-[#1e3a8a]">Tour Virtual</h2>
             <div className="flex gap-6">
               {(['NONE', 'OTHER'] as const).map(v => (
                 <label key={v} className="flex items-center gap-2 cursor-pointer">
                   <input type="radio" name="virtualTourType" value={v}
                     checked={form.virtualTourType === v}
                     onChange={() => setForm(prev => ({ ...prev, virtualTourType: v }))}
-                    className="accent-[#2E86DE]" />
+                    className="accent-[#2563eb]" />
                   <span className="text-sm text-gray-700">{v === 'NONE' ? 'Nenhum' : 'Tour Virtual'}</span>
                 </label>
               ))}
@@ -436,7 +488,7 @@ export default function EmpreendimentoEditPage() {
           <Trash2 className="w-4 h-4" />Excluir empreendimento
         </button>
         <button onClick={handleSave} disabled={saving}
-          className="flex items-center gap-1.5 px-5 py-2.5 bg-[#0D2F5E] text-white text-sm font-medium rounded-lg hover:bg-[#081E3F] disabled:opacity-50">
+          className="flex items-center gap-1.5 px-5 py-2.5 bg-[#1e3a8a] text-white text-sm font-medium rounded-lg hover:bg-[#172554] disabled:opacity-50">
           <Save className="w-4 h-4" />{saving ? 'Salvando...' : saved ? 'Salvo!' : 'Salvar alterações'}
         </button>
       </div>
@@ -453,15 +505,15 @@ function ImageSection({ title, description, images, category, onUpload, onRemove
   return (
     <div className="bg-white rounded-2xl p-6 border border-gray-200">
       <div className="flex items-center justify-between mb-1">
-        <h2 className="font-semibold text-[#0D2F5E]">{title}</h2>
+        <h2 className="font-semibold text-[#1e3a8a]">{title}</h2>
         <button onClick={() => onUpload(category)} disabled={uploading}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0D2F5E] text-white text-xs font-medium rounded-lg hover:bg-[#081E3F] disabled:opacity-50">
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1e3a8a] text-white text-xs font-medium rounded-lg hover:bg-[#172554] disabled:opacity-50">
           <ImagePlus className="w-3.5 h-3.5" />{uploading ? 'Enviando...' : 'Adicionar fotos'}
         </button>
       </div>
       <p className="text-xs text-gray-400 mb-4">{description}</p>
       {images.length === 0 ? (
-        <div className="border-2 border-dashed border-gray-200 rounded-xl py-10 text-center cursor-pointer hover:border-[#2E86DE] transition-colors"
+        <div className="border-2 border-dashed border-gray-200 rounded-xl py-10 text-center cursor-pointer hover:border-[#2563eb] transition-colors"
           onClick={() => onUpload(category)}>
           <ImagePlus className="w-8 h-8 mx-auto text-gray-300 mb-2" />
           <p className="text-sm text-gray-400">Clique para adicionar fotos</p>
@@ -480,7 +532,7 @@ function ImageSection({ title, description, images, category, onUpload, onRemove
             </div>
           ))}
           <button onClick={() => onUpload(category)}
-            className="aspect-video rounded-xl border-2 border-dashed border-gray-200 hover:border-[#2E86DE] flex items-center justify-center text-gray-300 hover:text-[#2E86DE] transition-colors">
+            className="aspect-video rounded-xl border-2 border-dashed border-gray-200 hover:border-[#2563eb] flex items-center justify-center text-gray-300 hover:text-[#2563eb] transition-colors">
             <Plus className="w-6 h-6" />
           </button>
         </div>

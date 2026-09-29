@@ -3,8 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import {
   User, Phone, Share2, Layout, Search, Mail, Puzzle,
-  Save, Eye, CheckCircle, AlertCircle, Upload, Loader2, ImageIcon
-} from 'lucide-react'
+  Save, Eye, CheckCircle, AlertCircle, Upload, Loader2, ImageIcon, BarChart3, FileText } from 'lucide-react'
 
 const TABS = [
   { id: 'perfil', label: 'Perfil', icon: User },
@@ -14,6 +13,8 @@ const TABS = [
   { id: 'seo', label: 'SEO', icon: Search },
   { id: 'email', label: 'E-mail', icon: Mail },
   { id: 'integracoes', label: 'Integrações', icon: Puzzle },
+  { id: 'rastreamento', label: 'Rastreamento', icon: BarChart3 },
+  { id: 'legal', label: 'Páginas legais', icon: FileText },
 ] as const
 
 type TabId = typeof TABS[number]['id']
@@ -49,6 +50,14 @@ interface Config {
   smtpPassword?: string
   notificationEmail?: string
   geminiApiKey?: string
+  ga4Id?: string
+  metaPixelId?: string
+  gtmId?: string
+  privacyPolicy?: string
+  termsOfUse?: string
+  businessHours?: string
+  googleBusinessUrl?: string
+  mapEmbedUrl?: string
   googleMapsKey?: string
   footerText?: string
   showDestaques?: boolean
@@ -126,7 +135,7 @@ export default function ConfiguracoesPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-[#2E86DE]" aria-label="Carregando configurações..." />
+        <Loader2 className="w-8 h-8 animate-spin text-[#2563eb]" aria-label="Carregando configurações..." />
       </div>
     )
   }
@@ -136,7 +145,7 @@ export default function ConfiguracoesPage() {
       {/* Cabeçalho */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-[#0D2F5E]">Configurações</h1>
+          <h1 className="text-2xl font-bold text-[#1e3a8a]">Configurações</h1>
           <p className="text-sm text-gray-500">Personalize o site sem precisar de desenvolvedor</p>
         </div>
         <div className="flex gap-2">
@@ -144,7 +153,7 @@ export default function ConfiguracoesPage() {
             href="/"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-4 py-2 border border-[#0D2F5E] text-[#0D2F5E] rounded-xl text-sm font-medium hover:bg-[#0D2F5E] hover:text-white transition-colors"
+            className="flex items-center gap-1.5 px-4 py-2 border border-[#1e3a8a] text-[#1e3a8a] rounded-xl text-sm font-medium hover:bg-[#1e3a8a] hover:text-white transition-colors"
             aria-label="Visualizar site em nova aba"
           >
             <Eye className="w-4 h-4" />
@@ -153,7 +162,7 @@ export default function ConfiguracoesPage() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="flex items-center gap-1.5 px-4 py-2 bg-[#2E86DE] hover:bg-[#1B6EC2] disabled:opacity-60 text-white rounded-xl text-sm font-medium transition-colors"
+            className="flex items-center gap-1.5 px-4 py-2 bg-[#2563eb] hover:bg-[#1d4ed8] disabled:opacity-60 text-white rounded-xl text-sm font-medium transition-colors"
             aria-label="Salvar configurações"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
@@ -196,7 +205,7 @@ export default function ConfiguracoesPage() {
                 aria-current={activeTab === tab.id ? 'page' : undefined}
                 className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors whitespace-nowrap ${
                   activeTab === tab.id
-                    ? 'bg-[#0D2F5E] text-white'
+                    ? 'bg-[#1e3a8a] text-white'
                     : 'text-gray-600 hover:bg-gray-100'
                 }`}
               >
@@ -212,7 +221,7 @@ export default function ConfiguracoesPage() {
           {/* ─── PERFIL ─── */}
           {activeTab === 'perfil' && (
             <>
-              <h2 className="font-semibold text-[#0D2F5E] text-lg">Perfil do Corretor</h2>
+              <h2 className="font-semibold text-[#1e3a8a] text-lg">Perfil do Corretor</h2>
               {/* Foto */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Foto do Corretor</label>
@@ -222,7 +231,7 @@ export default function ConfiguracoesPage() {
                     <img
                       src={config.ownerPhotoUrl}
                       alt="Foto do corretor"
-                      className="w-20 h-20 rounded-full object-cover border-2 border-[#2E86DE]"
+                      className="w-20 h-20 rounded-full object-cover border-2 border-[#2563eb]"
                     />
                   ) : (
                     <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center">
@@ -232,7 +241,7 @@ export default function ConfiguracoesPage() {
                   <button
                     type="button"
                     onClick={() => photoRef.current?.click()}
-                    className="flex items-center gap-1.5 px-3 py-2 border border-gray-300 rounded-xl text-sm hover:border-[#2E86DE] transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-2 border border-gray-300 rounded-xl text-sm hover:border-[#2563eb] transition-colors"
                     aria-label="Alterar foto do corretor"
                   >
                     <Upload className="w-4 h-4" /> Alterar foto
@@ -268,7 +277,7 @@ export default function ConfiguracoesPage() {
           {/* ─── CONTATOS ─── */}
           {activeTab === 'contatos' && (
             <>
-              <h2 className="font-semibold text-[#0D2F5E] text-lg">Informações de Contato</h2>
+              <h2 className="font-semibold text-[#1e3a8a] text-lg">Informações de Contato</h2>
               <Field label="WhatsApp (com DDI, ex: 5561912345678)" value={config.ownerWhatsapp} onChange={v => set('ownerWhatsapp', v)} type="tel" />
               <Field label="Telefone" value={config.ownerPhone} onChange={v => set('ownerPhone', v)} type="tel" />
               <Field label="E-mail de contato" value={config.ownerEmail} onChange={v => set('ownerEmail', v)} type="email" />
@@ -279,7 +288,7 @@ export default function ConfiguracoesPage() {
           {/* ─── REDES SOCIAIS ─── */}
           {activeTab === 'redes' && (
             <>
-              <h2 className="font-semibold text-[#0D2F5E] text-lg">Redes Sociais</h2>
+              <h2 className="font-semibold text-[#1e3a8a] text-lg">Redes Sociais</h2>
               <Field label="Instagram (URL)" value={config.ownerInstagram} onChange={v => set('ownerInstagram', v)} type="url" />
               <Field label="Facebook (URL)" value={config.ownerFacebook} onChange={v => set('ownerFacebook', v)} type="url" />
               <Field label="LinkedIn (URL)" value={config.ownerLinkedin} onChange={v => set('ownerLinkedin', v)} type="url" />
@@ -292,7 +301,7 @@ export default function ConfiguracoesPage() {
           {/* ─── APARÊNCIA ─── */}
           {activeTab === 'aparencia' && (
             <>
-              <h2 className="font-semibold text-[#0D2F5E] text-lg">Aparência do Site</h2>
+              <h2 className="font-semibold text-[#1e3a8a] text-lg">Aparência do Site</h2>
 
               {/* Logo do site */}
               <div>
@@ -310,7 +319,7 @@ export default function ConfiguracoesPage() {
                   <button
                     type="button"
                     onClick={() => logoRef.current?.click()}
-                    className="flex items-center gap-1.5 px-3 py-2 border border-gray-300 rounded-xl text-sm hover:border-[#2E86DE] transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-2 border border-gray-300 rounded-xl text-sm hover:border-[#2563eb] transition-colors"
                     aria-label="Alterar logomarca do site"
                   >
                     <Upload className="w-4 h-4" /> Alterar logo
@@ -355,7 +364,7 @@ export default function ConfiguracoesPage() {
                   <button
                     type="button"
                     onClick={() => heroBgRef.current?.click()}
-                    className="flex items-center gap-1.5 px-3 py-2 border border-gray-300 rounded-xl text-sm hover:border-[#2E86DE] transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-2 border border-gray-300 rounded-xl text-sm hover:border-[#2563eb] transition-colors"
                     aria-label="Alterar imagem de fundo do hero"
                   >
                     <Upload className="w-4 h-4" /> Alterar imagem
@@ -400,7 +409,7 @@ export default function ConfiguracoesPage() {
                         aria-checked={config[field] ?? true}
                         onClick={() => set(field, !(config[field] ?? true))}
                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ${
-                          (config[field] ?? true) ? 'bg-[#2E86DE]' : 'bg-gray-300'
+                          (config[field] ?? true) ? 'bg-[#2563eb]' : 'bg-gray-300'
                         }`}
                       >
                         <span
@@ -419,7 +428,7 @@ export default function ConfiguracoesPage() {
           {/* ─── SEO ─── */}
           {activeTab === 'seo' && (
             <>
-              <h2 className="font-semibold text-[#0D2F5E] text-lg">SEO e Meta Tags</h2>
+              <h2 className="font-semibold text-[#1e3a8a] text-lg">SEO e Meta Tags</h2>
               <Field
                 label="Meta Title padrão"
                 value={config.metaTitle}
@@ -446,7 +455,7 @@ export default function ConfiguracoesPage() {
                   <button
                     type="button"
                     onClick={() => ogRef.current?.click()}
-                    className="flex items-center gap-1.5 px-3 py-2 border border-gray-300 rounded-xl text-sm hover:border-[#2E86DE] transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-2 border border-gray-300 rounded-xl text-sm hover:border-[#2563eb] transition-colors"
                     aria-label="Alterar OG image padrão"
                   >
                     <Upload className="w-4 h-4" /> Alterar imagem
@@ -470,7 +479,7 @@ export default function ConfiguracoesPage() {
           {/* ─── EMAIL ─── */}
           {activeTab === 'email' && (
             <>
-              <h2 className="font-semibold text-[#0D2F5E] text-lg">Configurações de E-mail (SMTP)</h2>
+              <h2 className="font-semibold text-[#1e3a8a] text-lg">Configurações de E-mail (SMTP)</h2>
               <Field label="SMTP Host" value={config.smtpHost} onChange={v => set('smtpHost', v)} placeholder="smtp.gmail.com" />
               <Field label="SMTP Porta" value={config.smtpPort} onChange={v => set('smtpPort', v)} placeholder="587" />
               <Field label="SMTP Usuário" value={config.smtpUser} onChange={v => set('smtpUser', v)} type="email" />
@@ -486,7 +495,7 @@ export default function ConfiguracoesPage() {
                 type="button"
                 onClick={handleTestEmail}
                 disabled={testingEmail}
-                className="flex items-center gap-1.5 px-4 py-2 border border-[#2E86DE] text-[#2E86DE] rounded-xl text-sm font-medium hover:bg-[#2E86DE] hover:text-white transition-colors disabled:opacity-60"
+                className="flex items-center gap-1.5 px-4 py-2 border border-[#2563eb] text-[#2563eb] rounded-xl text-sm font-medium hover:bg-[#2563eb] hover:text-white transition-colors disabled:opacity-60"
                 aria-label="Enviar e-mail de teste"
               >
                 {testingEmail ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
@@ -495,10 +504,34 @@ export default function ConfiguracoesPage() {
             </>
           )}
 
+          {/* ─── RASTREAMENTO (v1.1) ─── */}
+          {activeTab === 'rastreamento' && (
+            <>
+              <h2 className="font-semibold text-[#1e3a8a] text-lg">Rastreamento (GA4, Meta Pixel e GTM)</h2>
+              <p className="text-sm text-gray-500">Preencha só os IDs que você usa. Nada carrega no painel. Eventos enviados: page_view, view_item (imóvel), generate_lead (formulário), whatsapp_click e search.</p>
+              <Field label="ID do Google Analytics 4" value={config.ga4Id} onChange={v => set('ga4Id', v)} placeholder="G-XXXXXXXXXX" hint="Administrador → Fluxos de dados → ID da métrica" />
+              <Field label="ID do Meta Pixel" value={config.metaPixelId} onChange={v => set('metaPixelId', v)} placeholder="1234567890123456" hint="Gerenciador de Eventos → Fontes de dados" />
+              <Field label="ID do Google Tag Manager" value={config.gtmId} onChange={v => set('gtmId', v)} placeholder="GTM-XXXXXXX" hint="Opcional. Se usar o GTM para tudo, deixe GA4 e Pixel em branco para não contar em dobro." />
+            </>
+          )}
+
+          {/* ─── PÁGINAS LEGAIS E CONTATO (v1.1) ─── */}
+          {activeTab === 'legal' && (
+            <>
+              <h2 className="font-semibold text-[#1e3a8a] text-lg">Páginas legais e dados de atendimento</h2>
+              <p className="text-sm text-gray-500">Os textos abaixo aparecem em /politica-de-privacidade e /termos-de-uso. Se ficarem em branco, o site usa um texto padrão com o seu nome, CRECI e e-mail.</p>
+              <Field label="Política de Privacidade" value={config.privacyPolicy} onChange={v => set('privacyPolicy', v)} multiline rows={12} hint="Texto simples; linhas em branco separam parágrafos. Linhas começando com ## viram títulos." />
+              <Field label="Termos de Uso" value={config.termsOfUse} onChange={v => set('termsOfUse', v)} multiline rows={10} />
+              <Field label="Horário de atendimento" value={config.businessHours} onChange={v => set('businessHours', v)} placeholder="Segunda a sexta, 8h às 19h · Sábado, 9h às 13h" />
+              <Field label="Link do perfil no Google (Maps)" value={config.googleBusinessUrl} onChange={v => set('googleBusinessUrl', v)} placeholder="https://maps.app.goo.gl/..." />
+              <Field label="Mapa incorporado (URL do iframe do Google Maps)" value={config.mapEmbedUrl} onChange={v => set('mapEmbedUrl', v)} placeholder="https://www.google.com/maps/embed?pb=..." hint="Google Maps → Compartilhar → Incorporar um mapa → copie só o endereço src=" />
+            </>
+          )}
+
           {/* ─── INTEGRAÇÕES ─── */}
           {activeTab === 'integracoes' && (
             <>
-              <h2 className="font-semibold text-[#0D2F5E] text-lg">Integrações e Chaves de API</h2>
+              <h2 className="font-semibold text-[#1e3a8a] text-lg">Integrações e Chaves de API</h2>
               <Field
                 label="Google Gemini API Key"
                 value={config.geminiApiKey}
@@ -537,7 +570,7 @@ function Field({
 }) {
   const id = label.toLowerCase().replace(/\s+/g, '-')
   const className =
-    'w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86DE] focus:border-transparent transition-colors'
+    'w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb] focus:border-transparent transition-colors'
 
   return (
     <div>

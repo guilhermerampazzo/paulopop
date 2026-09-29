@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { revalidateSite } from '@/lib/cache'
 
 interface Params { params: { id: string } }
 
@@ -48,6 +49,20 @@ export async function PUT(request: NextRequest, { params }: Params) {
       floors: fields.floors ? parseInt(fields.floors) : null,
       bedroomsMin: fields.bedroomsMin ? parseInt(fields.bedroomsMin) : null,
       bedroomsMax: fields.bedroomsMax ? parseInt(fields.bedroomsMax) : null,
+      // v1.1: suítes, vídeo e tour virtual eram ignorados por esta rota (a tela de edição usa ela)
+      // v1.2
+      stage: ['LANCAMENTO', 'EM_OBRAS', 'ENTREGUE'].includes(fields.stage) ? fields.stage : 'ENTREGUE',
+      deliveryYear: fields.deliveryYear ? parseInt(fields.deliveryYear) : null,
+      builder: fields.builder ? String(fields.builder).slice(0, 120) : null,
+      elevators: fields.elevators !== undefined && fields.elevators !== '' ? parseInt(fields.elevators) : null,
+      condoFeeAvg: fields.condoFeeAvg ? parseFloat(fields.condoFeeAvg) : null,
+      petsAllowed: fields.petsAllowed === 'sim' || fields.petsAllowed === true ? true : fields.petsAllowed === 'nao' || fields.petsAllowed === false ? false : null,
+      rules: fields.rules ? String(fields.rules).slice(0, 5000) : null,
+      suitesMin: fields.suitesMin ? parseInt(fields.suitesMin) : null,
+      suitesMax: fields.suitesMax ? parseInt(fields.suitesMax) : null,
+      youtubeUrl: fields.youtubeUrl ? String(fields.youtubeUrl).trim() : null,
+      virtualTourUrl: fields.virtualTourUrl ? String(fields.virtualTourUrl).trim() : null,
+      virtualTourType: fields.virtualTourUrl && fields.virtualTourType && fields.virtualTourType !== 'NONE' ? String(fields.virtualTourType) : 'NONE',
       areaMin: fields.areaMin ? parseFloat(fields.areaMin) : null,
       areaMax: fields.areaMax ? parseFloat(fields.areaMax) : null,
       priceMin: fields.priceMin ? parseFloat(fields.priceMin) : null,
@@ -103,6 +118,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
     }
   }
 
+  revalidateSite('empreendimentos')
   return NextResponse.json(empreendimento)
 }
 
@@ -111,5 +127,6 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
   if (!session) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
   await prisma.empreendimento.delete({ where: { id: params.id } })
+  revalidateSite('empreendimentos')
   return NextResponse.json({ ok: true })
 }

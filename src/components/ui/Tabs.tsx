@@ -50,7 +50,7 @@ export function Tab({ id, children }: TabProps) {
       className={cn(
         'px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors',
         isActive
-          ? 'border-[#2E86DE] text-[#2E86DE]'
+          ? 'border-[#2563eb] text-[#2563eb]'
           : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
       )}
     >

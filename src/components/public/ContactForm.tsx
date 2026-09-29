@@ -2,10 +2,12 @@
 
 import { useState } from 'react'
 import { MessageCircle, Send, Loader2 } from 'lucide-react'
+import { trackEvent } from '@/components/public/Analytics'
 
 interface ContactFormProps {
   propertyId?: string
   propertySlug?: string
+  propertyRef?: string
   whatsapp?: string
   whatsappMessage?: string
 }
@@ -21,7 +23,7 @@ const DDI_OPTIONS = [
   { code: '+39', flag: '🇮🇹', label: 'Itália' },
 ]
 
-export function ContactForm({ propertyId, propertySlug, whatsapp, whatsappMessage }: ContactFormProps) {
+export function ContactForm({ propertyId, propertySlug, propertyRef, whatsapp, whatsappMessage }: ContactFormProps) {
   const [form, setForm] = useState({
     firstName: '',
     lastName: '',
@@ -57,7 +59,11 @@ export function ContactForm({ propertyId, propertySlug, whatsapp, whatsappMessag
         }),
       })
 
-      if (!res.ok) throw new Error('Erro ao enviar mensagem.')
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}))
+        throw new Error(d.error ?? 'Erro ao enviar mensagem.')
+      }
+      trackEvent('generate_lead', { method: 'form', property_id: propertyId ?? '', page_path: window.location.pathname })
       setSuccess(true)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao enviar. Tente novamente.')
@@ -72,7 +78,7 @@ export function ContactForm({ propertyId, propertySlug, whatsapp, whatsappMessag
         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <Send className="w-8 h-8 text-green-600" />
         </div>
-        <h3 className="text-xl font-bold text-[#0D2F5E] mb-2">Mensagem enviada!</h3>
+        <h3 className="text-xl font-bold text-[#1e3a8a] mb-2">Mensagem enviada!</h3>
         <p className="text-gray-600 text-sm">Paulo Pop entrará em contato em breve.</p>
       </div>
     )
@@ -81,7 +87,7 @@ export function ContactForm({ propertyId, propertySlug, whatsapp, whatsappMessag
   const cleanWhatsapp = whatsapp?.replace(/\D/g, '') ?? ''
   const waMessage = whatsappMessage
     ?? (propertySlug
-      ? `Olá! Tenho interesse no imóvel: ${typeof window !== 'undefined' ? window.location.origin : ''}/imoveis/${propertySlug}`
+      ? `Olá! Tenho interesse no imóvel${propertyRef ? ` ${propertyRef}` : ''}: ${typeof window !== 'undefined' ? window.location.origin : ''}/imoveis/${propertySlug}`
       : 'Olá! Gostaria de mais informações sobre imóveis.')
   const waHref = cleanWhatsapp
     ? `https://wa.me/${cleanWhatsapp}?text=${encodeURIComponent(waMessage)}`
@@ -101,7 +107,7 @@ export function ContactForm({ propertyId, propertySlug, whatsapp, whatsappMessag
             value={form.firstName}
             onChange={e => update('firstName', e.target.value)}
             placeholder="João"
-            className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86DE]"
+            className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
           />
         </div>
         <div>
@@ -114,7 +120,7 @@ export function ContactForm({ propertyId, propertySlug, whatsapp, whatsappMessag
             value={form.lastName}
             onChange={e => update('lastName', e.target.value)}
             placeholder="Silva"
-            className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86DE]"
+            className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
           />
         </div>
       </div>
@@ -128,7 +134,7 @@ export function ContactForm({ propertyId, propertySlug, whatsapp, whatsappMessag
             value={form.ddi}
             onChange={e => update('ddi', e.target.value)}
             aria-label="Código do país"
-            className="w-28 border border-gray-200 rounded-lg px-2 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2E86DE]"
+            className="w-28 border border-gray-200 rounded-lg px-2 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
           >
             {DDI_OPTIONS.map(d => (
               <option key={d.code} value={d.code}>
@@ -143,7 +149,7 @@ export function ContactForm({ propertyId, propertySlug, whatsapp, whatsappMessag
             value={form.phone}
             onChange={e => update('phone', e.target.value)}
             placeholder="(11) 99999-9999"
-            className="flex-1 border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86DE]"
+            className="min-w-0 flex-1 border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
           />
         </div>
       </div>
@@ -158,7 +164,7 @@ export function ContactForm({ propertyId, propertySlug, whatsapp, whatsappMessag
           value={form.email}
           onChange={e => update('email', e.target.value)}
           placeholder="joao@exemplo.com"
-          className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86DE]"
+          className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]"
         />
       </div>
 
@@ -172,7 +178,7 @@ export function ContactForm({ propertyId, propertySlug, whatsapp, whatsappMessag
           onChange={e => update('message', e.target.value)}
           placeholder="Olá, tenho interesse neste imóvel..."
           rows={4}
-          className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2E86DE] resize-none"
+          className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb] resize-none"
         />
       </div>
 
@@ -180,10 +186,17 @@ export function ContactForm({ propertyId, propertySlug, whatsapp, whatsappMessag
         <p className="mb-4 text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
       )}
 
+      {/* v1.1: aviso de privacidade (LGPD) */}
+      <p className="mb-3 text-[11px] leading-relaxed text-gray-400">
+        Ao enviar, você concorda com a nossa{' '}
+        <a href="/politica-de-privacidade" className="underline hover:text-gray-600" target="_blank" rel="noopener noreferrer">Política de Privacidade</a>.
+        Seus dados são usados só para responder ao seu contato.
+      </p>
+
       <button
         type="submit"
         disabled={loading}
-        className="w-full flex items-center justify-center gap-2 py-3 bg-[#0D2F5E] hover:bg-[#081E3F] text-white font-semibold rounded-xl transition-colors disabled:opacity-60"
+        className="w-full flex items-center justify-center gap-2 py-3 bg-[#1e3a8a] hover:bg-[#172554] text-white font-semibold rounded-xl transition-colors disabled:opacity-60"
       >
         {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
         Enviar mensagem
