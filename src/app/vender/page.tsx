@@ -8,7 +8,7 @@ import { SellWizard } from '@/components/public/SellWizard'
 import { Testimonials } from '@/components/public/Testimonials'
 
 export const metadata: Metadata = {
-  title: 'Vender meu imóvel — avaliação online grátis | Paulo Pop',
+  title: 'Vender meu imóvel — avaliação online grátis', // v1.4: o sufixo "| Paulo Pop" vem do layout (antes saía duplicado)
   description: 'Descubra em 2 minutos a faixa de preço do seu apartamento ou casa no DF com base nos anúncios e vendas da região, e receba o relatório do seu prédio.',
   alternates: { canonical: absUrl('/vender') },
 }

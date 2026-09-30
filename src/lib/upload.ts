@@ -75,3 +75,17 @@ export async function deleteFile(url: string): Promise<void> {
     // Arquivo pode não existir, ignorar
   }
 }
+
+/**
+ * v1.4 — lê do disco um arquivo de /uploads (URL relativa gravada no banco). Devolve null se não existir
+ * ou se o caminho sair da pasta de uploads.
+ */
+export async function readUploadFile(url: string): Promise<Buffer | null> {
+  if (!url.startsWith('/uploads/')) return null
+  const segments = url.replace(/^\/uploads\//, '').split('?')[0].split('/')
+  if (segments.some(s => s === '..' || s === '' || s.includes('\0'))) return null
+  const base = path.resolve(path.isAbsolute(UPLOAD_BASE) ? UPLOAD_BASE : path.join(process.cwd(), UPLOAD_BASE))
+  const full = path.resolve(base, ...segments)
+  if (!full.startsWith(base + path.sep)) return null
+  try { return await fs.readFile(full) } catch { return null }
+}

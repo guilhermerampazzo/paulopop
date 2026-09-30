@@ -21,6 +21,8 @@ export async function GET() {
       whatsapp: true,
       creci: true,
       company: true,
+      publicName: true,
+      companyRole: true,
       avatarUrl: true,
       active: true,
       createdAt: true,
@@ -46,6 +48,8 @@ export async function POST(request: NextRequest) {
     creci?: string
     company?: string
     companyCreci?: string
+    publicName?: string
+    companyRole?: string
     bio?: string
     instagram?: string
     facebook?: string
@@ -80,6 +84,8 @@ export async function POST(request: NextRequest) {
       creci: body.creci,
       company: body.company,
       companyCreci: body.companyCreci,
+      publicName: body.publicName || null,
+      companyRole: body.companyRole || null,
       bio: body.bio,
       instagram: body.instagram,
       facebook: body.facebook,

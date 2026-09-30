@@ -8,6 +8,7 @@ import { requireSession, canManageProperty } from '@/lib/authz'
 import { toPublicProperty } from '@/lib/property-public'
 import { appendPriceHistory } from '@/lib/price-history'
 import { proposePropertySlug, uniqueSlug } from '@/lib/property-slug'
+import { pricePerSqmValue, needsPublishAuthorization, isPublicStatus } from '@/lib/property-compare'
 
 export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
   const auth = await requireSession()
@@ -59,6 +60,8 @@ async function loadForWrite(id: string) {
       // v1.3: histórico de preço e slug com bairro
       ref: true, slug: true, price: true, priceHistory: true, previousSlugs: true,
       propertyType: true, transactionType: true, neighborhood: true, city: true,
+      // v1.4: preço/m² automático e autorização de publicação de anúncio importado
+      usefulArea: true, totalArea: true, sourcePortal: true, publishAuthConfirmedAt: true,
     },
   })
 }
@@ -89,6 +92,28 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     : []
 
   const data = normalizePropertyUpdateInput(body)
+
+  // v1.4: anúncio importado de portal de terceiros só vai ao ar com a confirmação de autorização
+  if (isPublicStatus(data.status) && needsPublishAuthorization(current)) {
+    if (body.publishAuthConfirmed === true) {
+      data.publishAuthConfirmedAt = new Date().toISOString()
+      data.publishAuthConfirmedBy = auth.user.id
+    } else {
+      return NextResponse.json({
+        error: 'Este imóvel foi importado de um portal. Para publicar, confirme que o anúncio é seu ou que você tem autorização escrita do proprietário.',
+        needsPublishAuth: true,
+      }, { status: 409 })
+    }
+  }
+
+  // v1.4: preço por m² calculado pelo sistema (preço ÷ área útil/privativa; sem ela, área total)
+  {
+    const num = (v: unknown) => (v === null || v === undefined || v === '' ? null : Number(v))
+    const p = num('price' in data ? data.price : current.price)
+    const useful = num('usefulArea' in data ? data.usefulArea : current.usefulArea)
+    const total = num('totalArea' in data ? data.totalArea : current.totalArea)
+    data.pricePerSqm = pricePerSqmValue(p, useful, total)
+  }
 
   // Validar FKs opcionais para evitar violação de constraint
   if (data.condominiumId) {

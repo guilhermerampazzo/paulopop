@@ -5,6 +5,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { AiUnavailableError } from './ai-sections'
 import { SITE_URL } from './site'
+import { safeFetch } from './net/safe-fetch'
 
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash'
 const MAX_IMAGES = 6
@@ -21,14 +22,20 @@ export interface FinishAnalysis {
 
 async function loadImage(url: string): Promise<{ mimeType: string; data: string } | null> {
   try {
-    const abs = url.startsWith('http') ? url : `${SITE_URL}${url}`
-    const res = await fetch(abs, { signal: AbortSignal.timeout(10000), cache: 'no-store' })
-    if (!res.ok) return null
-    const type = res.headers.get('content-type') ?? ''
-    if (!/image\/(jpeg|png|webp)/.test(type)) return null
-    const buf = Buffer.from(await res.arrayBuffer())
-    if (buf.length > MAX_BYTES) return null
-    return { mimeType: type.split(';')[0], data: buf.toString('base64') }
+    // v1.4: foto do próprio site (caminho relativo) é lida direto; endereço externo passa pelo leitor seguro
+    // (só https, sem rede interna), porque o endereço vem de campo preenchido no painel ou pelo conector.
+    if (url.startsWith('/') && !url.startsWith('//')) {
+      const res = await fetch(`${SITE_URL}${url}`, { signal: AbortSignal.timeout(10000), cache: 'no-store' })
+      if (!res.ok) return null
+      const type = res.headers.get('content-type') ?? ''
+      if (!/image\/(jpeg|png|webp)/.test(type)) return null
+      const buf = Buffer.from(await res.arrayBuffer())
+      if (buf.length > MAX_BYTES) return null
+      return { mimeType: type.split(';')[0], data: buf.toString('base64') }
+    }
+    const r = await safeFetch(url, { accept: 'image/webp,image/jpeg,image/png', maxBytes: MAX_BYTES, timeoutMs: 10000 })
+    if (r.status !== 200 || !/image\/(jpeg|png|webp)/.test(r.contentType)) return null
+    return { mimeType: r.contentType.split(';')[0], data: r.body.toString('base64') }
   } catch { return null }
 }
 

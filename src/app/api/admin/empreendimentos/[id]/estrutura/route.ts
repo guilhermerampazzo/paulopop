@@ -38,7 +38,9 @@ async function loadStructure(id: string) {
 }
 
 interface BlockIn { id?: string; name: string; floors: number; unitsPerFloor: number; firstFloor?: number; numbering?: string; order?: number }
-interface TypeIn { id?: string; name: string; bedrooms?: number | null; suites?: number | null; bathrooms?: number | null; area?: number | null; parking?: number | null; sunPosition?: string | null; floorPlanUrl?: string | null; finals?: string | null; order?: number }
+interface TypeIn { id?: string; name: string; bedrooms?: number | null; suites?: number | null; bathrooms?: number | null; area?: number | null; parking?: number | null; sunPosition?: string | null; floorPlanUrl?: string | null; finals?: string | null; order?: number
+  // v1.4
+  floorsLabel?: string | null; totalArea?: number | null; balconies?: number | null; priceFrom?: number | null; description?: string | null }
 
 export async function PUT(req: NextRequest, { params }: Params) {
   const auth = await requireSession()
@@ -51,6 +53,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
   const typesIn = Array.isArray(body.unitTypes) ? body.unitTypes : []
   const int = (v: unknown, min = 0, max = 999) => { const n = Number(v); return Number.isFinite(n) ? Math.max(min, Math.min(max, Math.floor(n))) : null }
   const txt = (v: unknown, max = 120) => (typeof v === 'string' && v.trim() ? limitString(stripHtml(v.trim()), max) : null)
+  const dec = (v: unknown) => { if (v === null || v === undefined || v === '') return null; const n = Number(String(v).replace(',', '.')); return Number.isFinite(n) && n > 0 ? n : null }
 
   const result = await prisma.$transaction(async (tx) => {
     // Tipologias
@@ -62,6 +65,9 @@ export async function PUT(req: NextRequest, { params }: Params) {
         bedrooms: int(t.bedrooms, 0, 20), suites: int(t.suites, 0, 20), bathrooms: int(t.bathrooms, 0, 20), parking: int(t.parking, 0, 20),
         area: t.area != null && t.area !== ('' as unknown) ? Number(t.area) : null,
         sunPosition: txt(t.sunPosition, 60), floorPlanUrl: txt(t.floorPlanUrl, 500), finals: txt(t.finals, 200),
+        // v1.4: tipologia completa
+        floorsLabel: txt(t.floorsLabel, 80), balconies: int(t.balconies, 0, 20), description: txt(t.description, 1000),
+        totalArea: dec(t.totalArea), priceFrom: dec(t.priceFrom),
       }
       const saved = t.id
         ? await tx.empreendimentoUnitType.update({ where: { id: t.id }, data }).catch(() => tx.empreendimentoUnitType.create({ data }))

@@ -21,10 +21,12 @@ export default async function EstudoPublicoPage({ params }: { params: { token: s
       </div>
     )
   }
-  const study = await loadStudy(ref.id)
+  const study = await loadStudy(ref.id, { approvedOnly: true })
   if (!study) notFound()
   return (
     <div className="min-h-screen bg-[#dfe2ea] px-2 py-6 print:bg-white print:p-0">
+      {/* v1.4: lâminas 16:9 — a regra de página vale só neste documento */}
+      <style dangerouslySetInnerHTML={{ __html: '@page { size: 297mm 167mm; margin: 0; }' }} />
       <div className="mx-auto mb-4 flex max-w-[1100px] flex-wrap items-center justify-between gap-3 print:hidden">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-wider text-[#2563eb]">Estudo de mercado</p>

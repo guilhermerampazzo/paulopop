@@ -9,7 +9,7 @@ import { stripHtml, limitString } from '@/lib/sanitize'
 /** v1.1 — Meu perfil: o corretor logado lê e edita os próprios dados (nome, CRECI, foto, contatos, redes). */
 const SELECT = {
   id: true, name: true, email: true, role: true, phone: true, whatsapp: true, creci: true, bio: true, avatarUrl: true,
-  company: true, companyCreci: true, instagram: true, facebook: true, linkedin: true, youtube: true, telegram: true, twitter: true,
+  company: true, companyCreci: true, publicName: true, companyRole: true, instagram: true, facebook: true, linkedin: true, youtube: true, telegram: true, twitter: true,
 } as const
 
 export async function GET() {
@@ -34,6 +34,9 @@ export async function PUT(request: NextRequest) {
     avatarUrl: safe(body.avatarUrl, 500),
     company: safe(body.company, 200),
     companyCreci: safe(body.companyCreci, 50),
+    // v1.4: hub do corretor
+    publicName: safe(body.publicName, 150),
+    companyRole: safe(body.companyRole, 80),
     instagram: safe(body.instagram, 300),
     facebook: safe(body.facebook, 300),
     linkedin: safe(body.linkedin, 300),

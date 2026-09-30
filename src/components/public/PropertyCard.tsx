@@ -13,7 +13,7 @@ import { formatCurrency } from '@/lib/formatters'
 import { cn } from '@/lib/utils'
 import { formatDuration } from '@/lib/sales'
 import { isFavorite, toggleFavorite, subscribe, FAVORITES_KEY } from '@/lib/favorites'
-import { shareLink, waHref } from '@/lib/share'
+import { shareProperty, waHref } from '@/lib/share'
 
 export interface PropertyCardProps {
   id: string
@@ -49,6 +49,8 @@ export interface PropertyCardProps {
   priceReduced?: boolean
   /** v1.3: empreendimento em lançamento */
   isLaunch?: boolean
+  /** v1.4: condição do imóvel (Na planta, Novo, Usado, Em construção) */
+  condition?: string | null
   /** v1.3: WhatsApp do corretor (botão no card) */
   whatsapp?: string | null
   /** v1.3: primeira dobra → carrega a capa com prioridade */
@@ -87,6 +89,7 @@ function PropertyCardComponent({
   isNew,
   priceReduced,
   isLaunch,
+  condition,
   whatsapp,
   priority,
   className,
@@ -194,7 +197,7 @@ function PropertyCardComponent({
           <button
             type="button"
             aria-label="Compartilhar imóvel"
-            onClick={e => { stop(e); void shareLink({ url: `${window.location.origin}/imoveis/${slug}`, title: title ?? propertyType ?? 'Imóvel' }) }}
+            onClick={e => { stop(e); void shareProperty({ url: `${window.location.origin}/imoveis/${slug}`, title: title ?? propertyType ?? 'Imóvel', imageUrl: photos.length ? `/api/og/imovel/${id}?modo=foto` : null }) }}
             className="w-8 h-8 bg-white/90 rounded-full flex items-center justify-center hover:bg-white transition-colors"
           >
             <Share2 className="w-4 h-4 text-gray-500" />
@@ -270,6 +273,7 @@ function PropertyCardComponent({
         <div className="min-w-0">
           <p className="text-xs font-semibold text-[#2563eb] uppercase tracking-wide mb-0.5">
             {propertyType ?? (transactionType === 'RENT' ? 'Para alugar' : 'Para venda')}
+            {condition && <span className="ml-1.5 font-medium normal-case tracking-normal text-amber-700">· {condition}</span>}
           </p>
           {addressLine && (
             <p className="text-sm text-gray-600 truncate">{addressLine}</p>

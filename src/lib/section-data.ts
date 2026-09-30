@@ -32,7 +32,7 @@ export function cityMatchWhere(names: string[]): Prisma.PropertyWhereInput {
  * Use sempre com `toCard()`.
  */
 export const CARD_SELECT = {
-  id: true, slug: true, ref: true, title: true, propertyType: true, transactionType: true, status: true,
+  id: true, slug: true, ref: true, title: true, propertyType: true, transactionType: true, status: true, condition: true,
   price: true, totalArea: true, usefulArea: true, suites: true, balconies: true, bedrooms: true, bathrooms: true,
   environments: true, totalParkingSpots: true, neighborhood: true, city: true, state: true, zipCode: true, createdAt: true,
   daysOnMarket: true, salePrice: true, showSalePrice: true, priceHistory: true,

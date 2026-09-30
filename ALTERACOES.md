@@ -1,4 +1,235 @@
-# Corretor Paulo Pop — Pacote completo v1.3 (inclui 1.1 e 1.2)
+# Corretor Paulo Pop — Pacote completo v1.4 (inclui 1.1, 1.2 e 1.3)
+
+**Versão:** 1.4 · **Data:** 30/09/2026 · **Base:** `paulopop-v1.3-completo.zip` · **Pacote único:** `corretorpaulopop-v1.4.zip`
+
+**Novo na 1.4:** hub do corretor padronizado, compartilhar com a foto principal, preço por m² com faixa de tolerância e ajuste por imóvel no painel (cálculo automático), condição do imóvel no anúncio, ficha completa para imprimir (12 fotos + mapa), tipologias completas nos empreendimentos, **Área de Inteligência** (350 quadras de Samambaia, banco de amostras, ordem de busca quadra a quadra), **conector do Claude** (`/api/mcp`) com a aba **Pesquisa** no estudo de mercado, e importador de anúncios por link (DF Imóveis, WImóveis, OLX e outros) ou por texto colado.
+
+Este pacote reúne as quatro versões num só código, para **uma única publicação**. As quatro migrações de banco (`20260929…_v1_1`, `20260930…_v1_2`, `20261001…_v1_3`, `20261002…_v1_4`) rodam sozinhas, em ordem, na subida do contêiner; todas só adicionam colunas e tabelas e podem ser executadas mais de uma vez sem erro.
+
+> **Se você já está na 1.3 e vai só para a 1.4:** troque o código, não mexa no `.env` (não há variável nova) e suba. Só a migração `20261002000000_v1_4_hub_inteligencia_conector` será aplicada. Depois siga a conferência da seção 2.3.
+
+## 1. Resumo da 1.4
+
+| Área | Como era | Como ficou |
+|---|---|---|
+| Hub do corretor (1.4) | Foto redonda cortada, nome do cadastro, CRECI e imobiliária em formatos diferentes em cada tela; linhas truncadas no celular. | Cartão único (`AgentCard`) na página do imóvel, na ficha impressa e no estudo de mercado: **foto inteira, sem corte** (ajustada ao quadro), **Corretor Paulo Pop**, **(61) 98409-0968** com o ícone do WhatsApp (abre a conversa), linha **CRECI/DF Nº 12896**, linha **Corretor Associado REMAX INOVELAR**. Nada é cortado: as linhas quebram dentro do cartão. Dois campos novos em Meu perfil: "Nome que aparece no site" e "Vínculo com a imobiliária", com prévia do cartão. |
+| Compartilhar imóvel (1.4) | O link ia sozinho; a prévia usava a primeira foto no tamanho original (às vezes sem imagem no WhatsApp). | A prévia do link (WhatsApp, Facebook, Telegram) mostra a **foto principal** em 1200×630 (`/api/og/imovel/{id}`). No celular, o botão Compartilhar envia a foto junto com o link quando o aparelho permite. |
+| Preço por m² comparado (1.4) | Mostrava sempre "X% acima/abaixo da média". | Regra pedida pelo Paulo, com faixa de tolerância: **abaixo da referência** → mostra a referência e o percentual; **até 10% acima** → mostra só "Imóvel no preço de mercado", sem números de comparação; **mais de 10% acima** → o bloco some para o público. |
+| Hub de preço/m² no painel (1.4) | Não existia; o R$/m² era digitado. | Em cada imóvel (aba Principal): R$/m² **calculado sozinho** (valor ÷ área útil/privativa; sem ela, área total) e gravado ao salvar; médias automáticas do bairro e do prédio; modo **Automática / Minha referência / Não mostrar**; valor de referência com botões −1% / +1%; rótulo público; nota interna; e a frase "O público vê: …" ao vivo. |
+| Condição no anúncio (1.4) | O campo existia só no painel. | **Na planta / Novo / Usado / Em construção** aparece na página do imóvel (selo e ficha), nos cartões da lista e na ficha impressa. |
+| Imprimir (1.4) | Imprimia a tela do site, cortando fotos, simulador e mapa. | Botão **Imprimir ficha** abre `/imoveis/{slug}/imprimir` (A4): 12 fotos (a primeira é a principal, todas inteiras), Detalhes do imóvel, Preço por m² comparado (mesma regra do site), Sobre este imóvel, Características, Quanto custa por mês, Localização e mapa (imagem do OpenStreetMap com marcador) e o cartão do corretor. Nenhum bloco é partido entre páginas. |
+| Tipologias (1.4) | Nome, quartos, suítes, banheiros, área, vagas, posição, finais. | Acrescidos: **Andar(es)**, varandas, área total, **preço a partir de**, planta (upload) e descrição. A página do empreendimento ganhou os cartões de tipologia com todos os campos. |
+| Área de Inteligência (1.4) | Não existia. | Menu **Inteligência**: **Endereços** (350 quadras de Samambaia com termos de busca e posição no mapa; editar, desativar, acrescentar quadras de outras cidades), **Banco de amostras** (todo anúncio lido fica guardado por link, com histórico de preço), **Buscas** (onde já se procurou), **Regiões** (observações internas) e **Conector do Claude**. |
+| Ordem de busca (1.4) | O corretor procurava amostras à mão. | Ordem fixa: 1) o próprio site (ativos, vendidos e banco de amostras); 2) mesmo condomínio; 3) a quadra do imóvel; 4) as de mesma numeração (QR/QN/QS); 5) as vizinhas, da mais próxima para a mais distante; 6) bairro e cidade. Portais prioritários: WImóveis, DF Imóveis e OLX; os demais só se faltar amostra. Para na meta; amostra recusada reabre a busca de onde parou. |
+| Estudo de mercado: aba Pesquisa (1.4) | Amostras só por link colado ou à mão; todas entravam direto no cálculo. | Aba **Pesquisa**: meta de amostras, quadra, condomínio, tolerâncias, portais e regras do corretor; botão **Buscar no meu site**; botão **Pedir pesquisa ao Claude** (gera o pedido pronto para colar); lista de **candidatas** com Aprovar / Não serve (com motivo); recusadas; histórico. **Candidata não entra no cálculo nem no relatório** até ser aprovada. Na aba Amostras: "cole o texto do anúncio" quando o portal bloqueia o link. |
+| Conector do Claude (1.4) | Não existia. | `POST /api/mcp/{token}` (protocolo MCP): o Claude lê os estudos, consulta as quadras, registra candidatas com link e trecho do anúncio e cria rascunhos de anúncio. **Não aprova, não publica e não apaga.** O endereço com o token é gerado no painel, mostrado uma vez e pode ser revogado. |
+| Importador de anúncios (1.4) | Só RE/MAX. | Imóveis → **Importar anúncio**, três abas: RE/MAX (como era), **Outros portais (link)** e **Colar texto**. O site lê, o corretor confere e o cadastro entra como **rascunho**. As fotos do anúncio só são copiadas, e o imóvel só pode ser publicado, depois de marcar "este anúncio é meu ou tenho autorização escrita do proprietário" (Lei 6.530/78, art. 20, III). |
+| Banco de dados (1.4) | — | Migração `20261002000000_v1_4_hub_inteligencia_conector` (seção 4). Só adiciona. |
+
+## 2. Como publicar — passo a passo único (1.1 + 1.2 + 1.3 + 1.4)
+
+### 2.1 Backup
+
+```bash
+docker compose exec postgres pg_dump -U paulopop paulopop > backup-antes-v1.4.sql
+docker compose exec app tar czf - -C /app/public/uploads . > uploads-antes-v1.4.tgz
+```
+
+### 2.2 Código e `.env`
+
+1. Substitua o código pela pasta `paulopop-master/` do pacote `corretorpaulopop-v1.4.zip` (mantenha o `.env` do servidor e a pasta de uploads).
+2. `.env`: **nenhuma variável nova na 1.4**. Continuam valendo: `NEXTAUTH_SECRET` (obrigatória), `NEXT_PUBLIC_SITE_URL=https://corretorpaulopop.com` (usada no endereço do conector e na imagem de compartilhamento), `GEMINI_API_KEY` e `GOOGLE_MAPS_SERVER_KEY` (opcionais).
+3. Suba: `docker compose up -d --build`. O `scripts/docker-start.sh` aplica as migrações pendentes antes de iniciar.
+4. **Saída de rede do servidor** (só se houver firewall de saída): liberar `tile.openstreetmap.org` (mapa da ficha impressa) e os portais `dfimoveis.com.br`, `wimoveis.com.br`, `olx.com.br`, `vivareal.com.br`, `zapimoveis.com.br`, `imovelweb.com.br`, `chavesnamao.com.br` e os endereços de foto deles (importador). Sem isso o site continua funcionando: a ficha avisa "mapa indisponível" e o importador pede o texto colado.
+5. **Registro de acessos (importante):** o endereço do conector traz o token no caminho (`/api/mcp/ppk_…`). Se o proxy (Nginx, Traefik, Cloudflare) grava o caminho das requisições, configure para **não registrar** `/api/mcp/` ou mascarar o trecho depois de `/api/mcp/`. Exemplo em Nginx: `location /api/mcp/ { access_log off; proxy_pass …; }`.
+
+### 2.3 Conferência depois de publicar
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" https://corretorpaulopop.com/api/health                        # 200
+curl -s -o /dev/null -w "%{http_code}\n" https://corretorpaulopop.com/api/mcp                           # 405 (só aceita POST)
+curl -s -o /dev/null -w "%{http_code}\n" -X POST -H 'content-type: application/json' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"ping"}' https://corretorpaulopop.com/api/mcp                    # 401 (sem token)
+curl -s -o /dev/null -w "%{http_code}\n" https://corretorpaulopop.com/api/admin/inteligencia/quadras   # 401
+curl -s -o /dev/null -w "%{http_code} %{content_type}\n" \
+  "https://corretorpaulopop.com/api/mapa-estatico?lat=-15.879&lng=-48.087"                              # 200 image/png
+```
+
+- ☐ Página de um imóvel: cartão do corretor com foto inteira, WhatsApp com ícone, "CRECI/DF Nº 12896", "Corretor Associado REMAX INOVELAR"; selo da condição (Usado, Novo…); bloco "Preço por m² comparado" conforme a regra.
+- ☐ Colar o link de um imóvel no WhatsApp: a prévia mostra a foto principal (o WhatsApp guarda prévias antigas; teste com um imóvel que ainda não foi compartilhado).
+- ☐ Botão **Imprimir ficha** → 12 fotos, todas as seções, mapa, nada cortado. Salvar em PDF e conferir.
+- ☐ Painel → um imóvel → "Preço por m² comparado": trocar a referência e ver a frase "O público vê".
+- ☐ Painel → **Meu perfil**: preencher "Nome que aparece no site" e "Vínculo com a imobiliária".
+- ☐ Painel → Empreendimentos → Estrutura e unidades → tipologia com Andar(es), varandas e preço; conferir na página do prédio.
+- ☐ Painel → **Inteligência** → Endereços mostra "Samambaia: 350 quadras".
+- ☐ Painel → Inteligência → **Conector do Claude** → Gerar endereço → colar no Claude (Personalizar → Conectores → Adicionar conector personalizado) → pedir "liste meus estudos".
+- ☐ Estudo de mercado → aba **Pesquisa** → Buscar no meu site → aprovar uma candidata e recusar outra → aba Amostras e cálculo conferem.
+- ☐ Imóveis → Importar anúncio → **Colar texto** → criar rascunho → tentar "Salvar e Ativar": aparece o pedido de confirmação de autorização.
+- ☐ Celular (390 px): página do imóvel, ficha, Inteligência e aba Pesquisa sem rolagem lateral.
+
+### 2.4 Conteúdo que o Paulo preenche no painel
+
+- **Meu perfil:** Nome que aparece no site = `Corretor Paulo Pop`; Vínculo com a imobiliária = `Corretor Associado`; Imobiliária = `REMAX INOVELAR`; CRECI = `12896/DF`; WhatsApp = `61984090968`; foto de corpo ou meio corpo na vertical (4:5).
+- **Imóveis:** conferir o campo **Condição** e a **área útil** (o R$/m² é calculado a partir dela). Onde quiser, ajustar a referência do preço por m².
+- **Empreendimentos:** completar as tipologias (andares, varandas, preço a partir de, planta).
+- **Inteligência → Conector do Claude:** gerar o endereço e ligar no Claude (uma vez).
+- **Inteligência → Regiões:** revisar as observações de Samambaia (são de uso interno).
+
+### 2.5 Voltar atrás (rollback)
+
+Suba o código 1.3. As tabelas e colunas novas podem ficar (o código antigo as ignora). Para remover tudo da 1.4:
+
+```sql
+DROP TABLE IF EXISTS "study_search_runs", "api_tokens", "intel_region_notes", "intel_quadras" CASCADE;
+ALTER TABLE "market_study_samples" DROP COLUMN IF EXISTS "origin", DROP COLUMN IF EXISTS "candidateStatus", DROP COLUMN IF EXISTS "rejectedReason", DROP COLUMN IF EXISTS "rejectedAt", DROP COLUMN IF EXISTS "foundAtStep", DROP COLUMN IF EXISTS "foundAtQuadra", DROP COLUMN IF EXISTS "collectedAt", DROP COLUMN IF EXISTS "sourceText", DROP COLUMN IF EXISTS "altUrls", DROP COLUMN IF EXISTS "suites", DROP COLUMN IF EXISTS "bankId";
+DROP TABLE IF EXISTS "sample_bank" CASCADE;
+ALTER TABLE "market_studies" DROP COLUMN IF EXISTS "searchStatus", DROP COLUMN IF EXISTS "targetSamples", DROP COLUMN IF EXISTS "searchParams", DROP COLUMN IF EXISTS "searchCursor";
+ALTER TABLE "properties" DROP COLUMN IF EXISTS "sqmCompareMode", DROP COLUMN IF EXISTS "sqmRefValue", DROP COLUMN IF EXISTS "sqmRefLabel", DROP COLUMN IF EXISTS "sqmRefNote", DROP COLUMN IF EXISTS "sourcePhotoUrls", DROP COLUMN IF EXISTS "publishAuthConfirmedAt", DROP COLUMN IF EXISTS "publishAuthConfirmedBy";
+ALTER TABLE "users" DROP COLUMN IF EXISTS "publicName", DROP COLUMN IF EXISTS "companyRole";
+ALTER TABLE "empreendimento_unit_types" DROP COLUMN IF EXISTS "floorsLabel", DROP COLUMN IF EXISTS "totalArea", DROP COLUMN IF EXISTS "balconies", DROP COLUMN IF EXISTS "priceFrom", DROP COLUMN IF EXISTS "description";
+DELETE FROM "_prisma_migrations" WHERE migration_name = '20261002000000_v1_4_hub_inteligencia_conector';
+```
+
+Atenção: antes de voltar, as candidatas e recusadas ainda estão em `market_study_samples`. No código 1.3 elas entrariam no cálculo como amostras comuns. Apague-as antes (`DELETE FROM "market_study_samples" WHERE "candidateStatus" <> 'APPROVED';`) ou mantenha o código 1.4.
+
+## 3. Mudanças por área (1.4)
+
+### 3.1 Hub do corretor, compartilhar e condição
+
+**Como era:** cada tela montava os dados do corretor do seu jeito; a foto usava `object-cover` num círculo; o CRECI aparecia como estava no cadastro.
+**Como ficou:** `src/lib/agent-display.ts` (`formatCreci` → "CRECI/DF Nº 12896", `formatPhoneBR` → "(61) 98409-0968", `agentCompanyLine`, `agentDisplay`) e o componente `src/components/public/AgentCard.tsx` (foto com `object-contain`, sem truncar texto). Usado em `imoveis/[slug]/page.tsx`, na ficha impressa e em `StudyReport.tsx`. `og:image` e `twitter:image` do imóvel apontam para `GET /api/og/imovel/[id]` (capa em JPEG 1200×630; `?modo=foto` devolve a foto inteira para o botão Compartilhar). `src/lib/share.ts` ganhou `shareProperty` (Web Share com arquivo quando o aparelho aceita). Condição: `PropertyCard.tsx`, `section-data.ts` (`CARD_SELECT`) e a página do imóvel.
+**Arquivos:** `src/lib/agent-display.ts`, `share.ts`, `upload.ts` (`readUploadFile`); `src/components/public/AgentCard.tsx`, `PropertyCard.tsx`, `PropertySummaryBar.tsx`, `StudyReport.tsx`; `src/components/ui/WhatsAppIcon.tsx`; `src/app/api/og/imovel/[id]/route.ts`; `src/app/admin/perfil/page.tsx`, `admin/corretores/page.tsx`; `src/app/api/admin/perfil/route.ts`, `admin/corretores/*`.
+
+### 3.2 Preço por m²
+
+**Como era:** `diffLabel` mostrava sempre o percentual; `pricePerSqm` era campo livre.
+**Como ficou:** `src/lib/sqm-display.ts` — `sqmVerdict(own, avg)`: ≤ −2% "X% abaixo da referência"; até +10% "Imóvel no preço de mercado"; acima disso oculto (`SQM_TOLERANCE_PCT = 10`, um número só para mudar a faixa). `sqmPublicView` junta a média automática (bairro/prédio) ou a referência manual do imóvel. `PUT /api/imoveis/[id]` recalcula `pricePerSqm` a cada gravação. Painel: `src/components/admin/SqmHubPanel.tsx` (dentro de `PropertyForm/TabPrincipal.tsx`) e `GET /api/admin/imoveis/[id]/sqm`.
+**Arquivos:** `src/lib/sqm-display.ts`, `sqm-client.ts`, `property-compare.ts`, `property-update.ts`; `src/components/admin/SqmHubPanel.tsx`, `PropertyForm/TabPrincipal.tsx`; `src/app/api/imoveis/[id]/route.ts`, `api/admin/imoveis/[id]/sqm/route.ts`; `src/app/imoveis/[slug]/page.tsx`.
+
+### 3.3 Ficha para imprimir e tipologias
+
+**Como era:** `window.print()` na página do anúncio, com regra de página 16:9 global (do estudo de mercado).
+**Como ficou:** página própria `src/app/imoveis/[slug]/imprimir/page.tsx` (A4, `break-inside: avoid` em cada bloco, fotos com `object-contain`), `AutoPrint.tsx` (espera as imagens e abre a impressão; `?semimprimir=1` só mostra), mapa por `GET /api/mapa-estatico` (mosaico de blocos do OpenStreetMap montado com `sharp`, cache de 7 dias; se o serviço de mapas falhar, `PrintMapImage.tsx` mostra o endereço do anúncio). A regra `@page` saiu do `globals.css` e ficou em cada documento (estudo 16:9, ficha A4). Tipologias: campos novos no `EstruturaEditor.tsx` e na rota de estrutura; `TipologiasTable.tsx` na página do empreendimento.
+**Arquivos:** `src/app/imoveis/[slug]/imprimir/page.tsx`; `src/components/public/AutoPrint.tsx`, `PrintMapImage.tsx`, `TipologiasTable.tsx`, `PublicShell.tsx`; `src/lib/static-map.ts`; `src/app/api/mapa-estatico/route.ts`; `src/app/globals.css`, `estudo/[token]/page.tsx`; `src/components/admin/EstruturaEditor.tsx`; `src/app/api/admin/empreendimentos/[id]/estrutura/route.ts`; `src/app/empreendimentos/[slug]/page.tsx`.
+
+### 3.4 Área de Inteligência
+
+**Como era:** não existia.
+**Como ficou:** `src/data/samambaia-quadras.json` (350 quadras conferidas com o Mapa 15A da RA XII; posição relativa em metros para ordenar vizinhas; 11 observações de região) é carregado nas tabelas `intel_quadras` e `intel_region_notes` no primeiro acesso. `src/lib/intel/quadras.ts` (funções puras): `parseQuadraRefs`/`matchQuadra` (acha "QR 303", "Qd. 303", "QN-303" no endereço), `sisterQuadras`, `neighborQuadras`, `buildSearchPlan` e `nextSearchStep` (cursor `{tier, index, done, key}`; a `key` guarda quadra-base e condomínio: se o endereço for corrigido, a busca recomeça). `intel/candidates.ts`: `registerCandidates` (um registro por link normalizado; mesmo imóvel em outro portal é juntado em `altUrls`; trava por estudo), `rejectSample`, `sampleCounts`. `intel/site-search.ts`: passo 1 (anúncios do site e banco de amostras, na ordem do plano; valor de fechamento só quando a venda foi registrada com "mostrar valor final"). Outras cidades: acrescentar quadras em Inteligência → Endereços; sem base, a busca vai por condomínio, bairro e cidade.
+**Arquivos:** `src/data/samambaia-quadras.json`; `src/lib/intel/*` (quadras, db, candidates, site-search, url-key, number, prompt); `src/app/admin/inteligencia/*`; `src/app/api/admin/inteligencia/*` (quadras, banco, buscas, regioes, tokens); `src/components/admin/AdminSidebar.tsx`, `src/app/admin/layout.tsx`.
+
+### 3.5 Estudo de mercado: candidatas e aba Pesquisa
+
+**Como era:** toda amostra gravada entrava no cálculo; salvar o estudo apagava as amostras que não estavam na tela.
+**Como ficou:** `market_study_samples.candidateStatus` (`CANDIDATE`, `APPROVED`, `REJECTED`). `computeStudy` e o relatório público (`loadStudy(id, { approvedOnly: true })`) usam só as aprovadas. `PUT /api/admin/estudos/[id]` recebe `knownSampleIds` e só apaga a amostra que a tela conhecia e o corretor removeu — candidatas registradas pelo Claude enquanto a tela estava aberta nunca são apagadas. `StudyResearchTab.tsx` é a aba Pesquisa. Links de amostra passam a aceitar só `http(s)`.
+**Arquivos:** `src/lib/market-study.ts`, `market-study-db.ts`, `study-guard.ts`, `json-body.ts`; `src/components/admin/StudyResearchTab.tsx`; `src/app/admin/estudos/[id]/page.tsx`; `src/app/api/admin/estudos/[id]/route.ts`, `pesquisa/route.ts`, `candidatas/route.ts`, `amostra-link/route.ts`; `src/app/estudo/[token]/page.tsx`.
+
+### 3.6 Conector do Claude (MCP)
+
+**Como era:** não existia.
+**Como ficou:** servidor MCP mínimo, sem dependência nova e sem sessão: cada `POST` traz uma mensagem JSON-RPC 2.0 e recebe JSON (`initialize`, `ping`, `tools/list`, `tools/call`; versões de protocolo 2025-06-18, 2025-03-26 e 2024-11-05). Autenticação por token (`ppk_…`, 32 bytes aleatórios): no caminho (`/api/mcp/{token}`, para colar no Claude) ou no cabeçalho `Authorization: Bearer`. O banco guarda só o `sha256` e os 10 primeiros caracteres; o token aparece uma vez e pode ser revogado. Limites: 120 chamadas/min por token, 300/min por IP, corpo de 600 KB. **Não há OAuth nesta versão**: quem tiver o endereço acessa os estudos daquele corretor pelo conector — trate como senha (ver 2.2, item 5).
+
+Ferramentas (10): `listar_estudos`, `ler_estudo`, `buscar_no_site`, `proxima_quadra`, `consultar_quadras`, `registrar_candidatas`, `registrar_busca`, `recusar_amostra`, `resumo_calculo`, `importar_anuncio`. Garantias no código: o conector só enxerga os estudos do dono do token (administrador vê todos); só cria amostra como candidata; exige link e trecho do anúncio; não tem ferramenta para aprovar, publicar ou apagar; `recusar_amostra` exige motivo; `importar_anuncio` cria rascunho sem fotos e sem autorização; links da RE/MAX não entram pelo conector.
+
+Como ligar no Claude: Painel → Inteligência → Conector do Claude → **Gerar endereço do conector** → copiar → no Claude: **Personalizar → Conectores → Adicionar conector personalizado** → nome "Corretor Paulo Pop" + o endereço. A pesquisa nos portais é feita pelo Claude no navegador do Paulo (Claude no Chrome); o site não acessa os portais para pesquisar.
+**Arquivos:** `src/lib/mcp/auth.ts`, `server.ts`, `tools.ts`, `http.ts`; `src/app/api/mcp/route.ts`, `api/mcp/[token]/route.ts`; `src/app/api/admin/inteligencia/tokens/route.ts`.
+
+### 3.7 Importador por link e por texto colado
+
+**Como era:** só RE/MAX (`/api/admin/importar-remax`), publicando na hora.
+**Como ficou:** `src/lib/portal-reader/parse.ts` (funções puras): `parseListingHtml` combina metatags `og:*`, JSON-LD, dados embutidos (`__NEXT_DATA__`, formato VivaReal/ZAP e OLX) e padrões de texto; `parseListingText` lê anúncio colado (preço sem confundir com condomínio/IPTU, áreas, quartos, suítes, banheiros, vagas, andar, posição, endereço, cidade do DF, tipo, venda/aluguel). Campo não encontrado fica vazio. `read.ts` busca a página só nos portais da lista, por `safeFetch` (só https, sem IP, sem rede interna, redirecionamento conferido, tamanho limitado). `import.ts`: `createDraftFromListing` cria sempre `DRAFT`, com `sourcePortal`, `sourceId`, `sourceUrl` e `sourcePhotoUrls`; as fotos só são baixadas com a confirmação (`bringSourcePhotos`). Porta de autorização em `PUT /api/imoveis/[id]`, `POST /api/imoveis/bulk` e `/api/imoveis/[id]/venda`: imóvel com `sourcePortal` diferente de `remax` não passa a Ativo, Vendido ou Alugado sem `publishAuthConfirmed` (responde 409 e o painel abre a confirmação). A RE/MAX continua no importador próprio.
+**Arquivos:** `src/lib/portal-reader/parse.ts`, `read.ts`, `import.ts`; `src/lib/net/safe-fetch.ts`; `src/app/api/admin/importar/route.ts`, `api/admin/imoveis/[id]/fotos-origem/route.ts`; `src/app/admin/imoveis/importar/page.tsx`, `ImportarTabs.tsx`, `ImportarPortalClient.tsx`; `src/components/admin/SourcePhotosBox.tsx`, `PropertyForm/index.tsx`, `PropertyForm/TabPrincipal.tsx`; `src/app/api/imoveis/[id]/route.ts`, `bulk/route.ts`, `[id]/venda/route.ts`.
+
+### 3.8 Ajustes encontrados nos testes e na revisão
+
+- Painel do imóvel no celular: a barra de botões do rodapé saía da tela (já acontecia na 1.3); agora quebra de linha.
+- `src/lib/ai-vision.ts` (IA nas fotos, 1.3): endereços externos de foto passam pelo `safeFetch` (antes o servidor buscava qualquer endereço informado).
+- Cabeçalho do painel mostra "Inteligência" no celular.
+- Título duplicado "| Paulo Pop | Paulo Pop" (item aprovado no backlog em 29/09): corrigido em `/vender` e `/relatorio/[propertyId]`; as demais páginas públicas foram conferidas e usam um sufixo só.
+
+## 4. Banco de dados (1.4)
+
+Migração `prisma/migrations/20261002000000_v1_4_hub_inteligencia_conector/migration.sql` (idempotente: `ADD COLUMN IF NOT EXISTS`, `CREATE TABLE IF NOT EXISTS`).
+
+| Tabela | Colunas | Uso |
+|---|---|---|
+| `users` | publicName, companyRole | Hub do corretor |
+| `properties` | sqmCompareMode (AUTO/MANUAL/HIDDEN), sqmRefValue, sqmRefLabel, sqmRefNote, sourcePhotoUrls[], publishAuthConfirmedAt, publishAuthConfirmedBy | Preço/m² por imóvel; importação e autorização |
+| `empreendimento_unit_types` | floorsLabel, totalArea, balconies, priceFrom, description | Tipologias |
+| `market_studies` | searchStatus (NONE/REQUESTED/RUNNING/DONE), targetSamples (10), searchParams JSON, searchCursor JSON | Pesquisa de amostras |
+| `market_study_samples` | origin (MANUAL/LINK/CLAUDE/SITE), candidateStatus (padrão APPROVED), rejectedReason, rejectedAt, foundAtStep, foundAtQuadra, collectedAt, sourceText, altUrls[], suites, bankId | Candidatas e prova da coleta. As amostras que já existem ficam como APPROVED. |
+| `intel_quadras` (nova) | city, sector, series, quadra, prefix, number, type, searchTerms[], mapX, mapY, latitude, longitude, notes, active · único (city, quadra) | Base de endereços |
+| `intel_region_notes` (nova) | city, name, series[], confirmed, market · único (city, name) | Observações internas por região |
+| `sample_bank` (nova) | urlKey (único), url, portal, externalId, title, advertiser, location, city, neighborhood, quadra, price, areaPrivate, areaTotal, bedrooms, suites, bathrooms, parking, floor, condoFee, publishedAt, photoUrl, sourceText, priceHistory JSON, firstSeenAt, lastSeenAt | Banco de amostras |
+| `study_search_runs` (nova) | studyId, source (MCP/PANEL), step, quadra, portal, query, found, read, registered, notes | Histórico das buscas |
+| `api_tokens` (nova) | userId, name, tokenHash (único), prefix, lastUsedAt, revokedAt | Tokens do conector (só o hash) |
+
+A base de Samambaia não está na migração: é carregada do arquivo `src/data/samambaia-quadras.json` na primeira vez que alguém abre Inteligência ou pede uma busca.
+
+## 5. API (1.4)
+
+| Método | Rota | Acesso | Observação |
+|---|---|---|---|
+| POST | `/api/mcp/{token}` · `/api/mcp` (Bearer) | Token do conector | MCP (JSON-RPC). GET/DELETE → 405. Sem token válido → 401. |
+| GET/POST/DELETE | `/api/admin/inteligencia/tokens` | Login (o dono; ADMIN vê todos) | Gera (mostra o endereço uma vez), lista e revoga. Máximo 5 ativos por corretor. |
+| GET/POST/PUT | `/api/admin/inteligencia/quadras` | GET: login · POST/PUT: ADMIN | Base de endereços. |
+| GET/DELETE | `/api/admin/inteligencia/banco` | GET: login · DELETE: ADMIN | Banco de amostras (50 por página). |
+| GET | `/api/admin/inteligencia/buscas` | Login (as suas; ADMIN todas) | Histórico. |
+| GET/PUT | `/api/admin/inteligencia/regioes` | GET: login · PUT: ADMIN | Observações internas. |
+| GET/PUT/POST | `/api/admin/estudos/[id]/pesquisa` | Login + dono/ADMIN | Dados da aba Pesquisa; salvar parâmetros (`request: true` pede a pesquisa); ações `site`, `restart`, `finish`. |
+| POST | `/api/admin/estudos/[id]/candidatas` | Login + dono/ADMIN | `{ action: approve \| reject \| restore, sampleIds[], reason }`. Recalcula o estudo. |
+| POST | `/api/admin/estudos/[id]/amostra-link` | Login + dono/ADMIN | Agora aceita `{ text }` (anúncio colado) além de `{ url }`. |
+| PUT | `/api/admin/estudos/[id]` | Login + dono/ADMIN | Novo: `knownSampleIds[]`, `targetSamples`, `searchParams`, `searchStatus`. |
+| POST | `/api/admin/importar` | Login | `{ step: 'ler', url?, text? }` → campos lidos; `{ step: 'criar', draft, authConfirmed }` → rascunho. |
+| POST | `/api/admin/imoveis/[id]/fotos-origem` | Login + quem edita o imóvel | `{ confirm: true }` copia as fotos do anúncio de origem e registra a autorização. |
+| GET | `/api/admin/imoveis/[id]/sqm` | Login + quem edita o imóvel | Médias do bairro e do prédio para o hub. |
+| PUT | `/api/imoveis/[id]` · POST `/api/imoveis/bulk` · POST/DELETE `/api/imoveis/[id]/venda` | Login | Importado de portal sem confirmação: 409 `{ needsPublishAuth: true }` ao tentar Ativo/Vendido/Alugado. `pricePerSqm` calculado no servidor. |
+| GET | `/api/og/imovel/[id]` | Público | Foto principal 1200×630 (JPEG) para a prévia de compartilhamento. |
+| GET | `/api/mapa-estatico?lat=&lng=&w=&h=&z=` | Público (40/IP/min) | PNG do mapa com marcador. |
+| GET | `/imoveis/[slug]/imprimir` | Público (noindex) | Ficha A4. |
+
+## 6. Variáveis de ambiente
+
+Nenhuma variável nova na 1.4. A tabela da 1.3 continua valendo (`NEXTAUTH_SECRET` obrigatória; `NEXT_PUBLIC_SITE_URL`, `GEMINI_API_KEY`, `GOOGLE_MAPS_SERVER_KEY`, `SMTP_*` opcionais).
+
+## 7. Testes (1.4)
+
+**Testado (30/09/2026):**
+- `tsc --noEmit` limpo; `next build` completo.
+- Vitest: **167 testes** (107 da 1.3 + 60 novos). Os novos cobrem: formato do hub do corretor; faixa de tolerância do preço/m²; cálculo automático; porta de autorização; mosaico do mapa (blocos simulados); candidatas fora do cálculo; base de 350 quadras, ordem de busca, avanço, parada na meta, retomada após recusa e segunda rodada de portais; chave de link; leitor de portais (HTML com JSON-LD, formato VivaReal/ZAP e OLX) e texto colado; proteção contra endereços internos e contra página malformada; servidor JSON-RPC; token.
+- Com banco (PostgreSQL 16, migrações 1.0 a 1.4 aplicadas; a 1.4 duas vezes seguidas sem erro): conector de ponta a ponta (token do dono, de outro corretor e revogado; as 10 ferramentas), busca no site, candidatas, aprovação, recusa, relatório público só com aprovadas, importador em rascunho.
+- Navegador (Playwright, servidor local com dados de teste), **1366 px e 390 px**: 76 verificações de tela (hub do corretor sem corte, condição, três casos do preço/m², ficha com 12 fotos e todas as seções, PDF A4 de 3 páginas, tipologias, painel do preço/m², Meu perfil, Inteligência com as 5 abas, importador, aba Pesquisa; sem rolagem lateral e sem erro de JavaScript) e 38 verificações de fluxo (buscar no site → aprovar → recusar → salvar sem perder candidatas; conector por HTTP; texto colado → rascunho → publicação recusada sem confirmação → publicada com confirmação).
+- Revisão de segurança independente do código novo; os pontos encontrados foram corrigidos antes do pacote (seção 3.8 e testes acima).
+
+**Não testado (o ambiente de desenvolvimento não tem acesso):**
+- `prisma migrate deploy` pela linha de comando (o motor do Prisma não pôde ser baixado aqui). A migração foi aplicada com `psql`; o SQL é o mesmo arquivo.
+- Leitura real dos portais (DF Imóveis, WImóveis, OLX e os demais). O leitor foi testado com páginas de exemplo no formato de cada um. Os portais mudam o HTML e costumam bloquear leitura por servidor: nesses casos o site pede o texto colado.
+- Blocos reais do OpenStreetMap (a montagem foi testada com blocos simulados; aqui a ficha mostrou o aviso "mapa indisponível").
+- Ligação real com o Claude (Personalizar → Conectores). O servidor segue o protocolo MCP e foi testado por HTTP, mas a tela do Claude só pode ser conferida com o site no ar em `https`.
+- Prévia do link no WhatsApp/Facebook (precisa do domínio público).
+- Gemini e Google Maps (como na 1.3).
+
+## 8. Pendências (fora deste pacote)
+
+- **Motor por fatores** (homogeneização: oferta 0,90, localização, área, padrão, depreciação, andar; saneamento ±30%; intervalo de confiança; campo de arbítrio ±15%; graus de fundamentação e precisão da NBR 14653-2) e **parecer em A4 (PTAM)**. Aprovados no backlog. Dependem de um caso já avaliado pelo Paulo na planilha, para conferir os números (o modelo da planilha veio em branco).
+- **Botão "Buscar amostras" usando a API do Claude pelo servidor** (sem abrir a conversa). Aprovado no backlog; tem custo por uso.
+- **Login do conector por OAuth** (em vez do token no endereço).
+- Base de quadras das outras cidades do DF (hoje: Samambaia).
+- Aviso automático quando o Claude registra candidatas (hoje: selo na aba Pesquisa).
+- Limite de tamanho em campos de texto das rotas antigas do painel (1.1 a 1.3) e corpo inválido em `PUT /api/imoveis/[id]` (responde 500 em vez de 400). Só afeta usuário logado.
+- Da 1.3: notificação dos alertas de preço; DNS do `www`.
+
+## 9. Arquivos da 1.4
+
+**Novos (52):** migração `20261002000000_v1_4_hub_inteligencia_conector`; `src/data/samambaia-quadras.json`; `src/lib/` agent-display, sqm-display, sqm-client, static-map, study-guard, json-body, `intel/` (quadras, db, candidates, site-search, url-key, number, prompt), `mcp/` (auth, server, tools, http), `net/safe-fetch`, `portal-reader/` (parse, read, import); `src/components/public/` AgentCard, AutoPrint, PrintMapImage, TipologiasTable; `src/components/ui/WhatsAppIcon`; `src/components/admin/` SqmHubPanel, SourcePhotosBox, StudyResearchTab; `src/app/imoveis/[slug]/imprimir/page`; `src/app/admin/inteligencia/` (page, InteligenciaClient); `src/app/admin/imoveis/importar/` (ImportarTabs, ImportarPortalClient); `src/app/api/` mcp/route, mcp/[token]/route, og/imovel/[id]/route, mapa-estatico/route, admin/importar/route, admin/imoveis/[id]/sqm/route, admin/imoveis/[id]/fotos-origem/route, admin/inteligencia/(quadras, banco, buscas, regioes, tokens)/route, admin/estudos/[id]/pesquisa/route, admin/estudos/[id]/candidatas/route; `tests/unit/v1_4.test.ts`, `tests/unit/v1_4.db.test.ts`.
+
+**Alterados (41):** `package.json` (1.4.0), `prisma/schema.prisma`, `ALTERACOES.md`, `alteracoes.pdf`; `src/app/` globals.css, imoveis/[slug]/page, empreendimentos/[slug]/page, estudo/[token]/page, vender/page, relatorio/[propertyId]/page, admin/layout, admin/perfil/page, admin/corretores/page, admin/estudos/[id]/page, admin/imoveis/page, admin/imoveis/importar/page; `src/app/api/` imoveis/[id]/route, imoveis/[id]/venda/route, imoveis/bulk/route, admin/perfil/route, admin/corretores/route, admin/corretores/[id]/route, admin/empreendimentos/[id]/estrutura/route, admin/estudos/[id]/route, admin/estudos/[id]/amostra-link/route; `src/components/admin/` AdminSidebar, EstruturaEditor, PropertyForm/index, PropertyForm/TabPrincipal; `src/components/public/` PropertyCard, PropertySummaryBar, PublicShell, StudyReport; `src/lib/` ai-vision, market-study, market-study-db, property-compare, property-update, section-data, share, upload.
+
+**Removido:** nada.
+
+---
+
+# Histórico — Alterações v1.3
 
 **Versão:** 1.3 · **Data:** 29/09/2026 · **Base:** `paulopop-v1.0.zip` (site no ar, 24/09/2026) · **Pacote único:** `paulopop-v1.3-completo.zip`
 

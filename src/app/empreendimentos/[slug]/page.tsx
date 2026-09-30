@@ -10,6 +10,7 @@ import { formatCurrency } from '@/lib/formatters'
 import type { Metadata } from 'next'
 import { PropertyGallery } from '@/components/public/PropertyGallery'
 import { EmpreendimentoHub } from '@/components/public/EmpreendimentoHub'
+import { TipologiasTable } from '@/components/public/TipologiasTable'
 import { AreaInsightBlock } from '@/components/public/AreaInsightBlock'
 import { PartnersStrip } from '@/components/public/PartnersStrip'
 import { STAGE_LABEL } from '@/lib/empreendimento-units'
@@ -48,12 +49,14 @@ export default async function EmpreendimentoPage({ params }: Props) {
       include: {
         images: { orderBy: [{ category: 'asc' }, { order: 'asc' }] },
         floorPlanImages: { orderBy: { order: 'asc' } },
+        _count: { select: { unitTypes: true } },
       },
     }),
     prisma.siteConfig.findFirst(),
   ])
 
   if (!emp) notFound()
+  const unitTypeCount = emp._count.unitTypes
 
   const imagesOf = (cat: string) => emp.images.filter(i => i.category === cat)
   const heroImages = [...imagesOf('FACHADA'), ...imagesOf('AREAS_COMUNS')]
@@ -264,10 +267,12 @@ export default async function EmpreendimentoPage({ params }: Props) {
             )}
 
             {/* Tipologias */}
-            {(emp.tipologiasDescription || emp.floorPlanImages.length > 0) && (
+            {(emp.tipologiasDescription || emp.floorPlanImages.length > 0 || unitTypeCount > 0) && (
               <section>
                 <SectionTitle>Apartamentos e Tipologias</SectionTitle>
                 <div className="bg-white rounded-2xl p-6 shadow-sm space-y-6">
+                  {/* v1.4: tipologias cadastradas no painel (nome, andares, quartos, áreas, vagas, planta) */}
+                  {unitTypeCount > 0 && <TipologiasTable empreendimentoId={emp.id} />}
                   {(emp.bedroomsMin || emp.bedroomsMax || emp.areaMin || emp.areaMax) && (
                     <div className="flex flex-wrap gap-4">
                       {(emp.bedroomsMin || emp.bedroomsMax) && (

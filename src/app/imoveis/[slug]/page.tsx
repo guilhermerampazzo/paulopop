@@ -4,10 +4,11 @@ export const dynamic = 'force-dynamic'
  * Página do imóvel — v1.3: galeria com abas e grupos por cômodo, barra de resumo fixa,
  * simulador "Quanto custa por mês", preço/m² comparado, características agrupadas,
  * histórico de preço, alerta de redução, impressão, "Viver aqui", parceiros e redirect 301 de slugs antigos.
+ * v1.4: hub do corretor padronizado (AgentCard), condição do imóvel visível, preço/m² com faixa de
+ * tolerância e referência editável por imóvel, compartilhar com a foto principal e ficha completa para imprimir.
  */
 import { notFound, permanentRedirect } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image'
 import type { Metadata } from 'next'
 import { prisma } from '@/lib/prisma'
 import { absUrl } from '@/lib/site'
@@ -15,13 +16,15 @@ import { formatCurrency, formatArea } from '@/lib/formatters'
 import { CARD_SELECT, toCard } from '@/lib/section-data'
 import { parsePriceHistory, priceReductions } from '@/lib/price-history'
 import { groupFeatures } from '@/lib/property-features'
-import { compareSqm, diffLabel } from '@/lib/property-compare'
+import { compareSqm } from '@/lib/property-compare'
+import { sqmPublicView } from '@/lib/sqm-display'
+import { agentDisplay } from '@/lib/agent-display'
+import { AgentCard } from '@/components/public/AgentCard'
 import { PropertyGallery } from '@/components/public/PropertyGallery'
 import { PropertySummaryBar } from '@/components/public/PropertySummaryBar'
 import { FinanceSimulator } from '@/components/public/FinanceSimulator'
 import { FeatureGroups } from '@/components/public/FeatureGroups'
 import { PriceDropAlert } from '@/components/public/PriceDropAlert'
-import { PrintButton } from '@/components/public/PrintButton'
 import { ContactForm } from '@/components/public/ContactForm'
 import { GoogleReviews } from '@/components/public/GoogleReviews'
 import { PropertyCarousel } from '@/components/public/PropertyCarousel'
@@ -32,7 +35,7 @@ import DescriptionExpander from '@/components/public/DescriptionExpander'
 import { AreaInsightBlock } from '@/components/public/AreaInsightBlock'
 import {
   MapPin, Bed, Bath, LayoutGrid, Maximize2, Car, Building2,
-  ChevronRight, FileText, Download, Globe, Layers, CalendarDays, TrendingDown, BarChart3, Tag,
+  ChevronRight, FileText, Download, Globe, Layers, CalendarDays, TrendingDown, BarChart3, Tag, BadgeCheck, Printer,
 } from 'lucide-react'
 
 interface Props {
@@ -45,7 +48,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const property = await prisma.property.findUnique({
     where: { slug: params.slug, status: 'ACTIVE', hideOnSite: false },
     select: {
-      title: true, propertyType: true, transactionType: true, city: true, neighborhood: true, state: true, price: true, totalArea: true,
+      id: true, title: true, propertyType: true, transactionType: true, city: true, neighborhood: true, state: true, price: true, totalArea: true,
       description: true, marketingDescription: true,
       images: { orderBy: [{ isCover: 'desc' }, { order: 'asc' }], take: 1, select: { url: true } },
     },
@@ -64,13 +67,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title,
     description,
     alternates: { canonical: `/imoveis/${params.slug}` },
+    // v1.4: a foto principal vai na prévia do link (WhatsApp, Facebook, Telegram), em 1200×630 e endereço absoluto
     openGraph: {
       title: `${title} | Paulo Pop`,
       description,
-      images: property.images[0] ? [{ url: property.images[0].url }] : [],
+      url: absUrl(`/imoveis/${params.slug}`),
+      images: property.images[0] ? [{ url: absUrl(`/api/og/imovel/${property.id}`)!, width: 1200, height: 630, alt: title }] : [],
       type: 'website',
       locale: 'pt_BR',
     },
+    twitter: property.images[0] ? { card: 'summary_large_image', title, description, images: [absUrl(`/api/og/imovel/${property.id}`)!] } : undefined,
   }
 }
 
@@ -86,7 +92,7 @@ export default async function PropertyPage({ params }: Props) {
         lifestyles: true,
         documents: { where: { isPublic: true } },
         videos: true,
-        agent: { select: { name: true, avatarUrl: true, company: true, phone: true, whatsapp: true } },
+        agent: { select: { name: true, publicName: true, avatarUrl: true, company: true, companyRole: true, creci: true, phone: true, whatsapp: true } },
         empreendimento: { select: { id: true, name: true, slug: true, stage: true, status: true, builder: true, deliveryYear: true } },
         unit: { select: { number: true, floor: true, block: { select: { name: true } }, unitType: { select: { name: true } } } },
       },
@@ -127,6 +133,13 @@ export default async function PropertyPage({ params }: Props) {
       city: property.city, neighborhood: property.neighborhood, empreendimentoId: property.empreendimentoId,
     }).catch(() => null),
   ])
+  // v1.4: o que o público vê do preço/m² (faixa de tolerância; referência automática ou do corretor)
+  const sqmView = sqmPublicView({
+    own: sqm?.own ?? null,
+    mode: property.sqmCompareMode,
+    auto: sqm ? { region: sqm.region, building: sqm.building && property.empreendimento ? { ...sqm.building, label: property.empreendimento.name } : null } : null,
+    manual: { value: property.sqmRefValue ? Number(property.sqmRefValue) : null, label: property.sqmRefLabel },
+  })
   const similar = similarRows.map(toCard)
   const soldSimilar = soldRows.map(p => ({ ...toCard(p), isNew: false }))
 
@@ -213,6 +226,9 @@ export default async function PropertyPage({ params }: Props) {
   const agentWhatsapp = property.agent.whatsapp ?? config?.ownerWhatsapp ?? process.env.NEXT_PUBLIC_WHATSAPP ?? ''
   const agentName = property.agent.name
   const agentCompany = property.agent.company ?? config?.ownerCompany ?? ''
+  // v1.4: hub do corretor (mesmo formato em todo o site)
+  const agentCard = agentDisplay(property.agent, { whatsapp: config?.ownerWhatsapp, phone: config?.ownerPhone, company: config?.ownerCompany })
+  const hasCover = property.images.length > 0
   const pageUrl = absUrl(`/imoveis/${property.slug}`)!
 
   // JSON-LD: RealEstateListing + Offer (v1.3)
@@ -260,12 +276,16 @@ export default async function PropertyPage({ params }: Props) {
   keyFacts.push({ icon: <Car className="w-5 h-5 text-[#2563eb]" />, value: String(property.totalParkingSpots ?? 0), label: 'Vagas' })
   if ((property.environments ?? 0) > 0) keyFacts.push({ icon: <LayoutGrid className="w-5 h-5 text-[#2563eb]" />, value: String(property.environments), label: 'Ambientes' })
   if (property.floor) keyFacts.push({ icon: <Building2 className="w-5 h-5 text-[#2563eb]" />, value: property.floor, label: 'Andar' })
+  // v1.4: condição (na planta, novo, usado, em construção) sempre visível no anúncio
+  if (property.condition) keyFacts.push({ icon: <BadgeCheck className="w-5 h-5 text-[#2563eb]" />, value: property.condition, label: 'Condição' })
 
   const hasLocationBlock = !!(property.surroundingsInfo || (property.latitude && property.longitude))
 
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      {/* v1.4: Ctrl+P nesta página sai em A4 (a ficha completa fica em /imprimir) */}
+      <style dangerouslySetInnerHTML={{ __html: '@page { size: A4; margin: 12mm; }' }} />
 
       {/* Contador de views */}
       <ViewCounter propertyId={property.id} propertyRef={property.ref} title={property.title} price={price} city={property.city} />
@@ -313,6 +333,8 @@ export default async function PropertyPage({ params }: Props) {
             parking={property.totalParkingSpots}
             area={usefulArea ?? totalArea}
             whatsapp={agentWhatsapp}
+            imageUrl={hasCover ? `/api/og/imovel/${property.id}?modo=foto` : null}
+            printUrl={`/imoveis/${property.slug}/imprimir`}
           />
 
           {/* Grid principal */}
@@ -326,6 +348,7 @@ export default async function PropertyPage({ params }: Props) {
                     <Link href={`/imoveis?tipo=${encodeURIComponent(property.propertyType)}`} className="px-2.5 py-1 rounded-full bg-[#eff6ff] border border-[#bfdbfe] text-[#1e3a8a]">{property.propertyType}</Link>
                   )}
                   <Link href={`/imoveis?transacao=${property.transactionType === 'RENT' ? 'alugar' : 'comprar'}`} className="px-2.5 py-1 rounded-full bg-[#eff6ff] border border-[#bfdbfe] text-[#1e3a8a]">{transactionLabel[property.transactionType]}</Link>
+                  {property.condition && <span className="px-2.5 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800" data-testid="condicao-imovel">{property.condition}</span>}
                   {property.neighborhood && <span className="px-2.5 py-1 rounded-full bg-gray-50 border border-gray-200 text-gray-600">{property.neighborhood}</span>}
                   {lastReduction && <span className="px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 inline-flex items-center gap-1"><TrendingDown className="w-3 h-3" /> Preço reduzido</span>}
                 </div>
@@ -405,27 +428,31 @@ export default async function PropertyPage({ params }: Props) {
                 )}
               </section>
 
-              {/* Preço por m² comparado */}
-              {sqm && !property.hidePrice && (sqm.region || sqm.building) && (
-                <section className="bg-white rounded-2xl p-6 shadow-sm" aria-labelledby="sqm-title">
+              {/* Preço por m² comparado (v1.4: abaixo da referência mostra os números; até a tolerância,
+                  "no preço de mercado"; acima disso o bloco não aparece para o público) */}
+              {sqm && !property.hidePrice && sqmView.headline !== 'hidden' && (
+                <section className="bg-white rounded-2xl p-6 shadow-sm" aria-labelledby="sqm-title" data-testid="sqm-comparado">
                   <h2 id="sqm-title" className="font-semibold text-[#1e3a8a] mb-3 flex items-center gap-2"><BarChart3 className="w-4 h-4" /> Preço por m² comparado</h2>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {sqm.region && (() => { const d = diffLabel(sqm.own, sqm.region.avg); return (
-                      <div className="rounded-xl bg-[#F0F4F8] p-4">
-                        <p className="text-xs text-gray-500">Média de {sqm.region.label} ({sqm.region.count} {sqm.region.count === 1 ? 'anúncio' : 'anúncios'})</p>
-                        <p className="font-semibold text-[#1e3a8a]">{formatCurrency(Math.round(sqm.region.avg))}/m²</p>
-                        <p className={`text-sm font-semibold mt-1 ${d.tone === 'good' ? 'text-emerald-700' : d.tone === 'bad' ? 'text-orange-700' : 'text-gray-600'}`}>Este imóvel está {d.text}</p>
-                      </div>
-                    ) })()}
-                    {sqm.building && property.empreendimento && (() => { const d = diffLabel(sqm.own, sqm.building.avg); return (
-                      <div className="rounded-xl bg-[#F0F4F8] p-4">
-                        <p className="text-xs text-gray-500">Média do {property.empreendimento.name} ({sqm.building.count} {sqm.building.count === 1 ? 'unidade' : 'unidades'})</p>
-                        <p className="font-semibold text-[#1e3a8a]">{formatCurrency(Math.round(sqm.building.avg))}/m²</p>
-                        <p className={`text-sm font-semibold mt-1 ${d.tone === 'good' ? 'text-emerald-700' : d.tone === 'bad' ? 'text-orange-700' : 'text-gray-600'}`}>Este imóvel está {d.text}</p>
-                      </div>
-                    ) })()}
-                  </div>
-                  <p className="mt-3 text-xs text-gray-400">Média calculada dos anúncios ativos deste site na mesma modalidade. Não substitui uma avaliação.</p>
+                  {sqmView.headline === 'below' ? (
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {sqmView.items.filter(i => i.verdict === 'below').map(i => (
+                        <div key={i.ref.kind + i.ref.label} className="rounded-xl bg-[#F0F4F8] p-4">
+                          <p className="text-xs text-gray-500">
+                            {i.ref.kind === 'manual' ? i.ref.label : `Média de ${i.ref.label}`}
+                            {i.ref.count != null && ` (${i.ref.count} ${i.ref.kind === 'building' ? (i.ref.count === 1 ? 'unidade' : 'unidades') : (i.ref.count === 1 ? 'anúncio' : 'anúncios')})`}
+                          </p>
+                          <p className="font-semibold text-[#1e3a8a]">{formatCurrency(Math.round(i.ref.avg))}/m²</p>
+                          <p className="text-sm font-semibold mt-1 text-emerald-700">Este imóvel está {i.text}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="rounded-xl bg-[#F0F4F8] p-4 text-sm font-semibold text-[#1e3a8a]">Imóvel no preço de mercado</p>
+                  )}
+                  <p className="mt-3 text-xs text-gray-400">
+                    Este imóvel: {formatCurrency(Math.round(sqm.own))}/m² (preço ÷ área {usefulArea ? 'útil' : 'total'}).{' '}
+                    {sqmView.items.some(i => i.ref.kind === 'manual') ? 'Referência informada pelo corretor.' : 'Referência: média dos anúncios ativos deste site na mesma modalidade.'} Não substitui uma avaliação.
+                  </p>
                 </section>
               )}
 
@@ -544,24 +571,16 @@ export default async function PropertyPage({ params }: Props) {
             {/* Coluna direita — corretor, ações e formulário */}
             <aside className="lg:col-span-1 print:hidden">
               <div className="bg-white rounded-2xl p-6 shadow-sm lg:sticky lg:top-[184px] space-y-5">
-                <div className="flex items-center gap-3 pb-5 border-b border-gray-100">
-                  <div className="w-14 h-14 rounded-full overflow-hidden bg-[#F0F4F8] flex-shrink-0 relative">
-                    {property.agent.avatarUrl ? (
-                      <Image src={property.agent.avatarUrl} alt={agentName} fill sizes="56px" className="object-cover" />
-                    ) : (
-                      <Building2 className="w-7 h-7 m-3.5 text-gray-300" />
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-bold text-[#1e3a8a] text-sm truncate">{agentName}</p>
-                    {agentCompany && <p className="text-xs text-gray-400 truncate">{agentCompany}</p>}
-                    {property.agent.phone && <a href={`tel:${property.agent.phone}`} className="text-xs text-[#2563eb] hover:underline">{property.agent.phone}</a>}
-                  </div>
+                {/* v1.4: hub do corretor — foto inteira, nome, WhatsApp com ícone, CRECI e vínculo, sem cortes */}
+                <div className="pb-5 border-b border-gray-100">
+                  <AgentCard agent={agentCard} message={`Olá! Tenho interesse no imóvel ${property.ref} — ${title}. ${pageUrl}`} />
                 </div>
 
                 <div className="flex flex-wrap gap-2">
                   <PriceDropAlert propertyId={property.id} propertyRef={property.ref} />
-                  <PrintButton label="Imprimir ficha" />
+                  <a href={`/imoveis/${property.slug}/imprimir`} target="_blank" rel="noopener" className="inline-flex items-center gap-2 rounded-full bg-[#ea580c] px-4 py-2 text-sm font-semibold text-white hover:bg-[#c2410c]">
+                    <Printer className="h-4 w-4" /> Imprimir ficha
+                  </a>
                 </div>
 
                 <div>

@@ -10,6 +10,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { ArrowLeft, Save, Loader2, Plus, Trash2, Link2, ExternalLink, Share2, Upload, Copy, Check, AlertTriangle, Calculator } from 'lucide-react'
 import { computeStudy, fmtBRL, PORTALS, portalFromUrl, DEFAULT_INTRO, DEFAULT_METHODOLOGY } from '@/lib/market-study'
 import { formatDuration } from '@/lib/sales'
+import { StudyResearchTab } from '@/components/admin/StudyResearchTab'
 
 type Sample = {
   id?: string; portal: string; url: string; advertiser: string; location: string; sameCondo: boolean
@@ -17,12 +18,19 @@ type Sample = {
   floor: string; sunPosition: string; renovation: string; condoFee: string; age: string; distanceKm: string
   publishedAt: string; daysListed: string; photoUrl: string; notes: string; status: 'VALID' | 'DISCARDED'; discardReason: string
   finishes: { piso?: string; forro?: string; pintura?: string }
+  // v1.4
+  suites?: string; origin?: string; tags?: string[]; altUrls?: string[]; sourceText?: string; foundAtQuadra?: string
 }
 type Study = Record<string, unknown> & { id: string; samples: Sample[]; agent: { name: string; creci: string | null }; property: { id: string; ref: string; slug: string } | null; publicToken: string | null; tokenExpiresAt: string | null; status: string }
 
 const emptySample = (): Sample => ({ portal: 'DF Imóveis', url: '', advertiser: '', location: '', sameCondo: false, price: '', areaPrivate: '', areaTotal: '', bedrooms: '', bathrooms: '', parking: '', floor: '', sunPosition: '', renovation: '', condoFee: '', age: '', distanceKm: '', publishedAt: '', daysListed: '', photoUrl: '', notes: '', status: 'VALID', discardReason: '', finishes: {} })
 const s = (v: unknown) => (v == null ? '' : String(v))
-const TABS = [['estudo', 'Estudo'], ['imovel', 'Imóvel avaliado'], ['amostras', 'Amostras'], ['calculo', 'Cálculo e parecer'], ['publicar', 'Publicar / PDF']] as const
+const TABS = [['estudo', 'Estudo'], ['imovel', 'Imóvel avaliado'], ['pesquisa', 'Pesquisa'], ['amostras', 'Amostras'], ['calculo', 'Cálculo e parecer'], ['publicar', 'Publicar / PDF']] as const
+/** v1.4 — amostra do banco → campos do formulário (listas continuam listas; o resto vira texto). */
+const toSample = (x: Record<string, unknown>): Sample => ({
+  ...emptySample(),
+  ...Object.fromEntries(Object.entries(x).map(([k, v]) => [k, k === 'finishes' ? (v ?? {}) : k === 'sameCondo' ? Boolean(v) : k === 'status' ? (v === 'DISCARDED' ? 'DISCARDED' : 'VALID') : k === 'publishedAt' && v ? String(v).slice(0, 10) : k === 'id' || Array.isArray(v) ? v : s(v)])),
+}) as Sample
 
 export default function EstudoEditorPage() {
   const { id } = useParams<{ id: string }>()
@@ -55,6 +63,16 @@ export default function EstudoEditorPage() {
   const [linkBusy, setLinkBusy] = useState(false)
   const [copied, setCopied] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+  // v1.4 — amostras que esta tela carregou (o servidor só apaga as que saíram desta lista) e candidatas pendentes
+  const knownIds = useRef<string[]>([])
+  const [candCount, setCandCount] = useState(0)
+  const [pasteOpen, setPasteOpen] = useState(false)
+  const [pasteText, setPasteText] = useState('')
+  const onCounts = useCallback((c: { candidates: number }) => setCandCount(c.candidates), [])
+  const onApproved = useCallback((list: Array<Record<string, unknown>>) => {
+    setSamples(a => [...a, ...list.filter(x => !a.some(y => y.id === x.id)).map(toSample)])
+    knownIds.current = Array.from(new Set([...knownIds.current, ...list.map(x => String(x.id))]))
+  }, [])
 
   const hydrate = useCallback((d: Study) => {
     const fields: Record<string, string> = {}
@@ -67,10 +85,12 @@ export default function EstudoEditorPage() {
     setSt(fields)
     setPhotos(Array.isArray(d.photos) ? (d.photos as string[]) : [])
     setFinishes((d.finishes as Record<string, string>) ?? {})
-    setSamples((d.samples ?? []).map(x => ({
-      ...emptySample(),
-      ...Object.fromEntries(Object.entries(x).map(([k, v]) => [k, k === 'finishes' ? (v ?? {}) : k === 'sameCondo' ? Boolean(v) : k === 'status' ? (v === 'DISCARDED' ? 'DISCARDED' : 'VALID') : k === 'publishedAt' && v ? String(v).slice(0, 10) : k === 'id' ? v : s(v)])),
-    }) as Sample))
+    // v1.4: a aba Amostras mostra só as aprovadas; candidatas e recusadas ficam na aba Pesquisa
+    const all = (d.samples ?? []) as unknown as Array<Record<string, unknown>>
+    const approved = all.filter(x => !x.candidateStatus || x.candidateStatus === 'APPROVED')
+    setSamples(approved.map(toSample))
+    knownIds.current = approved.map(x => String(x.id))
+    setCandCount(all.filter(x => x.candidateStatus === 'CANDIDATE').length)
     setMeta({ agent: d.agent, property: d.property, publicToken: d.publicToken, tokenExpiresAt: d.tokenExpiresAt, status: d.status })
   }, [])
 
@@ -92,7 +112,7 @@ export default function EstudoEditorPage() {
   async function save(): Promise<boolean> {
     setSaving(true); setMsg(null)
     try {
-      const body: Record<string, unknown> = { ...st, photos, finishes, elevator: st.elevator === 'true' ? true : st.elevator === 'false' ? false : null, samples }
+      const body: Record<string, unknown> = { ...st, photos, finishes, elevator: st.elevator === 'true' ? true : st.elevator === 'false' ? false : null, samples, knownSampleIds: knownIds.current }
       const res = await fetch(`/api/admin/estudos/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
       const d = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(d.error ?? 'Erro ao salvar')
@@ -105,19 +125,22 @@ export default function EstudoEditorPage() {
     } finally { setSaving(false) }
   }
 
-  async function addByLink() {
-    if (!linkUrl.trim()) return
+  /** v1.2: lê o link do anúncio. v1.4: também lê o TEXTO colado do anúncio (quando o portal bloqueia o link). */
+  async function addByLink(text?: string) {
+    if (!linkUrl.trim() && !text?.trim()) return
     setLinkBusy(true); setMsg(null)
     try {
-      const res = await fetch(`/api/admin/estudos/${id}/amostra-link`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: linkUrl.trim() }) })
+      const res = await fetch(`/api/admin/estudos/${id}/amostra-link`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: linkUrl.trim() || undefined, text: text?.trim() || undefined }) })
       const d = await res.json().catch(() => ({}))
       if (!res.ok) {
+        if (text) { setMsg({ type: 'err', text: d.error ?? 'Não foi possível ler o texto.' }); return }
         setSamples(a => [...a, { ...emptySample(), url: linkUrl.trim(), portal: portalFromUrl(linkUrl) }])
         setMsg({ type: 'err', text: `${d.error ?? 'Não foi possível ler o anúncio'} A amostra foi criada só com o link; preencha os campos.` })
       } else {
         const sm = d.sample
         setSamples(a => [...a, { ...emptySample(), ...Object.fromEntries(Object.entries(sm).map(([k, v]) => [k, v == null ? '' : typeof v === 'boolean' ? v : Array.isArray(v) ? v : String(v)])) } as Sample])
-        setMsg({ type: 'ok', text: `Amostra lida do ${sm.portal}: confira preço, área e quartos antes de salvar.` })
+        setMsg({ type: 'ok', text: `Amostra lida${sm.portal ? ` do ${sm.portal}` : ''}: confira preço, área e quartos antes de salvar.` })
+        setPasteText(''); setPasteOpen(false)
       }
       setLinkUrl('')
     } finally { setLinkBusy(false) }
@@ -186,7 +209,7 @@ export default function EstudoEditorPage() {
       </div>
 
       <div className="mb-6 flex gap-1 overflow-x-auto rounded-xl bg-gray-100 p-1">
-        {TABS.map(([k, l]) => <button key={k} type="button" onClick={() => setTab(k)} className={`flex-shrink-0 rounded-lg px-4 py-2 text-sm font-medium ${tab === k ? 'bg-white text-[#1e3a8a] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>{l}{k === 'amostras' ? ` (${samples.length})` : ''}</button>)}
+        {TABS.map(([k, l]) => <button key={k} type="button" onClick={() => setTab(k)} className={`flex-shrink-0 rounded-lg px-4 py-2 text-sm font-medium ${tab === k ? 'bg-white text-[#1e3a8a] shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>{l}{k === 'amostras' ? ` (${samples.length})` : ''}{k === 'pesquisa' && candCount > 0 ? <span className="ml-1.5 rounded-full bg-[#ea580c] px-1.5 py-0.5 text-[10px] font-bold text-white">{candCount}</span> : null}</button>)}
       </div>
 
       {tab === 'estudo' && (
@@ -274,6 +297,8 @@ export default function EstudoEditorPage() {
         </div>
       )}
 
+      {tab === 'pesquisa' && <StudyResearchTab studyId={id} onApproved={onApproved} onCounts={onCounts} />}
+
       {tab === 'amostras' && (
         <div className="space-y-4">
           <div className="rounded-2xl border border-gray-200 bg-white p-5">
@@ -281,9 +306,18 @@ export default function EstudoEditorPage() {
             <p className="text-xs text-gray-500">Cole o link do anúncio (DF Imóveis, WImóveis, OLX, VivaReal, ZAP…) para o site tentar ler preço, área, quartos e foto. Se o portal bloquear, a amostra é criada com o link e você preenche à mão.</p>
             <div className="mt-3 flex flex-col gap-2 md:flex-row">
               <input value={linkUrl} onChange={e => setLinkUrl(e.target.value)} placeholder="https://www.dfimoveis.com.br/imovel/…" className={inputCls} aria-label="Link do anúncio" />
-              <button type="button" onClick={addByLink} disabled={linkBusy || !linkUrl.trim()} className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#2563eb] px-4 py-2 text-sm font-medium text-white disabled:opacity-50">{linkBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />} Ler anúncio</button>
+              <button type="button" onClick={() => void addByLink()} disabled={linkBusy || !linkUrl.trim()} className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#2563eb] px-4 py-2 text-sm font-medium text-white disabled:opacity-50">{linkBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />} Ler anúncio</button>
               <button type="button" onClick={() => setSamples(a => [...a, emptySample()])} className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50"><Plus className="h-4 w-4" /> Amostra à mão</button>
             </div>
+            {/* v1.4 — copiar e colar o anúncio */}
+            <button type="button" onClick={() => setPasteOpen(o => !o)} className="mt-2 text-xs text-[#2563eb] hover:underline">{pasteOpen ? 'Fechar' : 'O portal bloqueou? Cole o texto do anúncio'}</button>
+            {pasteOpen && (
+              <div className="mt-2 space-y-2">
+                <textarea rows={5} value={pasteText} onChange={e => setPasteText(e.target.value)} className={inputCls} placeholder="Abra o anúncio, selecione tudo (Ctrl+A), copie (Ctrl+C) e cole aqui (Ctrl+V). Se tiver o link, preencha também o campo acima." aria-label="Texto do anúncio" />
+                <button type="button" onClick={() => void addByLink(pasteText)} disabled={linkBusy || pasteText.trim().length < 20} className="inline-flex items-center gap-1.5 rounded-lg bg-[#2563eb] px-4 py-2 text-sm font-medium text-white disabled:opacity-50">{linkBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />} Ler texto colado</button>
+              </div>
+            )}
+            {candCount > 0 && <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">Há {candCount} candidata(s) aguardando sua decisão na aba <button type="button" onClick={() => setTab('pesquisa')} className="font-semibold underline">Pesquisa</button>. Elas só entram aqui e no cálculo depois de aprovadas.</p>}
           </div>
 
           {samples.map((sm, i) => {

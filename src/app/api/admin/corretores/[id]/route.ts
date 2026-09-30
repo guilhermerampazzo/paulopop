@@ -38,6 +38,9 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   if (body.creci !== undefined) data.creci = body.creci
   if (body.company !== undefined) data.company = body.company
   if (body.companyCreci !== undefined) data.companyCreci = body.companyCreci
+  // v1.4: hub do corretor
+  if (body.publicName !== undefined) data.publicName = body.publicName || null
+  if (body.companyRole !== undefined) data.companyRole = body.companyRole || null
   if (body.bio !== undefined) data.bio = body.bio
   if (body.avatarUrl !== undefined) data.avatarUrl = body.avatarUrl
   if (body.instagram !== undefined) data.instagram = body.instagram

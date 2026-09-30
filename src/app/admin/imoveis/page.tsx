@@ -118,7 +118,7 @@ export default function AdminImoveisPage({
             className="inline-flex items-center gap-2 px-4 py-2 border border-[#1e3a8a] text-[#1e3a8a] text-sm font-medium rounded-lg hover:bg-[#1e3a8a] hover:text-white transition-colors"
           >
             <Link2 className="w-4 h-4" />
-            Importar da RE/MAX
+            Importar anúncio
           </Link>
           <Link
             href="/admin/imoveis/novo"

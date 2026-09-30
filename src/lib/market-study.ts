@@ -10,7 +10,12 @@ export interface SampleInput {
   status?: string | null      // VALID | DISCARDED
   daysListed?: number | null
   publishedAt?: string | Date | null
+  /** v1.4 — CANDIDATE | APPROVED | REJECTED. Só as aprovadas entram no cálculo e no relatório. */
+  candidateStatus?: string | null
 }
+
+/** v1.4 — amostra aprovada pelo corretor (as antigas, sem o campo, contam como aprovadas). */
+export const isApprovedSample = (s: { candidateStatus?: string | null }) => !s.candidateStatus || s.candidateStatus === 'APPROVED'
 
 export interface SampleStat {
   id?: string
@@ -64,7 +69,8 @@ export function computeStudy(
   const outlierPct = opts.outlierPct ?? 30
   const scenario = (['COMPETITIVE', 'MARKET', 'OPTIMISTIC'].includes(opts.scenario ?? '') ? opts.scenario : 'MARKET') as StudyResults['scenario']
 
-  const rows: SampleStat[] = samples.map((s, i) => {
+  // v1.4: candidatas (aguardando o corretor) e recusadas ficam fora do cálculo e da numeração
+  const rows: SampleStat[] = samples.filter(isApprovedSample).map((s, i) => {
     const days = s.daysListed ?? daysSince(s.publishedAt)
     const psqm = s.price && s.areaPrivate ? s.price / s.areaPrivate : null
     return {

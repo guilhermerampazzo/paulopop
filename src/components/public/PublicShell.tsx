@@ -33,7 +33,8 @@ export function PublicShell({
 }: PublicShellProps) {
   const pathname = usePathname()
   // v1.2: /estudo/[token] é um documento limpo (sem cabeçalho/rodapé), próprio para impressão em PDF
-  const isBare = pathname.startsWith('/admin') || pathname.startsWith('/estudo/')
+  // v1.4: /imoveis/[slug]/imprimir é a ficha completa do imóvel, também sem cabeçalho/rodapé
+  const isBare = pathname.startsWith('/admin') || pathname.startsWith('/estudo/') || /^\/imoveis\/[^/]+\/imprimir\/?$/.test(pathname)
 
   if (isBare) return <>{children}</>
 

@@ -21,6 +21,21 @@ export function sqmOf(price: number | null | undefined, usefulArea: number | nul
   return p / area
 }
 
+/** v1.4 — valor gravado em `pricePerSqm`: preço ÷ área útil (privativa); sem área útil, área total. 2 casas. */
+export function pricePerSqmValue(price: number | null | undefined, usefulArea: number | null | undefined, totalArea: number | null | undefined): number | null {
+  const v = sqmOf(price, usefulArea || null, totalArea || null)
+  return v == null ? null : Math.round(v * 100) / 100
+}
+
+/** v1.4 — status em que o imóvel aparece no site (ativo ou nos cartões de vendidos/alugados). */
+export const PUBLIC_STATUSES = ['ACTIVE', 'SOLD', 'RENTED'] as const
+export const isPublicStatus = (s: unknown): boolean => typeof s === 'string' && (PUBLIC_STATUSES as readonly string[]).includes(s)
+
+/** v1.4 — anúncio importado de portal de terceiros (tudo menos RE/MAX) precisa de confirmação de autorização para ser publicado. */
+export function needsPublishAuthorization(p: { sourcePortal?: string | null; publishAuthConfirmedAt?: Date | string | null }): boolean {
+  return !!p.sourcePortal && p.sourcePortal !== 'remax' && !p.publishAuthConfirmedAt
+}
+
 async function averageFor(where: Prisma.PropertyWhereInput): Promise<{ avg: number; count: number } | null> {
   const rows = await prisma.property.findMany({ where, select: { price: true, usefulArea: true, totalArea: true }, take: 300 })
   const vals = rows.map(r => sqmOf(Number(r.price), r.usefulArea ? Number(r.usefulArea) : null, r.totalArea ? Number(r.totalArea) : null)).filter((v): v is number => v != null)

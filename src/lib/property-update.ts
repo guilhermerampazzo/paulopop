@@ -55,6 +55,7 @@ const NULLABLE_DECIMAL_FIELDS = [
   'landDimensionLength',
   'latitude',
   'longitude',
+  'sqmRefValue',
 ] as const
 const NULLABLE_ENUM_FIELDS = ['contractType', 'priceType'] as const
 const NULLABLE_FK_FIELDS = ['condominiumId', 'empreendimentoId', 'ownerId', 'secondaryAgentId', 'unitId'] as const
@@ -64,6 +65,8 @@ const IMMUTABLE_FIELDS = [
   'sourcePortal', 'sourceId', 'sourceUrl', 'sourceAgentName', 'sourceOfficeName', 'importedAt',
   // v1.1: senha do relatório só pela rota do relatório
   'reportPasswordHash', 'reportPasswordSetAt',
+  // v1.4: confirmação de autorização e fotos de origem só pelas rotas próprias
+  'publishAuthConfirmedAt', 'publishAuthConfirmedBy', 'sourcePhotoUrls', 'publishAuthConfirmed',
 ] as const
 
 function parseDate(value: unknown): string | null {
@@ -150,6 +153,16 @@ export function normalizePropertyUpdateInput(body: Record<string, unknown>) {
       list.map(v => String(v).trim()).filter(v => v.length > 0 && v.length <= 80),
     )).slice(0, 100)
   }
+
+  // v1.4: preço/m² comparado editável por imóvel
+  if ('sqmCompareMode' in data) data.sqmCompareMode = data.sqmCompareMode === 'MANUAL' || data.sqmCompareMode === 'HIDDEN' ? data.sqmCompareMode : 'AUTO'
+  for (const field of ['sqmRefLabel', 'sqmRefNote'] as const) {
+    if (field in data) {
+      const v = typeof data[field] === 'string' ? (data[field] as string).replace(/<[^>]*>/g, '').trim().slice(0, field === 'sqmRefLabel' ? 80 : 500) : ''
+      data[field] = v || null
+    }
+  }
+  if (typeof data.sqmRefValue === 'number' && !(data.sqmRefValue > 0)) data.sqmRefValue = null
 
   if (data.status === 'ACTIVE' && !data.publishedAt) {
     data.publishedAt = new Date().toISOString()

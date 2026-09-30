@@ -7,6 +7,8 @@ import type { StudyResults } from '@/lib/market-study'
 import { fmtBRL } from '@/lib/market-study'
 import { formatDuration } from '@/lib/sales'
 import { SITE_URL } from '@/lib/site'
+import { agentDisplay } from '@/lib/agent-display'
+import { WhatsAppIcon } from '@/components/ui/WhatsAppIcon'
 
 const n = (v: unknown) => (v == null ? null : Number(v))
 const fmtDate = (d: Date | string | null | undefined) => (d ? new Intl.DateTimeFormat('pt-BR').format(new Date(d)) : '—')
@@ -53,6 +55,8 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
 export function StudyReport({ study }: { study: StudyFull }) {
   const r = (study.results ?? null) as StudyResults | null
   const agent = study.agent
+  // v1.4: mesmos dados do hub do corretor (nome público, WhatsApp formatado, CRECI/UF Nº, vínculo)
+  const hub = agentDisplay(agent)
   const photos = (Array.isArray(study.photos) ? study.photos : []) as string[]
   const samples = study.samples
   const rowsStat = new Map((r?.samples ?? []).map(s => [s.id, s]))
@@ -76,10 +80,11 @@ export function StudyReport({ study }: { study: StudyFull }) {
           <div className="flex flex-col items-end justify-end text-right">
             {agent.avatarUrl && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={agent.avatarUrl} alt={agent.name} className="mb-3 h-40 w-40 rounded-xl object-cover" />
+              <img src={agent.avatarUrl} alt={hub.name} className="mb-3 h-40 w-40 rounded-xl bg-white/10 object-contain" />
             )}
-            <p className="text-2xl font-bold">{agent.name}</p>
-            {agent.creci && <p className="text-sm text-blue-100">CRECI {agent.creci}</p>}
+            <p className="text-2xl font-bold">{hub.name}</p>
+            {hub.creci && <p className="text-sm text-blue-100">{hub.creci}</p>}
+            {hub.companyLine && <p className="text-sm text-blue-100">{hub.companyLine}</p>}
           </div>
         </div>
         <div className="mt-8 flex items-center justify-between gap-8 rounded-lg bg-white px-6 py-5 text-[#0f2452]">
@@ -365,13 +370,13 @@ export function StudyReport({ study }: { study: StudyFull }) {
           <div className="flex items-center gap-8">
             {agent.avatarUrl && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={agent.avatarUrl} alt="" className="h-44 w-36 rounded-lg object-cover" style={{ clipPath: 'polygon(20% 0, 100% 0, 80% 100%, 0 100%)' }} />
+              <img src={agent.avatarUrl} alt="" className="h-44 w-36 rounded-lg bg-white/10 object-contain" />
             )}
             <div>
-              <p className="text-3xl font-bold">{agent.name}</p>
-              <p className="text-blue-100">Corretor de Imóveis{agent.creci ? ` · CRECI ${agent.creci}` : ''}</p>
-              {agent.company && <p className="text-blue-100">{agent.company}{agent.companyCreci ? ` · CRECI ${agent.companyCreci}` : ''}</p>}
-              {(agent.whatsapp || agent.phone) && <p className="mt-4 inline-block rounded-full bg-[#d31c2c] px-6 py-2 text-xl font-bold">{agent.whatsapp ?? agent.phone}</p>}
+              <p className="text-3xl font-bold">{hub.name}</p>
+              {hub.creci && <p className="text-blue-100">{hub.creci}</p>}
+              {(hub.companyLine || agent.companyCreci) && <p className="text-blue-100">{[hub.companyLine, agent.companyCreci ? `CRECI ${agent.companyCreci}` : null].filter(Boolean).join(' · ')}</p>}
+              {hub.phone && <p className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#25D366] px-6 py-2 text-xl font-bold"><WhatsAppIcon className="h-5 w-5" />{hub.phone}</p>}
               <p className="mt-3 text-xs tracking-[0.2em] text-blue-200">PARCERIA GARANTIDA · TODOS GANHAM</p>
               <p className="mt-1 text-xs text-blue-200">{SITE_URL.replace(/^https?:\/\//, '')}</p>
             </div>

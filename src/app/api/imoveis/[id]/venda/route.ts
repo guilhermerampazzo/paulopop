@@ -6,6 +6,9 @@ import { requireSession, canManageProperty } from '@/lib/authz'
 import { revalidateSite } from '@/lib/cache'
 import { daysOnMarket, discount } from '@/lib/sales'
 import { stripHtml, limitString } from '@/lib/sanitize'
+import { needsPublishAuthorization } from '@/lib/property-compare'
+
+const AUTH_MSG = 'Este imóvel foi importado de um portal e ainda não tem a confirmação de autorização. Confirme na ficha do imóvel (Salvar e Ativar) antes de registrar venda ou locação.'
 
 /**
  * v1.1 — POST /api/imoveis/[id]/venda: marca o imóvel como vendido ou alugado
@@ -18,10 +21,12 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
   const property = await prisma.property.findUnique({
     where: { id: params.id },
-    select: { id: true, ref: true, agentId: true, secondaryAgentId: true, price: true, transactionType: true, publishedAt: true, registrationDate: true, createdAt: true, status: true },
+    select: { id: true, ref: true, agentId: true, secondaryAgentId: true, price: true, transactionType: true, publishedAt: true, registrationDate: true, createdAt: true, status: true, sourcePortal: true, publishAuthConfirmedAt: true },
   })
   if (!property) return NextResponse.json({ error: 'Imóvel não encontrado' }, { status: 404 })
   if (!canManageProperty(auth.user, property)) return NextResponse.json({ error: 'Sem permissão para este imóvel' }, { status: 403 })
+  // v1.4: vendido/alugado também aparece no site; importado de portal precisa da confirmação antes
+  if (needsPublishAuthorization(property)) return NextResponse.json({ error: AUTH_MSG, needsPublishAuth: true }, { status: 409 })
 
   const body = await request.json().catch(() => ({})) as {
     soldAt?: string; salePrice?: number | string | null; listPrice?: number | string | null
@@ -77,9 +82,12 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
   const auth = await requireSession()
   if (auth.response) return auth.response
-  const property = await prisma.property.findUnique({ where: { id: params.id }, select: { id: true, agentId: true, secondaryAgentId: true, status: true } })
+  const property = await prisma.property.findUnique({ where: { id: params.id }, select: { id: true, agentId: true, secondaryAgentId: true, status: true, sourcePortal: true, publishAuthConfirmedAt: true } })
   if (!property) return NextResponse.json({ error: 'Imóvel não encontrado' }, { status: 404 })
   if (!canManageProperty(auth.user, property)) return NextResponse.json({ error: 'Sem permissão para este imóvel' }, { status: 403 })
+  // v1.4: desfazer venda só vale para imóvel vendido/alugado e nunca publica importado sem confirmação
+  if (property.status !== 'SOLD' && property.status !== 'RENTED') return NextResponse.json({ error: 'Este imóvel não está marcado como vendido ou alugado.' }, { status: 400 })
+  if (needsPublishAuthorization(property)) return NextResponse.json({ error: AUTH_MSG, needsPublishAuth: true }, { status: 409 })
 
   await prisma.property.update({
     where: { id: property.id },

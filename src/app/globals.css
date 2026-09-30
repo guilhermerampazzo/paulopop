@@ -78,7 +78,7 @@
 .study-slide { aspect-ratio: 16 / 9; width: 100%; border-radius: 6px; box-shadow: 0 8px 30px -18px rgba(15, 36, 82, 0.5); }
 .study-report { font-family: "Inter Variable", Inter, system-ui, sans-serif; }
 @media print {
-  @page { size: 297mm 167mm; margin: 0; }
+  /* v1.4: o tamanho da página agora é definido por cada documento (estudo 16:9, ficha do imóvel A4) */
   html, body { background: #fff !important; margin: 0 !important; padding: 0 !important; }
   header, footer, nav, .print\:hidden, a[aria-label="Falar pelo WhatsApp"] { display: none !important; }
   .study-slide { aspect-ratio: auto; width: 297mm; height: 167mm; box-sizing: border-box; margin: 0 !important; border-radius: 0; box-shadow: none; page-break-after: always; break-after: page; overflow: hidden; }

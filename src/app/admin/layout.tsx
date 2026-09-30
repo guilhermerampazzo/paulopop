@@ -15,6 +15,7 @@ const pageTitles: Record<string, string> = {
   '/admin/contatos': 'Leads & Contatos',
   '/admin/analise-mercado': 'Estudos de mercado',
   '/admin/estudos': 'Estudos de mercado',
+  '/admin/inteligencia': 'Inteligência',
   '/admin/estudos/': 'Estudo de mercado',
   '/admin/marketing': 'Marketing',
   '/admin/relatorios': 'Relatórios',

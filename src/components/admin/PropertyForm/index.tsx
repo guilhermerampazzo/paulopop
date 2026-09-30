@@ -62,6 +62,9 @@ export function PropertyForm({ propertyId, initialData }: PropertyFormProps) {
   )
   const [showMarketingModal, setShowMarketingModal] = useState(false)
   const [showContractModal, setShowContractModal] = useState(false)
+  // v1.4: anúncio importado de portal — confirmação de autorização antes de publicar
+  const [authAsk, setAuthAsk] = useState<{ status: string } | null>(null)
+  const [authChecked, setAuthChecked] = useState(false)
 
   // Limpar mensagem de sucesso após 4 segundos
   useEffect(() => {
@@ -83,7 +86,7 @@ export function PropertyForm({ propertyId, initialData }: PropertyFormProps) {
     setData(prev => ({ ...prev, [field]: value }))
   }, [])
 
-  async function save(status?: string) {
+  async function save(status?: string, publishAuthConfirmed = false) {
     setSaving(true)
     setSaveError(null)
     setSaveSuccess(null)
@@ -95,6 +98,7 @@ export function PropertyForm({ propertyId, initialData }: PropertyFormProps) {
         hideOnSite,
       }
       if (status) payload.status = status
+      if (publishAuthConfirmed) payload.publishAuthConfirmed = true
 
       const res = await fetch(`/api/imoveis/${propertyId}`, {
         method: 'PUT',
@@ -104,8 +108,14 @@ export function PropertyForm({ propertyId, initialData }: PropertyFormProps) {
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
+        if (res.status === 409 && err.needsPublishAuth) {
+          setAuthChecked(false)
+          setAuthAsk({ status: status ?? 'ACTIVE' })
+          return
+        }
         throw new Error(err.error ?? 'Erro ao salvar')
       }
+      if (publishAuthConfirmed) setData(prev => ({ ...prev, publishAuthConfirmedAt: new Date().toISOString() }))
 
       // Atualizar status exibido no cabeçalho
       const newStatus = status ?? currentStatus
@@ -129,6 +139,23 @@ export function PropertyForm({ propertyId, initialData }: PropertyFormProps) {
 
   return (
     <div className="flex flex-col h-full min-h-screen bg-[#F0F4F8]">
+      {/* v1.4: confirmação de autorização para publicar anúncio importado de portal */}
+      {authAsk && (
+        <div role="dialog" aria-modal="true" aria-labelledby="auth-title" className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl space-y-4">
+            <h2 id="auth-title" className="text-lg font-bold text-[#1e3a8a]">Confirmar autorização para publicar</h2>
+            <p className="text-sm text-gray-600">Este imóvel foi importado de um portal de anúncios. A Lei 6.530/78 (art. 20, III) veda ao corretor anunciar imóvel sem autorização escrita. Publique somente se o anúncio for seu ou se você tiver essa autorização.</p>
+            <label className="flex items-start gap-2 text-sm text-gray-800">
+              <input type="checkbox" className="mt-1 accent-[#2563eb]" checked={authChecked} onChange={e => setAuthChecked(e.target.checked)} />
+              <span>Confirmo que este anúncio é meu ou que tenho autorização escrita do proprietário para anunciá-lo.</span>
+            </label>
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={() => setAuthAsk(null)} className="rounded-lg border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50">Cancelar</button>
+              <button type="button" disabled={!authChecked || saving} onClick={() => { const st = authAsk.status; setAuthAsk(null); void save(st, true) }} className="rounded-lg bg-[#1e3a8a] px-4 py-2 text-sm font-medium text-white hover:bg-[#172554] disabled:opacity-50">Confirmar e publicar</button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Toast de sucesso — fixo no topo direito */}
       {saveSuccess && (
         <div
@@ -330,8 +357,9 @@ export function PropertyForm({ propertyId, initialData }: PropertyFormProps) {
 
       {/* Footer */}
       <div className="bg-white border-t border-gray-200 px-4 md:px-6 py-3 sticky bottom-0 z-10">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
+        {/* v1.4: no celular os botões quebram de linha em vez de sair da tela */}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={() => window.print()}
@@ -379,7 +407,7 @@ export function PropertyForm({ propertyId, initialData }: PropertyFormProps) {
             </a>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
             <Button
               variant="outline"
               size="sm"

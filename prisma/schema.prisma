@@ -27,6 +27,9 @@ model User {
   youtube       String?
   telegram      String?
   twitter       String?
+  // v1.4 – hub do corretor: nome público e vínculo com a imobiliária ("Corretor Associado")
+  publicName    String?
+  companyRole   String?
   active        Boolean   @default(true)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -36,6 +39,7 @@ model User {
   activities    Activity[]
   blogPosts     BlogPost[]
   marketStudies MarketStudy[]
+  apiTokens     ApiToken[]
 
   @@map("users")
 }
@@ -189,6 +193,16 @@ model Property {
 
   // v1.1 – varandas (pedido do relatório de correções)
   balconies             Int?
+
+  // v1.4 – preço/m² comparado editável por imóvel: AUTO (média do site) | MANUAL (referência do corretor) | HIDDEN
+  sqmCompareMode        String            @default("AUTO")
+  sqmRefValue           Decimal?          @db.Decimal(10, 2)
+  sqmRefLabel           String?
+  sqmRefNote            String?
+  // v1.4 – importação de portais: fotos do anúncio original (não copiadas) e confirmação de autorização para publicar
+  sourcePhotoUrls       String[]          @default([])
+  publishAuthConfirmedAt DateTime?
+  publishAuthConfirmedBy String?
 
   // v1.1 – venda ou locação concluída: valor final, desconto e tempo de mercado
   soldAt                DateTime?
@@ -591,6 +605,12 @@ model MarketStudy {
   // acesso público
   publicToken     String?  @unique
   tokenExpiresAt  DateTime?
+  // v1.4 – pesquisa de amostras (Área de Inteligência + conector do Claude)
+  searchStatus    String   @default("NONE") // NONE | REQUESTED | RUNNING | DONE
+  targetSamples   Int      @default(10)
+  searchParams    Json?    // { quadra, condo, portals[], areaTolPct, bedroomsTol, maxAdDays, rules }
+  searchCursor    Json?    // { tier, step, index, done: [{ step, quadra, at }] }
+  searchRuns      StudySearchRun[]
   samples         MarketStudySample[]
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -632,6 +652,19 @@ model MarketStudySample {
   tags          String[]    @default([])
   latitude      Decimal?    @db.Decimal(10,7)
   longitude     Decimal?    @db.Decimal(10,7)
+  // v1.4 – origem, candidatura e prova da coleta
+  origin          String    @default("MANUAL")   // MANUAL | LINK | CLAUDE | SITE
+  candidateStatus String    @default("APPROVED") // CANDIDATE | APPROVED | REJECTED
+  rejectedReason  String?
+  rejectedAt      DateTime?
+  foundAtStep     String?
+  foundAtQuadra   String?
+  collectedAt     DateTime?
+  sourceText      String?   @db.Text
+  altUrls         String[]  @default([])
+  suites          Int?
+  bankId          String?
+  bank            SampleBankItem? @relation(fields: [bankId], references: [id], onDelete: SetNull)
   createdAt     DateTime    @default(now())
 
   @@index([studyId])
@@ -862,6 +895,12 @@ model EmpreendimentoUnitType {
   sunPosition       String?         // nascente, poente…
   floorPlanUrl      String?
   finals            String?         // finais de apartamento: "01,02,05"
+  // v1.4 – tipologia completa
+  floorsLabel       String?         // andares em que a tipologia existe: "1º ao 12º"
+  totalArea         Decimal?        @db.Decimal(10,2)
+  balconies         Int?
+  priceFrom         Decimal?        @db.Decimal(15,2)
+  description       String?         @db.Text
   order             Int             @default(0)
   units             EmpreendimentoUnit[]
 
@@ -1031,4 +1070,117 @@ model PropertyAlert {
 
   @@index([active])
   @@map("property_alerts")
+}
+
+// ─── v1.4: Área de Inteligência, banco de amostras e conector do Claude ──────
+
+/** Base de endereços por quadra (primeira carga: Samambaia/DF, 350 quadras). */
+model IntelQuadra {
+  id          String   @id @default(cuid())
+  city        String
+  sector      String?
+  series      Int?
+  quadra      String          // "QR 303"
+  prefix      String?         // QR | QN | QS | QI | Q
+  number      Int?
+  type        String?
+  searchTerms String[] @default([])
+  mapX        Int?            // posição relativa no mapa (m) — serve para ordenar vizinhas
+  mapY        Int?
+  latitude    Float?
+  longitude   Float?
+  notes       String?  @db.Text
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([city, quadra])
+  @@index([city, number])
+  @@map("intel_quadras")
+}
+
+/** Observações por região (uso interno da pesquisa; não vai a relatório público). */
+model IntelRegionNote {
+  id        String   @id @default(cuid())
+  city      String
+  name      String
+  series    Int[]    @default([])
+  confirmed String?  @db.Text
+  market    String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([city, name])
+  @@map("intel_region_notes")
+}
+
+/** Banco de amostras: um registro por anúncio lido (por link normalizado), reaproveitado entre estudos. */
+model SampleBankItem {
+  id           String   @id @default(cuid())
+  urlKey       String   @unique     // link normalizado (sem parâmetros de rastreio)
+  url          String
+  portal       String?
+  externalId   String?
+  title        String?
+  advertiser   String?
+  location     String?
+  city         String?
+  neighborhood String?
+  quadra       String?
+  price        Decimal? @db.Decimal(15,2)
+  areaPrivate  Decimal? @db.Decimal(10,2)
+  areaTotal    Decimal? @db.Decimal(10,2)
+  bedrooms     Int?
+  suites       Int?
+  bathrooms    Int?
+  parking      Int?
+  floor        String?
+  condoFee     Decimal? @db.Decimal(10,2)
+  publishedAt  DateTime?
+  photoUrl     String?
+  sourceText   String?  @db.Text
+  priceHistory Json?
+  firstSeenAt  DateTime @default(now())
+  lastSeenAt   DateTime @default(now())
+  samples      MarketStudySample[]
+
+  @@index([city, quadra])
+  @@index([portal])
+  @@map("sample_bank")
+}
+
+/** Histórico de cada busca feita para um estudo (pelo conector, pelo painel ou pela API). */
+model StudySearchRun {
+  id         String      @id @default(cuid())
+  studyId    String
+  study      MarketStudy @relation(fields: [studyId], references: [id], onDelete: Cascade)
+  source     String      @default("MCP") // MCP | PANEL | API
+  step       String?
+  quadra     String?
+  portal     String?
+  query      String?
+  found      Int         @default(0)
+  read       Int         @default(0)
+  registered Int         @default(0)
+  notes      String?     @db.Text
+  createdAt  DateTime    @default(now())
+
+  @@index([studyId, createdAt])
+  @@map("study_search_runs")
+}
+
+/** Token do conector do Claude (MCP). Só o hash é guardado. */
+model ApiToken {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  tokenHash  String    @unique
+  prefix     String
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId])
+  @@map("api_tokens")
 }

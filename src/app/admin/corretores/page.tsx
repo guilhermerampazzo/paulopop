@@ -28,12 +28,14 @@ interface FormData {
   creci: string
   company: string
   companyCreci: string
+  publicName: string
+  companyRole: string
   bio: string
 }
 
 const EMPTY_FORM: FormData = {
   name: '', email: '', password: '', role: 'AGENT',
-  phone: '', whatsapp: '', creci: '', company: '', companyCreci: '', bio: '',
+  phone: '', whatsapp: '', creci: '', company: '', companyCreci: '', publicName: '', companyRole: '', bio: '',
 }
 
 const ROLE_LABELS: Record<string, string> = {
@@ -72,7 +74,7 @@ export default function CorretoresPage() {
       name: c.name, email: c.email, password: '',
       role: c.role, phone: c.phone ?? '', whatsapp: c.whatsapp ?? '',
       creci: c.creci ?? '', company: c.company ?? '',
-      companyCreci: '', bio: '',
+      companyCreci: '', publicName: (c as { publicName?: string | null }).publicName ?? '', companyRole: (c as { companyRole?: string | null }).companyRole ?? '', bio: '',
     })
     setShowPassword(false)
     setModal(c)
@@ -88,7 +90,7 @@ export default function CorretoresPage() {
       const body: Record<string, string> = {
         name: form.name, email: form.email, role: form.role,
         phone: form.phone, whatsapp: form.whatsapp, creci: form.creci,
-        company: form.company, companyCreci: form.companyCreci, bio: form.bio,
+        company: form.company, companyCreci: form.companyCreci, publicName: form.publicName, companyRole: form.companyRole, bio: form.bio,
       }
       if (form.password) body.password = form.password
 
@@ -298,6 +300,8 @@ export default function CorretoresPage() {
               <FormField label="CRECI" value={form.creci} onChange={v => set('creci', v)} />
               <FormField label="Empresa" value={form.company} onChange={v => set('company', v)} />
               <FormField label="CRECI da Empresa" value={form.companyCreci} onChange={v => set('companyCreci', v)} />
+              <FormField label="Nome que aparece no site" value={form.publicName} onChange={v => set('publicName', v)} />
+              <FormField label="Vínculo (ex.: Corretor Associado)" value={form.companyRole} onChange={v => set('companyRole', v)} />
               <FormField label="Telefone" value={form.phone} onChange={v => set('phone', v)} type="tel" />
               <FormField label="WhatsApp (com DDI)" value={form.whatsapp} onChange={v => set('whatsapp', v)} type="tel" />
               <FormField label="Bio" value={form.bio} onChange={v => set('bio', v)} multiline />

@@ -7,10 +7,13 @@ import { useEffect, useRef, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { Save, Upload, UserCircle2, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { AgentCard } from '@/components/public/AgentCard'
+import { agentDisplay } from '@/lib/agent-display'
 
 interface Profile {
   name?: string; email?: string; role?: string; phone?: string | null; whatsapp?: string | null; creci?: string | null
   bio?: string | null; avatarUrl?: string | null; company?: string | null; companyCreci?: string | null
+  publicName?: string | null; companyRole?: string | null
   instagram?: string | null; facebook?: string | null; linkedin?: string | null; youtube?: string | null; telegram?: string | null; twitter?: string | null
 }
 
@@ -96,11 +99,19 @@ export default function PerfilPage() {
 
         <div className="grid gap-4 sm:grid-cols-2">
           {field('Nome', 'name')}
+          {field('Nome que aparece no site', 'publicName', 'Corretor Paulo Pop')}
           {field('CRECI', 'creci', '12896/DF')}
           {field('Telefone', 'phone', '(61) 9xxxx-xxxx')}
           {field('WhatsApp', 'whatsapp', '(61) 9xxxx-xxxx')}
-          {field('Imobiliária / franquia', 'company', 'RE/MAX Inovelar')}
+          {field('Vínculo com a imobiliária', 'companyRole', 'Corretor Associado')}
+          {field('Imobiliária / franquia', 'company', 'RE/MAX INOVELAR')}
           {field('CRECI da imobiliária (J)', 'companyCreci', '24.732-J')}
+        </div>
+        {/* v1.4: prévia do hub do corretor, como sai na página do imóvel e na ficha impressa */}
+        <div className="rounded-xl border border-dashed border-gray-300 p-4">
+          <p className="mb-3 text-xs font-medium uppercase tracking-wide text-gray-500">Como aparece no site</p>
+          <AgentCard agent={agentDisplay({ name: p.name ?? '', publicName: p.publicName, phone: p.phone, whatsapp: p.whatsapp, creci: p.creci, company: p.company, companyRole: p.companyRole, avatarUrl: p.avatarUrl })} />
+          <p className="mt-3 text-xs text-gray-500">A foto aparece inteira, sem corte. Para um enquadramento melhor, envie uma foto na vertical (proporção 4:5).</p>
         </div>
         <div>
           <label htmlFor="f-bio" className="block text-sm font-medium text-gray-700 mb-1">Apresentação (aparece no Sobre e nos relatórios)</label>

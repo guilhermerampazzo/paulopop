@@ -1,6 +1,9 @@
 'use client'
 
 import { AreaInsightPanel } from '@/components/admin/AreaInsightPanel'
+import { SourcePhotosBox } from '@/components/admin/SourcePhotosBox'
+import { SqmHubPanel } from '@/components/admin/SqmHubPanel'
+import { pricePerSqmClient } from '@/lib/sqm-client'
 
 import { useState, useEffect } from 'react'
 import { Input } from '@/components/ui/Input'
@@ -247,16 +250,27 @@ export function TabPrincipal({ data, onChange }: TabPrincipalProps) {
   return (
     <div className="space-y-8 py-4">
 
-      {typeof data.sourceUrl === 'string' && data.sourceUrl && (
+      {((typeof data.sourceUrl === 'string' && data.sourceUrl) || (typeof data.sourcePortal === 'string' && data.sourcePortal)) && (
         <div className="p-4 rounded-xl bg-[#F0F4F8] border border-[#D6E2F0] text-sm text-[#1e3a8a]">
-          Importado da RE/MAX
+          Importado {({ remax: 'da RE/MAX', dfimoveis: 'do DF Imóveis', wimoveis: 'do WImóveis', olx: 'da OLX', vivareal: 'do VivaReal', zap: 'do ZAP', imovelweb: 'do Imovelweb', chavesnamao: 'do Chaves na Mão', texto: 'de um texto colado', colado: 'de um texto colado' } as Record<string, string>)[String(data.sourcePortal ?? 'remax')] ?? 'de um portal'}
           {typeof data.importedAt === 'string' && ` em ${new Date(data.importedAt).toLocaleDateString('pt-BR')}`}
           {typeof data.sourceAgentName === 'string' && data.sourceAgentName && (
             <> · captação: <b>{data.sourceAgentName as string}</b>{typeof data.sourceOfficeName === 'string' && data.sourceOfficeName ? ` (${data.sourceOfficeName})` : ''}</>
           )}
-          {' · '}
-          <a href={data.sourceUrl as string} target="_blank" rel="noopener noreferrer" className="underline">ver anúncio original</a>
-          <span className="block text-xs text-gray-500 mt-1">Para atualizar com os dados atuais da RE/MAX, importe o mesmo link de novo em Imóveis → Importar da RE/MAX.</span>
+          {typeof data.sourceUrl === 'string' && data.sourceUrl && (
+            <>{' · '}<a href={data.sourceUrl as string} target="_blank" rel="noopener noreferrer" className="underline">ver anúncio original</a></>
+          )}
+          {data.sourcePortal === 'remax' || !data.sourcePortal
+            ? <span className="block text-xs text-gray-500 mt-1">Para atualizar com os dados atuais do anúncio, importe o mesmo link de novo em Imóveis → Importar.</span>
+            : <span className="block text-xs text-gray-500 mt-1">Cadastro criado como rascunho a partir do anúncio. Confira todos os campos antes de publicar.</span>}
+          {typeof data.sourcePortal === 'string' && data.sourcePortal !== 'remax' && (
+            <span className={`mt-1 block text-xs font-medium ${data.publishAuthConfirmedAt ? 'text-emerald-700' : 'text-amber-700'}`}>
+              {data.publishAuthConfirmedAt ? `Autorização para anunciar confirmada em ${new Date(String(data.publishAuthConfirmedAt)).toLocaleDateString('pt-BR')}.` : 'Ainda sem confirmação de autorização: ao publicar, o painel pede que você confirme que o anúncio é seu ou autorizado por escrito.'}
+            </span>
+          )}
+          {typeof data.id === 'string' && Array.isArray(data.sourcePhotoUrls) && data.sourcePhotoUrls.length > 0 && (
+            <SourcePhotosBox propertyId={data.id} count={data.sourcePhotoUrls.length} confirmed={!!data.publishAuthConfirmedAt} />
+          )}
         </div>
       )}
 
@@ -366,14 +380,20 @@ export function TabPrincipal({ data, onChange }: TabPrincipalProps) {
               options={PRICE_TYPE_OPTIONS}
             />
             <div className="flex items-end gap-2">
-              <Input
-                label="Preço por m²"
-                id="pricePerSqm"
-                type="number"
-                value={(data.pricePerSqm as string) ?? ''}
-                onChange={e => onChange('pricePerSqm', e.target.value)}
-                placeholder="0,00"
-              />
+              {/* v1.4: calculado pelo sistema (valor ÷ área útil/privativa; sem ela, área total) */}
+              <div className="flex-1">
+                <label htmlFor="pricePerSqm" className="block text-sm font-medium text-gray-700 mb-1">Preço por m² (automático)</label>
+                <input
+                  id="pricePerSqm"
+                  readOnly
+                  tabIndex={-1}
+                  value={(() => { const v = pricePerSqmClient(data.price, data.usefulArea, data.totalArea); return v ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v) : '' })()}
+                  placeholder="valor ÷ área útil"
+                  aria-describedby="pricePerSqm-hint"
+                  className="w-full border border-gray-200 bg-gray-50 rounded-lg px-3 py-2 text-sm text-gray-700"
+                />
+                <span id="pricePerSqm-hint" className="sr-only">Calculado automaticamente: valor do imóvel dividido pela área útil.</span>
+              </div>
               <label className="flex items-center gap-1.5 pb-2 cursor-pointer whitespace-nowrap">
                 <input
                   type="checkbox"
@@ -472,6 +492,15 @@ export function TabPrincipal({ data, onChange }: TabPrincipalProps) {
           </div>
         </div>
       </section>
+
+
+      {/* ── v1.4: hub do preço por m² comparado, editável em cada imóvel ─────── */}
+      {typeof data.id === 'string' && (
+        <section>
+          <SectionTitle>Preço por m² comparado</SectionTitle>
+          <SqmHubPanel propertyId={data.id} data={data} onChange={onChange} />
+        </section>
+      )}
 
       {/* ── Detalhes da Comissão ─────────────────────────────────────────────── */}
       <section>

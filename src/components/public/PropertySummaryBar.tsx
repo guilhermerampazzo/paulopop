@@ -10,7 +10,7 @@ import { Bed, Car, Maximize2, Heart, Scale, Share2, MessageCircle, CalendarClock
 import { formatCurrency } from '@/lib/formatters'
 import { estimateMonthly } from '@/lib/finance'
 import { isFavorite, toggleFavorite, isCompared, toggleCompare, subscribe, FAVORITES_KEY, COMPARE_KEY, COMPARE_MAX } from '@/lib/favorites'
-import { shareLink, waHref } from '@/lib/share'
+import { shareProperty, waHref } from '@/lib/share'
 import { trackEvent } from '@/components/public/Analytics'
 import { cn } from '@/lib/utils'
 
@@ -27,9 +27,13 @@ interface Props {
   parking?: number | null
   area?: number | null
   whatsapp: string
+  /** v1.4: foto principal (sem corte) para ir junto do link no "Compartilhar imóvel" */
+  imageUrl?: string | null
+  /** v1.4: ficha completa para impressão (abre em nova aba) */
+  printUrl?: string | null
 }
 
-export function PropertySummaryBar({ propertyId, propertyRef, url, title, price, hidePrice, transactionType, bedrooms, parking, area, whatsapp }: Props) {
+export function PropertySummaryBar({ propertyId, propertyRef, url, title, price, hidePrice, transactionType, bedrooms, parking, area, whatsapp, imageUrl, printUrl }: Props) {
   const [fav, setFav] = useState(false)
   const [cmp, setCmp] = useState(false)
   const [cmpCount, setCmpCount] = useState(0)
@@ -74,11 +78,11 @@ export function PropertySummaryBar({ propertyId, propertyRef, url, title, price,
     setToast(r.active ? `Adicionado à comparação (${r.list.length}/${COMPARE_MAX})` : 'Removido da comparação')
   }
   const onShare = async () => {
-    const r = await shareLink({ url: pageUrl, title, text: `${title} — ${propertyRef}` })
+    const r = await shareProperty({ url: pageUrl, title, text: `${title} — ${propertyRef}`, imageUrl })
     if (r === 'copied') setToast('Link copiado')
     trackEvent('share', { content_type: 'property', item_id: propertyRef })
   }
-  const onPrint = () => { try { window.print() } catch { /* ignore */ } }
+  const onPrint = () => { try { if (printUrl) window.open(printUrl, '_blank', 'noopener'); else window.print() } catch { /* ignore */ } }
 
   const priceNode = showPrice ? (
     <p className="font-display text-xl md:text-2xl font-bold text-[#1e3a8a] leading-tight">

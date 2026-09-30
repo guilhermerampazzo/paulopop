@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 import {
   LayoutDashboard, Building2, Users,
   Megaphone, FileText, Settings, X, Landmark,
-  UserCog, MessageSquareQuote, BookOpen, UserCircle, FileBarChart2, MapPinned, Handshake, BellRing
+  UserCog, MessageSquareQuote, BookOpen, UserCircle, FileBarChart2, MapPinned, Handshake, BellRing, Radar
 } from 'lucide-react'
 
 type Role = 'SUPER_ADMIN' | 'ADMIN' | 'AGENT'
@@ -24,6 +24,7 @@ const navItems: Array<{ href: string; label: string; icon: typeof LayoutDashboar
   { href: '/admin/parceiros', label: 'Parceiros', icon: Handshake, adminOnly: true },
   { href: '/admin/blog', label: 'Blog', icon: BookOpen },
   { href: '/admin/estudos', label: 'Estudos de mercado', icon: FileBarChart2 },
+  { href: '/admin/inteligencia', label: 'Inteligência', icon: Radar },
   { href: '/admin/marketing', label: 'Marketing', icon: Megaphone },
   { href: '/admin/relatorios', label: 'Relatórios', icon: FileText },
   { href: '/admin/configuracoes', label: 'Configurações', icon: Settings, adminOnly: true },

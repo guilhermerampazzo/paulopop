@@ -5,11 +5,13 @@
  * e a matriz de unidades gerada, com o imóvel ligado a cada unidade.
  */
 import { useEffect, useMemo, useState } from 'react'
-import { Plus, Trash2, Save, Loader2, RefreshCw, Grid3X3 } from 'lucide-react'
+import { Plus, Trash2, Save, Loader2, RefreshCw, Grid3X3, Upload } from 'lucide-react'
 import { unitFinal } from '@/lib/empreendimento-units'
 
 interface Block { id?: string; name: string; floors: number; unitsPerFloor: number; firstFloor: number; numbering: 'FLOOR_SEQ' | 'SEQ' }
-interface UnitType { id?: string; name: string; bedrooms?: number | null; suites?: number | null; bathrooms?: number | null; area?: number | null; parking?: number | null; sunPosition?: string | null; finals?: string | null }
+interface UnitType { id?: string; name: string; bedrooms?: number | null; suites?: number | null; bathrooms?: number | null; area?: number | null; parking?: number | null; sunPosition?: string | null; finals?: string | null
+  // v1.4
+  floorsLabel?: string | null; totalArea?: number | null; balconies?: number | null; priceFrom?: number | null; description?: string | null; floorPlanUrl?: string | null }
 interface Unit { id: string; blockId: string; floor: number; number: string; unitTypeId: string | null; properties: Array<{ id: string; ref: string; status: string; transactionType: string; price: string | null; slug: string }> }
 
 const STATUS_COLOR: Record<string, string> = {
@@ -47,6 +49,18 @@ export function EstruturaEditor({ empreendimentoId }: { empreendimentoId: string
     } finally { setSaving(false) }
   }
 
+  // v1.4: campos novos da tipologia
+  const setType = (i: number, patch: Partial<UnitType>) => setTypes(a => a.map((x, j) => (j === i ? { ...x, ...patch } : x)))
+  const numOrNull = (v: string) => (v === '' ? null : Number(v))
+  async function uploadPlan(i: number, file: File | undefined) {
+    if (!file) return
+    const fd = new FormData(); fd.append('file', file)
+    const res = await fetch('/api/upload', { method: 'POST', body: fd })
+    if (!res.ok) { setMsg('Não foi possível enviar a planta.'); return }
+    const j = await res.json() as { url: string }
+    setType(i, { floorPlanUrl: j.url })
+  }
+
   const typeById = useMemo(() => new Map(types.filter(t => t.id).map(t => [t.id as string, t])), [types])
   const inputCls = 'w-full border border-gray-300 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb]'
   const numberSet = (setter: (v: number) => void) => (e: React.ChangeEvent<HTMLInputElement>) => setter(Number(e.target.value) || 0)
@@ -60,9 +74,9 @@ export function EstruturaEditor({ empreendimentoId }: { empreendimentoId: string
         <div className="flex items-center justify-between">
           <div>
             <h2 className="font-semibold text-[#1e3a8a]">Tipologias</h2>
-            <p className="text-xs text-gray-500">Tipos de apartamento do prédio. Os <strong>finais</strong> (ex.: 01,02,05) dizem quais apartamentos são de cada tipo.</p>
+            <p className="text-xs text-gray-500">Tipos de apartamento do prédio. Os <strong>finais</strong> (ex.: 01,02,05) dizem quais apartamentos são de cada tipo. Nome, andares, quartos, áreas, vagas, posição, preço inicial e planta aparecem na página do empreendimento.</p>
           </div>
-          <button type="button" onClick={() => setTypes(t => [...t, { name: '', bedrooms: 2, suites: 0, bathrooms: 1, parking: 1, finals: '' }])} className="inline-flex items-center gap-1 rounded-lg border border-[#2563eb] px-3 py-1.5 text-sm text-[#2563eb] hover:bg-blue-50"><Plus className="h-4 w-4" /> Tipologia</button>
+          <button type="button" onClick={() => setTypes(t => [...t, { name: '', bedrooms: 2, suites: 0, bathrooms: 1, parking: 1, finals: '', floorsLabel: '' }])} className="inline-flex items-center gap-1 rounded-lg border border-[#2563eb] px-3 py-1.5 text-sm text-[#2563eb] hover:bg-blue-50"><Plus className="h-4 w-4" /> Tipologia</button>
         </div>
         {types.length === 0 && <p className="text-sm text-gray-400">Nenhuma tipologia ainda. Ex.: “2 quartos com suíte”, 50 m², 1 vaga, finais 01,02.</p>}
         <div className="space-y-3">
@@ -76,6 +90,25 @@ export function EstruturaEditor({ empreendimentoId }: { empreendimentoId: string
               <div><label className="text-[11px] text-gray-500">Vagas</label><input type="number" value={t.parking ?? ''} onChange={e => setTypes(a => a.map((x, j) => j === i ? { ...x, parking: e.target.value === '' ? null : Number(e.target.value) } : x))} className={inputCls} /></div>
               <div><label className="text-[11px] text-gray-500">Finais</label><input value={t.finals ?? ''} onChange={e => setTypes(a => a.map((x, j) => j === i ? { ...x, finals: e.target.value } : x))} className={inputCls} placeholder="01,02" /></div>
               <div className="flex items-end justify-end"><button type="button" aria-label="Remover tipologia" onClick={() => setTypes(a => a.filter((_, j) => j !== i))} className="rounded-lg p-2 text-red-500 hover:bg-red-50"><Trash2 className="h-4 w-4" /></button></div>
+              {/* v1.4: segunda linha da tipologia */}
+              <div className="col-span-2"><label className="text-[11px] text-gray-500" htmlFor={`tp-and-${i}`}>Andar(es)</label><input id={`tp-and-${i}`} value={t.floorsLabel ?? ''} onChange={e => setType(i, { floorsLabel: e.target.value })} className={inputCls} placeholder="1º ao 12º (vazio = pelos finais)" /></div>
+              <div><label className="text-[11px] text-gray-500" htmlFor={`tp-var-${i}`}>Varandas</label><input id={`tp-var-${i}`} type="number" value={t.balconies ?? ''} onChange={e => setType(i, { balconies: numOrNull(e.target.value) })} className={inputCls} /></div>
+              <div><label className="text-[11px] text-gray-500" htmlFor={`tp-at-${i}`}>Área total m²</label><input id={`tp-at-${i}`} type="number" step="0.01" value={t.totalArea ?? ''} onChange={e => setType(i, { totalArea: numOrNull(e.target.value) })} className={inputCls} /></div>
+              <div className="col-span-2"><label className="text-[11px] text-gray-500" htmlFor={`tp-sol-${i}`}>Posição solar</label>
+                <select id={`tp-sol-${i}`} value={t.sunPosition ?? ''} onChange={e => setType(i, { sunPosition: e.target.value || null })} className={inputCls}>
+                  <option value="">—</option><option>Nascente</option><option>Poente</option><option>Norte</option><option>Sul</option><option>Nascente e poente</option>
+                </select>
+              </div>
+              <div className="col-span-2"><label className="text-[11px] text-gray-500" htmlFor={`tp-pr-${i}`}>A partir de (R$)</label><input id={`tp-pr-${i}`} type="number" value={t.priceFrom ?? ''} onChange={e => setType(i, { priceFrom: numOrNull(e.target.value) })} className={inputCls} /></div>
+              <div className="flex items-end">
+                <label className="inline-flex w-full cursor-pointer items-center justify-center gap-1 rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-xs text-gray-700 hover:bg-gray-50">
+                  <Upload className="h-3.5 w-3.5" /> {t.floorPlanUrl ? 'Trocar planta' : 'Planta'}
+                  <input type="file" accept="image/*" className="hidden" onChange={e => void uploadPlan(i, e.target.files?.[0])} />
+                </label>
+              </div>
+              <div className="col-span-2 md:col-span-9"><label className="text-[11px] text-gray-500" htmlFor={`tp-desc-${i}`}>Descrição da tipologia</label><input id={`tp-desc-${i}`} value={t.description ?? ''} onChange={e => setType(i, { description: e.target.value })} className={inputCls} placeholder="Sala em dois ambientes, cozinha americana, varanda com churrasqueira" maxLength={1000} />
+                {t.floorPlanUrl && <p className="mt-1 text-[11px] text-gray-500">Planta enviada: <a href={t.floorPlanUrl} target="_blank" rel="noopener noreferrer" className="text-[#2563eb] underline">ver</a> · <button type="button" className="text-red-600 underline" onClick={() => setType(i, { floorPlanUrl: null })}>remover</button></p>}
+              </div>
             </div>
           ))}
         </div>

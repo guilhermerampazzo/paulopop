@@ -32,15 +32,19 @@ export async function POST(request: NextRequest) {
 
   if (action === 'status') {
     if (!status) return NextResponse.json({ error: 'Status não informado' }, { status: 400 })
-    await prisma.property.updateMany({
-      where: { id: { in: ids }, ...scope },
+    // v1.4: anúncios importados de portais de terceiros sem confirmação de autorização não são publicados em lote
+    const blocked = ['ACTIVE', 'SOLD', 'RENTED'].includes(String(status))
+      ? { NOT: { AND: [{ sourcePortal: { not: null } }, { sourcePortal: { not: 'remax' } }, { publishAuthConfirmedAt: null }] } }
+      : {}
+    const result = await prisma.property.updateMany({
+      where: { id: { in: ids }, ...scope, ...blocked },
       data: {
         status: status as never,
         ...(status === 'ACTIVE' ? { publishedAt: new Date() } : {}),
       },
     })
     revalidateSite('properties')
-    return NextResponse.json({ success: true, count: ids.length })
+    return NextResponse.json({ success: true, count: result.count, skipped: ids.length - result.count })
   }
 
   return NextResponse.json({ error: 'Ação inválida' }, { status: 400 })

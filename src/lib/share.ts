@@ -34,6 +34,36 @@ export async function shareLink(opts: { url: string; title?: string; text?: stri
   }
 }
 
+/**
+ * v1.4 — compartilhar o imóvel com a foto principal junto do link.
+ * Onde o aparelho aceita arquivos na Web Share API (celulares e Chrome/Edge no Windows), a foto vai
+ * como anexo e o link segue no texto; nos demais, cai em shareLink (o link leva a foto na prévia,
+ * pela metatag og:image do imóvel).
+ */
+export async function shareProperty(opts: { url: string; title?: string; text?: string; imageUrl?: string | null }): Promise<'shared' | 'copied' | 'failed'> {
+  if (opts.imageUrl && typeof navigator !== 'undefined' && typeof navigator.share === 'function' && typeof navigator.canShare === 'function') {
+    try {
+      const res = await fetch(opts.imageUrl, { cache: 'force-cache' })
+      if (res.ok) {
+        const blob = await res.blob()
+        if (blob.type.startsWith('image/') && blob.size > 0 && blob.size < 8 * 1024 * 1024) {
+          const ext = blob.type.includes('png') ? 'png' : blob.type.includes('webp') ? 'webp' : 'jpg'
+          const file = new File([blob], `imovel.${ext}`, { type: blob.type })
+          const data = { files: [file], title: opts.title, text: [opts.text ?? opts.title, opts.url].filter(Boolean).join('\n') }
+          if (navigator.canShare(data)) {
+            await navigator.share(data)
+            return 'shared'
+          }
+        }
+      }
+    } catch (e) {
+      if (e instanceof Error && e.name === 'AbortError') return 'failed'
+      // qualquer outra falha (rede, tipo não aceito) → compartilha só o link
+    }
+  }
+  return shareLink(opts)
+}
+
 /** Link do WhatsApp (55 + DDD + número). */
 export function waHref(phone: string | null | undefined, text?: string): string | null {
   const d = String(phone ?? '').replace(/\D/g, '')
