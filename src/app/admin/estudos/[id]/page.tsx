@@ -11,6 +11,8 @@ import { ArrowLeft, Save, Loader2, Plus, Trash2, Link2, ExternalLink, Share2, Up
 import { computeStudy, fmtBRL, PORTALS, portalFromUrl, DEFAULT_INTRO, DEFAULT_METHODOLOGY } from '@/lib/market-study'
 import { formatDuration } from '@/lib/sales'
 import { StudyResearchTab } from '@/components/admin/StudyResearchTab'
+import { BuscaAmostrasButton } from '@/components/admin/BuscaAmostrasButton'
+import type { BuscaAmostrasResponse, MarketAnalysisRequest } from '@/lib/market-types'
 
 type Sample = {
   id?: string; portal: string; url: string; advertiser: string; location: string; sameCondo: boolean
@@ -73,6 +75,37 @@ export default function EstudoEditorPage() {
     setSamples(a => [...a, ...list.filter(x => !a.some(y => y.id === x.id)).map(toSample)])
     knownIds.current = Array.from(new Set([...knownIds.current, ...list.map(x => String(x.id))]))
   }, [])
+  /** v1.5 — portal da amostra IA para a lista fixa do formulário. */
+  const MCP_PORTAL: Record<string, string> = { corretorpaulopop: 'Outro', wimoveis: 'WImóveis', dfimoveis: 'DF Imóveis', olx: 'OLX', outro: 'Outro' }
+  /** v1.5 — amostras vindas da busca IA (Claude) → formato do editor. */
+  const onMcpSamples = useCallback((r: BuscaAmostrasResponse) => {
+    const mapped: Sample[] = r.amostras.map(x => ({
+      ...emptySample(),
+      portal: MCP_PORTAL[x.fonteFonte] ?? 'Outro',
+      url: x.linkFonte ?? '',
+      advertiser: x.fonteFonte === 'corretorpaulopop' ? 'corretorpaulopop.com' : x.title,
+      location: [x.neighborhood, x.city].filter(Boolean).join(' – '),
+      price: x.precoTotal ? String(x.precoTotal) : '',
+      areaPrivate: x.metragem ? String(x.metragem) : '',
+      bedrooms: x.quartos ? String(x.quartos) : '',
+      bathrooms: x.banheiros ? String(x.banheiros) : '',
+      photoUrl: x.fotos?.[0] ?? '',
+      notes: `Amostra via busca IA (${x.fonteFonte})`,
+    }))
+    setSamples(a => [...a, ...mapped.filter(x => !x.url || !a.some(y => y.url === x.url))])
+    setMsg({ type: 'ok', text: `${r.totalEncontradas} amostra(s) da busca IA adicionadas. Confira os campos e salve.` })
+  }, [])
+  /** v1.5 — dados do imóvel avaliado no formato que a busca IA espera. */
+  const mcpPropertyData: MarketAnalysisRequest = {
+    propertyType: st.propertyType ?? '',
+    neighborhood: st.neighborhood ?? '',
+    city: st.city ?? '',
+    metragem: Number(st.areaPrivate) || 0,
+    quartos: Number(st.bedrooms) || 0,
+    banheiros: Number(st.bathrooms) || 0,
+    condicao: st.condition ?? '',
+    amenidades: st.leisure ? [st.leisure] : [],
+  }
 
   const hydrate = useCallback((d: Study) => {
     const fields: Record<string, string> = {}
@@ -317,6 +350,10 @@ export default function EstudoEditorPage() {
                 <button type="button" onClick={() => void addByLink(pasteText)} disabled={linkBusy || pasteText.trim().length < 20} className="inline-flex items-center gap-1.5 rounded-lg bg-[#2563eb] px-4 py-2 text-sm font-medium text-white disabled:opacity-50">{linkBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />} Ler texto colado</button>
               </div>
             )}
+            {/* v1.5 — busca IA no portfólio (Claude) */}
+            <div className="mt-4 border-t border-gray-100 pt-3">
+              <BuscaAmostrasButton propertyId={meta?.property?.id} propertyData={mcpPropertyData} onSamplesFound={onMcpSamples} />
+            </div>
             {candCount > 0 && <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">Há {candCount} candidata(s) aguardando sua decisão na aba <button type="button" onClick={() => setTab('pesquisa')} className="font-semibold underline">Pesquisa</button>. Elas só entram aqui e no cálculo depois de aprovadas.</p>}
           </div>
 

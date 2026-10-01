@@ -18,7 +18,16 @@
 
 # misc
 .DS_Store
+._*
 *.pem
+
+# chaves SSH privadas (nunca commitar — ficam só no disco local)
+*_id_ed25519
+*_id_rsa
+
+# backups locais de .env (não commitar)
+*.bak-*
+*.bak
 
 # debug
 npm-debug.log*
