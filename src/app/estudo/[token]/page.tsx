@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { loadStudy } from '@/lib/market-study-db'
 import { StudyReport } from '@/components/public/StudyReport'
+import { ownerFallback } from '@/lib/agent-display'
 import { PrintButton } from '@/components/public/PrintButton'
 
 export const metadata: Metadata = { title: 'Estudo de Mercado', robots: { index: false, follow: false } }
@@ -23,6 +24,7 @@ export default async function EstudoPublicoPage({ params }: { params: { token: s
   }
   const study = await loadStudy(ref.id, { approvedOnly: true })
   if (!study) notFound()
+  const config = await prisma.siteConfig.findFirst().catch(() => null)
   return (
     <div className="min-h-screen bg-[#dfe2ea] px-2 py-6 print:bg-white print:p-0">
       {/* v1.4: lâminas 16:9 — a regra de página vale só neste documento */}
@@ -34,7 +36,7 @@ export default async function EstudoPublicoPage({ params }: { params: { token: s
         </div>
         <PrintButton />
       </div>
-      <StudyReport study={study} />
+      <StudyReport study={study} agentFallback={ownerFallback(study.agent, config)} />
     </div>
   )
 }

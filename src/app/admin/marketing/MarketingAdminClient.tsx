@@ -32,7 +32,7 @@ export function MarketingAdminClient({ properties }: MarketingAdminClientProps) 
             <div>
               <h2 className="font-semibold text-[#1e3a8a]">Planos de marketing</h2>
               <p className="text-sm text-gray-500">
-                Gere um plano de divulgacao com IA para qualquer imovel cadastrado.
+                Gere um plano de divulgação com IA para qualquer imóvel cadastrado.
               </p>
             </div>
           </div>
@@ -41,18 +41,18 @@ export function MarketingAdminClient({ properties }: MarketingAdminClientProps) 
         <div className="rounded-2xl bg-white shadow-sm border border-gray-100 overflow-hidden">
           <div className="flex items-center justify-between gap-4 p-5 border-b border-gray-100">
             <div>
-              <h3 className="font-semibold text-[#1e3a8a]">Imoveis disponiveis para marketing</h3>
-              <p className="text-sm text-gray-500">Escolha um imovel para criar ou regenerar o plano.</p>
+              <h3 className="font-semibold text-[#1e3a8a]">Imóveis disponíveis para marketing</h3>
+              <p className="text-sm text-gray-500">Escolha um imóvel para criar ou regenerar o plano.</p>
             </div>
-            <span className="text-sm font-medium text-[#2563eb]">{properties.length} imoveis</span>
+            <span className="text-sm font-medium text-[#2563eb]">{properties.length} {properties.length === 1 ? 'imóvel' : 'imóveis'}</span>
           </div>
 
           {properties.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-3 px-6 py-16 text-center">
               <Search className="h-10 w-10 text-gray-300" />
-              <p className="font-medium text-gray-600">Nenhum imovel cadastrado ainda.</p>
+              <p className="font-medium text-gray-600">Nenhum imóvel cadastrado ainda.</p>
               <p className="max-w-md text-sm text-gray-400">
-                Assim que houver imoveis no sistema, eles vao aparecer aqui para gerar campanhas e planos de divulgacao.
+                Assim que houver imóveis no sistema, eles vão aparecer aqui para gerar campanhas e planos de divulgação.
               </p>
             </div>
           ) : (
@@ -62,10 +62,10 @@ export function MarketingAdminClient({ properties }: MarketingAdminClientProps) 
                   <div>
                     <p className="text-xs font-mono text-gray-400">{property.ref}</p>
                     <h4 className="mt-1 font-medium text-[#1e3a8a]">
-                      {property.title ?? property.propertyType ?? 'Imovel sem titulo'}
+                      {property.title ?? property.propertyType ?? 'Imóvel sem título'}
                     </h4>
                     <p className="mt-1 text-sm text-gray-500">
-                      {property.propertyType ?? 'Tipo nao informado'}
+                      {property.propertyType ?? 'Tipo não informado'}
                       {property.city ? ` • ${property.city}` : ''}
                       {property.state ? `, ${property.state}` : ''}
                     </p>

@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic'
  * v1.3 — Página pública de um parceiro: cabeçalho com logo/capa, contato, benefício,
  * seções do editor, empreendimentos ligados e CTA "Quer uma indicação?".
  */
+import { defaultOgImages } from '@/lib/seo-og'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -27,7 +28,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title, description,
     alternates: { canonical: absUrl(`/parceiros/${p.slug}`) },
-    openGraph: { title: `${title} | Paulo Pop`, description, url: absUrl(`/parceiros/${p.slug}`), ...(og ? { images: [{ url: og }] } : {}) },
+    openGraph: { title: `${title} | Paulo Pop`, description, url: absUrl(`/parceiros/${p.slug}`), images: og ? [{ url: og }] : await defaultOgImages() },
   }
 }
 

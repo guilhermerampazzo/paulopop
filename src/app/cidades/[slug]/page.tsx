@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic'
  * (RA, fundação, população, área, distância e preço médio do m² dos anúncios), índice lateral,
  * seções do editor e CTA padrão quando a página não tem seção CTA. JSON-LD `Place`.
  */
+import { defaultOgImages } from '@/lib/seo-og'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -33,7 +34,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title,
     description,
     alternates: { canonical: absUrl(`/cidades/${city.slug}`) },
-    openGraph: { title: `${title} | Paulo Pop`, description, url: absUrl(`/cidades/${city.slug}`), type: 'article', ...(og ? { images: [{ url: og }] } : {}) },
+    openGraph: { title: `${title} | Paulo Pop`, description, url: absUrl(`/cidades/${city.slug}`), type: 'article', images: og ? [{ url: og }] : await defaultOgImages() },
   }
 }
 

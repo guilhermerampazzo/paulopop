@@ -7,7 +7,7 @@ import type { StudyResults } from '@/lib/market-study'
 import { fmtBRL } from '@/lib/market-study'
 import { formatDuration } from '@/lib/sales'
 import { SITE_URL } from '@/lib/site'
-import { agentDisplay } from '@/lib/agent-display'
+import { agentDisplay, type AgentFallback } from '@/lib/agent-display'
 import { WhatsAppIcon } from '@/components/ui/WhatsAppIcon'
 
 const n = (v: unknown) => (v == null ? null : Number(v))
@@ -52,11 +52,11 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
   )
 }
 
-export function StudyReport({ study }: { study: StudyFull }) {
+export function StudyReport({ study, agentFallback }: { study: StudyFull; agentFallback?: AgentFallback }) {
   const r = (study.results ?? null) as StudyResults | null
   const agent = study.agent
   // v1.4: mesmos dados do hub do corretor (nome público, WhatsApp formatado, CRECI/UF Nº, vínculo)
-  const hub = agentDisplay(agent)
+  const hub = agentDisplay(agent, agentFallback) // v1.5: Meu perfil incompleto → Configurações
   const photos = (Array.isArray(study.photos) ? study.photos : []) as string[]
   const samples = study.samples
   const rowsStat = new Map((r?.samples ?? []).map(s => [s.id, s]))
@@ -78,9 +78,9 @@ export function StudyReport({ study }: { study: StudyFull }) {
             </div>
           </div>
           <div className="flex flex-col items-end justify-end text-right">
-            {agent.avatarUrl && (
+            {hub.avatarUrl && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={agent.avatarUrl} alt={hub.name} className="mb-3 h-40 w-40 rounded-xl bg-white/10 object-contain" />
+              <img src={hub.avatarUrl} alt={hub.name} className="mb-3 h-40 w-40 rounded-xl bg-white/10 object-contain" />
             )}
             <p className="text-2xl font-bold">{hub.name}</p>
             {hub.creci && <p className="text-sm text-blue-100">{hub.creci}</p>}
@@ -368,9 +368,9 @@ export function StudyReport({ study }: { study: StudyFull }) {
       <Slide dark>
         <div className="grid grid-cols-[1fr_auto] items-center gap-8 py-6">
           <div className="flex items-center gap-8">
-            {agent.avatarUrl && (
+            {hub.avatarUrl && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={agent.avatarUrl} alt="" className="h-44 w-36 rounded-lg bg-white/10 object-contain" />
+              <img src={hub.avatarUrl} alt="" className="h-44 w-36 rounded-lg bg-white/10 object-contain" />
             )}
             <div>
               <p className="text-3xl font-bold">{hub.name}</p>

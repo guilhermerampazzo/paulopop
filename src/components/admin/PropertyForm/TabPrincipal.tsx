@@ -31,6 +31,9 @@ interface RoomRow {
 interface TabPrincipalProps {
   data: Record<string, unknown>
   onChange: (field: string, value: unknown) => void
+  /** v1.5: completar os campos vazios com os dados do empreendimento */
+  onFillFromEmpreendimento?: () => void
+  filling?: boolean
 }
 
 const STATUS_OPTIONS = [
@@ -173,7 +176,7 @@ function FieldRow({ children, cols = 2 }: { children: React.ReactNode; cols?: nu
 interface EmpreendimentoOption { id: string; name: string }
 interface UnitOption { id: string; floor: number; number: string; block: { id: string; name: string }; unitType: { name: string } | null; properties: Array<{ id: string; ref: string; status: string }> }
 
-export function TabPrincipal({ data, onChange }: TabPrincipalProps) {
+export function TabPrincipal({ data, onChange, onFillFromEmpreendimento, filling }: TabPrincipalProps) {
   const features = (data.features as string[]) ?? []
   const lifestyles = (data.lifestyles as string[]) ?? []
   const additionalFees = (data.additionalFees as AdditionalFee[]) ?? []
@@ -351,6 +354,20 @@ export function TabPrincipal({ data, onChange }: TabPrincipalProps) {
               </div>
             )}
           </FieldRow>
+          {/* v1.5: preenchimento automático (também acontece sozinho ao escolher o empreendimento ou a unidade) */}
+          {empreendimentoId && onFillFromEmpreendimento && (
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={onFillFromEmpreendimento}
+                disabled={filling}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-[#2563eb] px-3 py-1.5 text-xs font-medium text-[#2563eb] hover:bg-blue-50 disabled:opacity-50"
+              >
+                {filling ? 'Buscando dados do empreendimento…' : 'Completar com os dados do empreendimento'}
+              </button>
+              <span className="text-xs text-gray-500">Endereço, mapa, condomínio, tipologia, textos e fotos do prédio. Só preenche o que estiver vazio.</span>
+            </div>
+          )}
         </section>
       )}
 

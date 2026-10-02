@@ -14,10 +14,16 @@ export async function GET(_req: NextRequest, { params }: Params) {
     include: {
       images: { orderBy: [{ category: 'asc' }, { order: 'asc' }] },
       floorPlanImages: { orderBy: { order: 'asc' } },
+      _count: { select: { properties: true } }, // v1.5: menu de ações → "Imóveis (n)"
     },
   })
 
   if (!empreendimento) return NextResponse.json({ error: 'Não encontrado' }, { status: 404 })
+  // v1.5: rascunho só para quem está logado (antes qualquer visitante lia empreendimentos não publicados)
+  if (empreendimento.status !== 'PUBLISHED') {
+    const session = await getServerSession(authOptions)
+    if (!session) return NextResponse.json({ error: 'Não encontrado' }, { status: 404 })
+  }
   return NextResponse.json(empreendimento)
 }
 

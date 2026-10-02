@@ -9,6 +9,19 @@ export function normalizeSearchText(q: string | null | undefined): string {
   return String(q ?? '').trim().replace(/\s+/g, ' ').slice(0, 120)
 }
 
+/** v1.5: "QN303" → ["QN 303", "QN303", "QN-303"] (sem a própria forma digitada). Só para siglas de quadra do DF. */
+export function quadraVariants(qRaw: string): string[] {
+  const m = normalizeSearchText(qRaw).match(/^(Q[A-Z]{1,3}|SQ[A-Z]{1,2}|CL[A-Z]{0,2}|CSG|CNB|CSB|QS|QR|QN|QNM|QNN|QNL|QND|QNJ|QNA|QNE)\s*[-.]?\s*(\d{1,4})(.*)$/i)
+  if (!m) return []
+  const sigla = m[1].toUpperCase()
+  const num = m[2]
+  const rest = m[3].trim()
+  const tail = rest ? ` ${rest}` : ''
+  const forms = [`${sigla} ${num}${tail}`, `${sigla}${num}${tail}`, `${sigla}-${num}${tail}`]
+  const typed = normalizeSearchText(qRaw).toLowerCase()
+  return Array.from(new Set(forms)).filter(f => f.toLowerCase() !== typed)
+}
+
 export function searchTextWhere(qRaw: string): Prisma.PropertyWhereInput[] {
   const q = normalizeSearchText(qRaw)
   if (!q) return []
@@ -25,6 +38,10 @@ export function searchTextWhere(qRaw: string): Prisma.PropertyWhereInput[] {
   // "PP 001" / "pp-001" → também tenta a ref sem separadores
   const compact = q.replace(/[\s-]/g, '')
   if (compact && compact !== q) or.push({ ref: { contains: compact, mode } })
+  // v1.5: quadras do DF escritas de jeitos diferentes — "QN 303", "qn303", "QN-303" acham umas às outras
+  for (const v of quadraVariants(q)) {
+    or.push({ address: { contains: v, mode } }, { title: { contains: v, mode } }, { neighborhood: { contains: v, mode } })
+  }
   return or
 }
 

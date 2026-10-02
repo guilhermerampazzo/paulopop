@@ -88,7 +88,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.85,
   }))
 
-  const extraStatic: MetadataRoute.Sitemap = ['/cidades', '/parceiros', '/vender', '/contato', '/politica-de-privacidade', '/termos-de-uso'].map(p => ({ url: `${BASE_URL}${p}`, lastModified: new Date(), changeFrequency: 'weekly' as const, priority: p === '/vender' ? 0.8 : 0.5 }))
+  // v1.5: /contato saiu daqui — já está em staticRoutes (aparecia duas vezes no sitemap)
+  const extraStatic: MetadataRoute.Sitemap = ['/cidades', '/parceiros', '/vender', '/politica-de-privacidade', '/termos-de-uso'].map(p => ({ url: `${BASE_URL}${p}`, lastModified: new Date(), changeFrequency: 'weekly' as const, priority: p === '/vender' ? 0.8 : 0.5 }))
   const cityRoutes: MetadataRoute.Sitemap = cityPages.map(c => ({ url: `${BASE_URL}/cidades/${c.slug}`, lastModified: c.updatedAt, changeFrequency: 'weekly' as const, priority: 0.7 }))
   const partnerRoutes: MetadataRoute.Sitemap = partners.map(c => ({ url: `${BASE_URL}/parceiros/${c.slug}`, lastModified: c.updatedAt, changeFrequency: 'monthly' as const, priority: 0.4 }))
   return [...staticRoutes, ...extraStatic, ...propertyRoutes, ...blogRoutes, ...empreendimentoRoutes, ...cityRoutes, ...partnerRoutes]

@@ -71,7 +71,18 @@ export async function POST(request: NextRequest) {
   const agent = { id: auth.id }
 
   const body = await request.json()
-  const { propertyType, purpose, transactionType, location, neighborhood, city } = body
+  const { propertyType, purpose, transactionType, location } = body
+  let { neighborhood, city } = body
+  // v1.5: imóvel criado a partir do empreendimento já nasce vinculado (bairro/cidade do prédio entram no slug)
+  let empreendimentoId: string | null = null
+  if (typeof body.empreendimentoId === 'string' && body.empreendimentoId) {
+    const emp = await prisma.empreendimento.findUnique({ where: { id: body.empreendimentoId }, select: { id: true, neighborhood: true, city: true } })
+    if (emp) {
+      empreendimentoId = emp.id
+      if (!(typeof neighborhood === 'string' && neighborhood.trim()) && emp.neighborhood) neighborhood = emp.neighborhood
+      if (!(typeof city === 'string' && city.trim()) && emp.city) city = emp.city
+    }
+  }
 
   if (!propertyType) return NextResponse.json({ error: 'Tipo de imóvel obrigatório' }, { status: 400 })
 
@@ -94,6 +105,7 @@ export async function POST(request: NextRequest) {
       ...(typeof city === 'string' && city.trim() ? { city: city.trim() } : {}),
       agentId: agent.id,
       status: 'DRAFT',
+      ...(empreendimentoId ? { empreendimentoId } : {}),
     },
   })
 

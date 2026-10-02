@@ -28,7 +28,7 @@ export async function generateMetadata(): Promise<Metadata> {
       template: '%s | Paulo Pop',
     },
     description: config?.metaDescription || DEFAULT_DESCRIPTION,
-    alternates: { canonical: '/' },
+    // v1.5: sem canonical padrão aqui — cada página declara o seu (antes toda página sem canonical apontava para a home)
     openGraph: {
       type: 'website',
       locale: 'pt_BR',

@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic'
  * busca, grade de cards, paginação, séries em destaque e bloco "Receba novidades no WhatsApp".
  * Só posts PUBLISHED com publishedAt <= agora.
  */
+import { defaultOgImages } from '@/lib/seo-og'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import type { Prisma } from '@prisma/client'
@@ -16,11 +17,14 @@ import { getPublishedCityLinksCached } from '@/lib/city-pages'
 import { blogPublishedWhere, formatBlogDate, whatsappLink, FEATURED_SERIES } from '@/lib/blog'
 import { BlogCard, AuthorAvatar } from '@/components/public/BlogCard'
 
-export const metadata: Metadata = {
-  title: 'Blog do mercado imobiliário do DF',
-  description: 'Guias para comprar, vender e alugar, análises do mercado e novidades das cidades do Distrito Federal, por Paulo Pop.',
-  alternates: { canonical: absUrl('/blog'), types: { 'application/rss+xml': absUrl('/blog/rss.xml') ?? '/blog/rss.xml' } },
-  openGraph: { title: 'Blog do mercado imobiliário do DF | Paulo Pop', url: absUrl('/blog'), type: 'website' },
+// v1.5: generateMetadata para incluir a imagem de compartilhamento padrão
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: 'Blog do mercado imobiliário do DF',
+    description: 'Guias para comprar, vender e alugar, análises do mercado e novidades das cidades do Distrito Federal, por Paulo Pop.',
+    alternates: { canonical: absUrl('/blog'), types: { 'application/rss+xml': absUrl('/blog/rss.xml') ?? '/blog/rss.xml' } },
+    openGraph: { title: 'Blog do mercado imobiliário do DF | Paulo Pop', url: absUrl('/blog'), type: 'website', images: await defaultOgImages() },
+  }
 }
 
 interface SearchParams { categoria?: string; cidade?: string; tag?: string; busca?: string; page?: string }

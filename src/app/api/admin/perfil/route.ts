@@ -12,11 +12,19 @@ const SELECT = {
   company: true, companyCreci: true, publicName: true, companyRole: true, instagram: true, facebook: true, linkedin: true, youtube: true, telegram: true, twitter: true,
 } as const
 
+const CONFIG_OWNER_SELECT = {
+  ownerName: true, ownerPhotoUrl: true, ownerCreci: true, ownerCompany: true, ownerWhatsapp: true, ownerPhone: true, ownerEmail: true,
+} as const
+
 export async function GET() {
   const auth = await requireSession()
   if (auth.response) return auth.response
-  const me = await prisma.user.findUnique({ where: { id: auth.user.id }, select: SELECT })
-  return NextResponse.json(me)
+  const [me, config] = await Promise.all([
+    prisma.user.findUnique({ where: { id: auth.user.id }, select: SELECT }),
+    prisma.siteConfig.findFirst({ select: CONFIG_OWNER_SELECT }),
+  ])
+  // v1.5: dados de Configurações → Perfil, para a prévia com reserva e o botão "Copiar das Configurações"
+  return NextResponse.json(me ? { ...me, configProfile: config } : me)
 }
 
 export async function PUT(request: NextRequest) {

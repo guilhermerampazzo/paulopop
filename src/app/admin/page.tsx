@@ -12,6 +12,20 @@ import { Card } from '@/components/ui/Card'
 import { formatCurrency, formatDate } from '@/lib/formatters'
 import { Building2, Users, TrendingUp, CheckCircle } from 'lucide-react'
 import { DashboardCharts } from '@/components/admin/DashboardCharts'
+import Link from 'next/link'
+import { getSessionUser } from '@/lib/authz'
+import { profileGaps } from '@/lib/agent-display'
+
+/** v1.5: o que falta no Meu perfil do usuário logado (aviso no topo do painel). */
+async function getMyProfileGaps() {
+  const me = await getSessionUser().catch(() => null)
+  if (!me) return []
+  const [user, config] = await Promise.all([
+    prisma.user.findUnique({ where: { id: me.id }, select: { name: true, publicName: true, avatarUrl: true, creci: true, phone: true, whatsapp: true, company: true, companyRole: true, role: true, email: true } }),
+    prisma.siteConfig.findFirst({ select: { ownerName: true, ownerPhotoUrl: true, ownerCreci: true, ownerCompany: true, ownerWhatsapp: true, ownerPhone: true, ownerEmail: true } }),
+  ])
+  return user ? profileGaps(user, config) : []
+}
 
 async function getDashboardData() {
   const now = new Date()
@@ -99,7 +113,7 @@ const sourceBadge: Record<string, 'default' | 'success' | 'info' | 'warning' | '
 }
 
 export default async function AdminDashboard() {
-  const { stats, recentProperties, recentLeads, leadsChartData, statusChartData } = await getDashboardData()
+  const [{ stats, recentProperties, recentLeads, leadsChartData, statusChartData }, gaps] = await Promise.all([getDashboardData(), getMyProfileGaps()])
 
   const statCards = [
     {
@@ -134,6 +148,16 @@ export default async function AdminDashboard() {
 
   return (
     <div className="space-y-6">
+      {/* v1.5: perfil incompleto → o cartão do corretor nos anúncios fica sem foto ou com a imobiliária errada */}
+      {gaps.length > 0 && (
+        <div role="status" className="flex flex-col gap-2 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="font-semibold">Seu perfil está incompleto</p>
+            <p className="mt-0.5">Falta: {gaps.map(g => g.label).join('; ')}. Esses dados aparecem no cartão do corretor em cada imóvel.</p>
+          </div>
+          <Link href="/admin/perfil" className="inline-flex flex-shrink-0 items-center justify-center rounded-xl bg-[#1e3a8a] px-4 py-2 text-xs font-semibold text-white hover:bg-[#2563eb]">Completar Meu perfil</Link>
+        </div>
+      )}
       {/* Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {statCards.map((card) => {

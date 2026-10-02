@@ -7,6 +7,7 @@ export const dynamic = 'force-dynamic'
  * v1.4: hub do corretor padronizado (AgentCard), condição do imóvel visível, preço/m² com faixa de
  * tolerância e referência editável por imóvel, compartilhar com a foto principal e ficha completa para imprimir.
  */
+import { cleanPageTitle, TITLE_SUFFIX } from '@/lib/seo-title'
 import { notFound, permanentRedirect } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
@@ -18,7 +19,7 @@ import { parsePriceHistory, priceReductions } from '@/lib/price-history'
 import { groupFeatures } from '@/lib/property-features'
 import { compareSqm } from '@/lib/property-compare'
 import { sqmPublicView } from '@/lib/sqm-display'
-import { agentDisplay } from '@/lib/agent-display'
+import { agentDisplay, ownerFallback } from '@/lib/agent-display'
 import { AgentCard } from '@/components/public/AgentCard'
 import { PropertyGallery } from '@/components/public/PropertyGallery'
 import { PropertySummaryBar } from '@/components/public/PropertySummaryBar'
@@ -56,8 +57,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (!property) return { title: 'Imóvel não encontrado' }
 
-  const title = property.title
-    ?? [property.propertyType, transactionLabel[property.transactionType], [property.neighborhood, property.city].filter(Boolean).join(', ')].filter(Boolean).join(' - ')
+  // v1.5: sem sufixo repetido ("| Paulo Pop | Paulo Pop") e com tamanho que o Google mostra inteiro
+  const title = cleanPageTitle(property.title
+    || [property.propertyType, transactionLabel[property.transactionType], [property.neighborhood, property.city].filter(Boolean).join(', ')].filter(Boolean).join(' - '))
 
   const description = property.marketingDescription
     ?? property.description?.substring(0, 160)
@@ -69,7 +71,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     alternates: { canonical: `/imoveis/${params.slug}` },
     // v1.4: a foto principal vai na prévia do link (WhatsApp, Facebook, Telegram), em 1200×630 e endereço absoluto
     openGraph: {
-      title: `${title} | Paulo Pop`,
+      title: `${title}${TITLE_SUFFIX}`,
       description,
       url: absUrl(`/imoveis/${params.slug}`),
       images: property.images[0] ? [{ url: absUrl(`/api/og/imovel/${property.id}`)!, width: 1200, height: 630, alt: title }] : [],
@@ -92,7 +94,7 @@ export default async function PropertyPage({ params }: Props) {
         lifestyles: true,
         documents: { where: { isPublic: true } },
         videos: true,
-        agent: { select: { name: true, publicName: true, avatarUrl: true, company: true, companyRole: true, creci: true, phone: true, whatsapp: true } },
+        agent: { select: { name: true, publicName: true, avatarUrl: true, company: true, companyRole: true, creci: true, phone: true, whatsapp: true, role: true, email: true } },
         empreendimento: { select: { id: true, name: true, slug: true, stage: true, status: true, builder: true, deliveryYear: true } },
         unit: { select: { number: true, floor: true, block: { select: { name: true } }, unitType: { select: { name: true } } } },
       },
@@ -227,7 +229,7 @@ export default async function PropertyPage({ params }: Props) {
   const agentName = property.agent.name
   const agentCompany = property.agent.company ?? config?.ownerCompany ?? ''
   // v1.4: hub do corretor (mesmo formato em todo o site)
-  const agentCard = agentDisplay(property.agent, { whatsapp: config?.ownerWhatsapp, phone: config?.ownerPhone, company: config?.ownerCompany })
+  const agentCard = agentDisplay(property.agent, ownerFallback(property.agent, config)) // v1.5: Meu perfil incompleto → Configurações
   const hasCover = property.images.length > 0
   const pageUrl = absUrl(`/imoveis/${property.slug}`)!
 

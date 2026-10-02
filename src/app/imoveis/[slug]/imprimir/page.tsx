@@ -16,7 +16,7 @@ import { formatCurrency, formatArea } from '@/lib/formatters'
 import { groupFeatures } from '@/lib/property-features'
 import { compareSqm } from '@/lib/property-compare'
 import { sqmPublicView } from '@/lib/sqm-display'
-import { agentDisplay } from '@/lib/agent-display'
+import { agentDisplay, ownerFallback } from '@/lib/agent-display'
 import { estimateMonthly, DEFAULT_ANNUAL_RATE } from '@/lib/finance'
 import { stripHtml } from '@/lib/sanitize'
 import { AgentCard } from '@/components/public/AgentCard'
@@ -62,7 +62,7 @@ export default async function FichaImpressaPage({ params }: Props) {
         images: { orderBy: [{ isCover: 'desc' }, { order: 'asc' }], take: MAX_PHOTOS },
         features: true,
         lifestyles: true,
-        agent: { select: { name: true, publicName: true, avatarUrl: true, company: true, companyRole: true, creci: true, phone: true, whatsapp: true } },
+        agent: { select: { name: true, publicName: true, avatarUrl: true, company: true, companyRole: true, creci: true, phone: true, whatsapp: true, role: true, email: true } },
         empreendimento: { select: { name: true } },
       },
     }),
@@ -136,7 +136,7 @@ export default async function FichaImpressaPage({ params }: Props) {
   const surroundings = property.surroundingsInfo ? stripHtml(property.surroundingsInfo.replace(/<\/(p|div|li|h\d)>|<br\s*\/?>/gi, '\n')).trim() : ''
   const lat = property.latitude ? Number(property.latitude) : null
   const lng = property.longitude ? Number(property.longitude) : null
-  const agent = agentDisplay(property.agent, { whatsapp: config?.ownerWhatsapp, phone: config?.ownerPhone, company: config?.ownerCompany })
+  const agent = agentDisplay(property.agent, ownerFallback(property.agent, config)) // v1.5: Meu perfil incompleto → Configurações
   const [cover, ...others] = property.images
   const h2 = 'mb-2 border-b-2 border-[#dc1c2e] pb-1 text-[13pt] font-bold text-[#1e3a8a]'
 

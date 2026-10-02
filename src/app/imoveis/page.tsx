@@ -6,11 +6,13 @@ import { prisma } from '@/lib/prisma'
 import { PropertyCard } from '@/components/public/PropertyCard'
 import { PropertyFilters } from '@/components/public/PropertyFilters'
 import { HomeSearch } from '@/components/public/HomeSearch'
-import { Search } from 'lucide-react'
+import { PropertyMapSearch } from '@/components/public/PropertyMapSearch'
+import { Search, Map as MapIcon, LayoutGrid } from 'lucide-react'
 import type { Metadata } from 'next'
 import type { Prisma } from '@prisma/client'
 import { CARD_SELECT, toCard } from '@/lib/section-data'
-import { searchTextWhere, sortByRelevance, normalizeSearchText } from '@/lib/property-search'
+import { sortByRelevance } from '@/lib/property-search'
+import { buildWhere, searchText, type SearchParams } from '@/lib/property-filters'
 import { getSiteConfigCached, getActiveCitiesCached } from '@/lib/cache'
 import { getPublishedCityLinksCached } from '@/lib/city-pages'
 
@@ -20,31 +22,7 @@ export const metadata: Metadata = {
   description: 'Encontre apartamentos, casas, terrenos e muito mais. Filtre por localização, preço, tipo e características.',
 }
 
-interface SearchParams {
-  q?: string
-  /** v1.3: busca por texto único (ref, título, bairro, cidade, endereço, empreendimento) */
-  busca?: string
-  transacao?: string
-  finalidade?: string
-  tipo?: string
-  precoMin?: string
-  precoMax?: string
-  quartos?: string
-  banheiros?: string
-  areaMin?: string
-  estado?: string
-  cidade?: string
-  bairro?: string
-  feature?: string | string[]
-  ordem?: string
-  pagina?: string
-}
-
 const PAGE_SIZE = 12
-
-function searchText(sp: SearchParams): string {
-  return normalizeSearchText(sp.busca ?? sp.q)
-}
 
 /** Converte SearchParams para Record<string,string> ignorando arrays (feature) */
 function spToRecord(sp: SearchParams, overrides: Record<string, string>): Record<string, string> {
@@ -53,43 +31,6 @@ function spToRecord(sp: SearchParams, overrides: Record<string, string>): Record
     if (typeof v === 'string') result[k] = v
   }
   return { ...result, ...overrides }
-}
-
-function buildWhere(sp: SearchParams): Prisma.PropertyWhereInput {
-  const features = Array.isArray(sp.feature)
-    ? sp.feature
-    : sp.feature
-      ? [sp.feature]
-      : []
-
-  return {
-    status: 'ACTIVE',
-    hideOnSite: false,
-    ...(sp.transacao === 'alugar' ? { transactionType: 'RENT' } : sp.transacao === 'comprar' ? { transactionType: 'SALE' } : {}),
-    ...(sp.finalidade === 'residencial' ? { purpose: 'RESIDENTIAL' } : sp.finalidade === 'comercial' ? { purpose: 'COMMERCIAL' } : {}),
-    ...(sp.tipo ? { propertyType: { equals: sp.tipo, mode: 'insensitive' as const } } : {}),
-    ...(sp.precoMin || sp.precoMax ? {
-      price: {
-        ...(sp.precoMin ? { gte: parseFloat(sp.precoMin) } : {}),
-        ...(sp.precoMax ? { lte: parseFloat(sp.precoMax) } : {}),
-      }
-    } : {}),
-    ...(sp.quartos ? {
-      bedrooms: sp.quartos === '4' ? { gte: 4 } : { equals: parseInt(sp.quartos) }
-    } : {}),
-    ...(sp.banheiros ? {
-      bathrooms: sp.banheiros === '4' ? { gte: 4 } : { equals: parseInt(sp.banheiros) }
-    } : {}),
-    ...(sp.areaMin ? { totalArea: { gte: parseFloat(sp.areaMin) } } : {}),
-    ...(sp.estado ? { state: { equals: sp.estado, mode: 'insensitive' as const } } : {}),
-    ...(sp.cidade ? { city: { contains: sp.cidade, mode: 'insensitive' as const } } : {}),
-    ...(sp.bairro ? { neighborhood: { contains: sp.bairro, mode: 'insensitive' as const } } : {}),
-    // v1.3: `busca` (ou `q`, legado) procura em ref, título, bairro, cidade, endereço, bairro comercial e empreendimento
-    ...(searchText(sp) ? { OR: searchTextWhere(searchText(sp)) } : {}),
-    ...(features.length > 0 ? {
-      features: { some: { feature: { in: features as never[] } } }
-    } : {}),
-  }
 }
 
 function buildOrderBy(ordem?: string): Prisma.PropertyOrderByWithRelationInput {
@@ -186,7 +127,7 @@ async function PropertyGrid({ searchParams, whatsapp }: { searchParams: SearchPa
       )}
 
       <p className="text-center text-sm text-gray-400 mt-4">
-        {total} imóvel{total !== 1 ? 'is' : ''} encontrado{total !== 1 ? 's' : ''}
+        {total} {total !== 1 ? 'imóveis' : 'imóvel'} encontrado{total !== 1 ? 's' : ''}
       </p>
     </div>
   )
@@ -222,6 +163,17 @@ export default async function ImoveisPage({ searchParams }: { searchParams: Sear
   const text = searchText(searchParams)
   const regions = Array.from(new Set([...cityLinks.map(c => c.name), ...activeCities])).slice(0, 8)
   const defaultTab = searchParams.transacao === 'alugar' ? 'alugar' : 'comprar'
+  // v1.5: modo mapa (o mapa fica acima da lista; os dois usam os mesmos filtros)
+  const mapMode = searchParams.modo === 'mapa'
+  const baseQuery = new URLSearchParams(spToRecord(searchParams, {}))
+  for (const f of Array.isArray(searchParams.feature) ? searchParams.feature : []) baseQuery.append('feature', f)
+  const toggleHref = (() => {
+    const q = new URLSearchParams(baseQuery)
+    q.delete('pagina')
+    if (mapMode) { q.delete('modo'); q.delete('area') } else q.set('modo', 'mapa')
+    const s = q.toString()
+    return `/imoveis${s ? `?${s}` : ''}`
+  })()
   const sortOptions = [
     { value: 'recente', label: 'Mais recente' },
     { value: 'menor-preco', label: 'Menor preço' },
@@ -249,13 +201,20 @@ export default async function ImoveisPage({ searchParams }: { searchParams: Sear
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex gap-8">
           {/* Sidebar de filtros */}
-          <PropertyFilters locations={locations} />
+          <PropertyFilters mode="sidebar" locations={locations} />
 
           {/* Resultados */}
           <div className="flex-1 min-w-0">
             {/* Ordenação e filtros mobile */}
-            <div className="flex items-center justify-between mb-6 gap-3">
-              <PropertyFilters className="lg:hidden" locations={locations} />
+            <div className="flex flex-wrap items-center justify-between mb-6 gap-3">
+              <PropertyFilters mode="mobile" locations={locations} />
+
+              {/* v1.5: alternar lista / mapa */}
+              <Link href={toggleHref} scroll={false}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-[#1e3a8a] bg-white px-3 py-2 text-sm font-medium text-[#1e3a8a] hover:bg-[#1e3a8a] hover:text-white transition-colors"
+                aria-label={mapMode ? 'Ver só a lista' : 'Ver imóveis no mapa'}>
+                {mapMode ? <><LayoutGrid className="h-4 w-4" /> Lista</> : <><MapIcon className="h-4 w-4" /> Mapa</>}
+              </Link>
 
               <div className="flex items-center gap-2 ml-auto">
                 <label className="text-xs text-gray-500 hidden sm:block" htmlFor="ordem">
@@ -288,6 +247,8 @@ export default async function ImoveisPage({ searchParams }: { searchParams: Sear
                 </form>
               </div>
             </div>
+
+            {mapMode && <PropertyMapSearch query={baseQuery.toString()} />}
 
             <Suspense fallback={
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">

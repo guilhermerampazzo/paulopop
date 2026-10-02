@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic'
 /**
  * v1.3 — Hub público "Parceiros": filtro por tipo (?tipo=BANCO) e cards com logo, tipo, tagline e benefício.
  */
+import { defaultOgImages } from '@/lib/seo-og'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrowRight, BadgePercent, Handshake } from 'lucide-react'
@@ -10,11 +11,14 @@ import { prisma } from '@/lib/prisma'
 import { absUrl } from '@/lib/site'
 import { PARTNER_TYPES, PARTNER_TYPE_LABEL, partnerTypeLabel } from '@/lib/partners'
 
-export const metadata: Metadata = {
-  title: 'Parceiros: construtoras, bancos, cartórios e serviços',
-  description: 'Rede de parceiros indicados por Paulo Pop no DF: construtoras, bancos e financiamento, cartórios, reforma, mudança e seguros, com condições especiais para clientes.',
-  alternates: { canonical: absUrl('/parceiros') },
-  openGraph: { title: 'Parceiros | Paulo Pop', description: 'Construtoras, bancos, cartórios e serviços indicados no DF.', url: absUrl('/parceiros') },
+// v1.5: generateMetadata para incluir a imagem de compartilhamento padrão
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: 'Parceiros: construtoras, bancos, cartórios e serviços',
+    description: 'Rede de parceiros indicados por Paulo Pop no DF: construtoras, bancos e financiamento, cartórios, reforma, mudança e seguros, com condições especiais para clientes.',
+    alternates: { canonical: absUrl('/parceiros') },
+    openGraph: { title: 'Parceiros | Paulo Pop', description: 'Construtoras, bancos, cartórios e serviços indicados no DF.', url: absUrl('/parceiros'), images: await defaultOgImages() },
+  }
 }
 
 export default async function ParceirosHubPage({ searchParams }: { searchParams: { tipo?: string } }) {

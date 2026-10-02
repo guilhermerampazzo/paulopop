@@ -6,6 +6,8 @@ export const dynamic = 'force-dynamic'
  * (SectionRenderer), compartilhar, "Imóveis nesta região", relacionados, próximo da série,
  * CTA final e JSON-LD BlogPosting. `?preview=1` mostra rascunho/agendado só para quem está logado.
  */
+import { defaultOgImages } from '@/lib/seo-og'
+import { cleanPageTitle, TITLE_SUFFIX } from '@/lib/seo-title'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -18,7 +20,7 @@ import { getSessionUser } from '@/lib/authz'
 import { sanitizeHtml } from '@/lib/sanitize'
 import { parseSections, type SectionCta } from '@/lib/sections'
 import { fetchPropertiesForSection } from '@/lib/section-data'
-import { addHeadingIds, blogPublishedWhere, contentToHtml, excerptFromContent, formatBlogDate, isVisiblePost, postVisibility, VISIBILITY_LABEL } from '@/lib/blog'
+import { addHeadingIds, blogPublishedWhere, demoteH1, contentToHtml, excerptFromContent, formatBlogDate, isVisiblePost, postVisibility, VISIBILITY_LABEL } from '@/lib/blog'
 import { CtaBlock, SectionRenderer } from '@/components/public/SectionRenderer'
 import { PropertyCarousel } from '@/components/public/PropertyCarousel'
 import { BlogCard, AuthorAvatar } from '@/components/public/BlogCard'
@@ -43,7 +45,7 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   const data = await loadPost(params.slug, searchParams.preview === '1')
   if (!data) return { title: 'Artigo não encontrado', robots: { index: false } }
   const { post, isPreview } = data
-  const title = post.seoTitle || post.title
+  const title = cleanPageTitle(post.seoTitle || post.title) // v1.5: sem sufixo repetido e no tamanho do Google
   const description = post.seoDescription || post.excerpt || excerptFromContent(post.content)
   const og = absUrl(post.ogImageUrl || post.coverUrl)
   const url = absUrl(`/blog/${post.slug}`)
@@ -53,12 +55,12 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
     alternates: { canonical: url },
     ...(isPreview ? { robots: { index: false, follow: false } } : {}),
     openGraph: {
-      title: `${title} | Paulo Pop`,
+      title: `${title}${TITLE_SUFFIX}`,
       description,
       url,
       type: 'article',
       locale: 'pt_BR',
-      ...(og ? { images: [{ url: og }] } : {}),
+      images: og ? [{ url: og }] : await defaultOgImages(), // v1.5: post sem capa usa a imagem padrão do site
       ...(post.publishedAt ? { publishedTime: post.publishedAt.toISOString() } : {}),
       modifiedTime: post.updatedAt.toISOString(),
       authors: [post.author.name],
@@ -85,7 +87,7 @@ export default async function BlogPostPage({ params, searchParams }: Props) {
   const url = absUrl(`/blog/${post.slug}`) as string
 
   // Corpo com ids nos títulos (índice lateral)
-  const { html, toc } = addHeadingIds(sanitizeHtml(contentToHtml(post.content)))
+  const { html, toc } = addHeadingIds(demoteH1(sanitizeHtml(contentToHtml(post.content))))
   const sections = parseSections(post.sections).filter(s => s.visible !== false)
   const hasCtaSection = sections.some(s => s.type === 'cta')
 

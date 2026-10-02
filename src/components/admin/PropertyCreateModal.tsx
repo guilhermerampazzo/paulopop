@@ -15,13 +15,16 @@ const PROPERTY_TYPES = [
 interface PropertyCreateModalProps {
   open: boolean
   onClose: () => void
+  /** v1.5: "Cadastrar unidade" a partir do empreendimento — o imóvel já nasce vinculado e preenchido */
+  empreendimentoId?: string | null
+  empreendimentoName?: string | null
 }
 
-export function PropertyCreateModal({ open, onClose }: PropertyCreateModalProps) {
+export function PropertyCreateModal({ open, onClose, empreendimentoId, empreendimentoName }: PropertyCreateModalProps) {
   const router = useRouter()
   const [purpose, setPurpose] = useState<'RESIDENTIAL' | 'COMMERCIAL'>('RESIDENTIAL')
   const [transactionType, setTransactionType] = useState<'SALE' | 'RENT'>('SALE')
-  const [propertyType, setPropertyType] = useState('')
+  const [propertyType, setPropertyType] = useState(empreendimentoId ? 'Apartamento' : '')
   const [location, setLocation] = useState<'BRAZIL' | 'ABROAD'>('BRAZIL')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -39,12 +42,12 @@ export function PropertyCreateModal({ open, onClose }: PropertyCreateModalProps)
       const res = await fetch('/api/imoveis', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ purpose, transactionType, propertyType, location }),
+        body: JSON.stringify({ purpose, transactionType, propertyType, location, ...(empreendimentoId ? { empreendimentoId } : {}) }),
       })
       if (!res.ok) throw new Error('Erro ao criar imóvel')
       const data = await res.json()
       onClose()
-      router.push(`/admin/imoveis/${data.id}`)
+      router.push(`/admin/imoveis/${data.id}${empreendimentoId ? '?preencher=1' : ''}`)
     } catch {
       setError('Ocorreu um erro. Tente novamente.')
       setLoading(false)
@@ -54,6 +57,11 @@ export function PropertyCreateModal({ open, onClose }: PropertyCreateModalProps)
   return (
     <Modal open={open} onClose={onClose} title="Cadastrar Imóvel" size="md">
       <form onSubmit={handleSubmit} className="space-y-5">
+        {empreendimentoId && (
+          <p className="rounded-lg bg-[#F0F4F8] px-3 py-2 text-sm text-[#1e3a8a]">
+            Nova unidade do empreendimento <b>{empreendimentoName || 'selecionado'}</b>. Endereço, condomínio, textos e fotos do prédio entram sozinhos; você completa o que é da unidade.
+          </p>
+        )}
         {/* Finalidade */}
         <fieldset>
           <legend className="text-sm font-medium text-gray-700 mb-2">

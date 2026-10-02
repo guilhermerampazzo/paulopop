@@ -8,6 +8,10 @@ import { ContactForm } from '@/components/public/ContactForm'
 import { GoogleReviews } from '@/components/public/GoogleReviews'
 import { formatCurrency } from '@/lib/formatters'
 import type { Metadata } from 'next'
+import { absUrl } from '@/lib/site'
+import { stripHtml } from '@/lib/sanitize'
+import { cleanPageTitle, TITLE_SUFFIX } from '@/lib/seo-title'
+import { jsonLdString } from '@/lib/og-image'
 import { PropertyGallery } from '@/components/public/PropertyGallery'
 import { EmpreendimentoHub } from '@/components/public/EmpreendimentoHub'
 import { TipologiasTable } from '@/components/public/TipologiasTable'
@@ -22,23 +26,37 @@ import {
 
 interface Props { params: { slug: string } }
 
+/** v1.5 — descrição para o Google e para a prévia do link: chamada → texto "Sobre" → localização → frase padrão. */
+function empDescription(emp: { name: string; tagline: string | null; description: string | null; locationDescription: string | null; neighborhood: string | null; city: string | null; state: string | null }): string {
+  const clean = (t: string | null) => (t ? stripHtml(t).replace(/\s+/g, ' ').trim() : '')
+  const text = clean(emp.tagline) || clean(emp.description) || clean(emp.locationDescription)
+    || `${emp.name}${[emp.neighborhood, emp.city].filter(Boolean).length ? ` em ${[emp.neighborhood, emp.city].filter(Boolean).join(', ')}` : ''}: plantas, fotos, localização e unidades à venda com o corretor Paulo Pop.`
+  return text.length <= 160 ? text : text.slice(0, 159).replace(/\s+\S*$/, '') + '…'
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const emp = await prisma.empreendimento.findUnique({
     where: { slug: params.slug, status: 'PUBLISHED' },
-    select: { name: true, tagline: true, description: true, city: true, state: true, coverUrl: true },
+    select: { id: true, name: true, tagline: true, description: true, locationDescription: true, neighborhood: true, city: true, state: true },
   })
   if (!emp) return { title: 'Empreendimento não encontrado' }
+  const title = cleanPageTitle(emp.name)
+  const description = empDescription(emp)
+  // v1.5: imagem de compartilhamento 1200×630 (capa ou fachada), endereço absoluto
+  const ogImage = absUrl(`/api/og/empreendimento/${emp.id}`)!
   return {
-    title: emp.name,
-    description: emp.tagline ?? emp.description?.substring(0, 160) ?? emp.name,
+    title,
+    description,
     alternates: { canonical: `/empreendimentos/${params.slug}` },
     openGraph: {
-      title: `${emp.name} | Paulo Pop`,
-      description: emp.tagline ?? emp.description?.substring(0, 160) ?? '',
-      images: emp.coverUrl ? [{ url: emp.coverUrl }] : [],
+      title: `${title}${TITLE_SUFFIX}`,
+      description,
+      url: absUrl(`/empreendimentos/${params.slug}`),
+      images: [{ url: ogImage, width: 1200, height: 630, alt: emp.name }],
       type: 'website',
       locale: 'pt_BR',
     },
+    twitter: { card: 'summary_large_image', title, description, images: [ogImage] },
   }
 }
 
@@ -75,8 +93,42 @@ export default async function EmpreendimentoPage({ params }: Props) {
   const highlights = emp.highlights ? emp.highlights.split('\n').map(l => l.trim()).filter(Boolean) : []
   const amenities = emp.amenities ? emp.amenities.split('\n').map(l => l.trim()).filter(Boolean) : []
 
+  // v1.5: dados estruturados (JSON-LD) do condomínio para o Google
+  const priceLow = emp.priceMin ? Number(emp.priceMin) : null
+  const priceHigh = emp.priceMax ? Number(emp.priceMax) : null
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ApartmentComplex',
+    name: emp.name,
+    description: empDescription(emp),
+    url: absUrl(`/empreendimentos/${emp.slug}`),
+    image: absUrl(`/api/og/empreendimento/${emp.id}`),
+    ...(emp.address || emp.neighborhood || emp.city ? {
+      address: {
+        '@type': 'PostalAddress',
+        ...(emp.address ? { streetAddress: emp.address } : {}),
+        ...(emp.neighborhood || emp.city ? { addressLocality: [emp.neighborhood, emp.city].filter(Boolean).join(', ') } : {}),
+        addressRegion: emp.state || 'DF',
+        ...(emp.zipCode ? { postalCode: emp.zipCode } : {}),
+        addressCountry: 'BR',
+      },
+    } : {}),
+    ...(emp.latitude != null && emp.longitude != null ? { geo: { '@type': 'GeoCoordinates', latitude: emp.latitude, longitude: emp.longitude } } : {}),
+    ...(emp.totalUnits ? { numberOfAccommodationUnits: emp.totalUnits } : {}),
+    ...(emp.petsAllowed != null ? { petsAllowed: emp.petsAllowed } : {}),
+    ...(priceLow ? {
+      offers: {
+        '@type': 'AggregateOffer',
+        priceCurrency: 'BRL',
+        lowPrice: priceLow,
+        ...(priceHigh ? { highPrice: priceHigh } : {}),
+      },
+    } : {}),
+  }
+
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }} />
       <div className="min-h-screen bg-[#F0F4F8] pb-24">
 
         {/* ── Hero ── */}

@@ -1,4 +1,160 @@
-# Corretor Paulo Pop — Pacote completo v1.4 (inclui 1.1, 1.2 e 1.3)
+# Corretor Paulo Pop — Pacote completo v1.5 (inclui 1.1 a 1.4)
+
+**Versão:** 1.5 · **Data:** 02/10/2026 · **Base:** `corretorpaulopop-v1.4.zip` (30/09/2026) · **Pacote único:** `corretorpaulopop-v1.5.zip`
+
+**Novo na 1.5:** busca por mapa em /imoveis (pinos com preço e "Buscar nesta área", sincronizados com a lista); **menu de ações no cadastro de empreendimentos** igual ao de imóveis (ver no site, compartilhar, cadastrar unidade, imóveis vinculados, excluir, salvar rascunho/publicar); **imóvel preenchido automaticamente pelo empreendimento** (endereço, mapa, condomínio, tipologia, textos e fotos; imóvel importado só completa o que falta); cartão do corretor usa a foto e a imobiliária das Configurações quando o Meu perfil está incompleto, com aviso no painel; imagem de compartilhamento e dados estruturados nos empreendimentos; canonical do Sobre, sitemap, H1 do blog, títulos sem "| Paulo Pop" repetido, textos do painel e fim da rolagem lateral no celular.
+
+**Nenhuma migração de banco nesta versão** e nenhuma variável de ambiente nova.
+
+> **Se você já está na 1.4 e vai só para a 1.5:** troque o código, não mexa no `.env` e suba. Não há migração. Depois siga a conferência da seção 2.3.
+
+## 1. Resumo da 1.5
+
+| Área | Como era | Como ficou |
+|---|---|---|
+| Busca de imóveis (1.5) | Só lista com filtros; a busca por texto (1.3) e a busca com IA (1.3) já existiam. | Botão **Mapa / Lista** em /imoveis. No modo mapa, cada imóvel vira um pino com o preço ("R$ 320 mil"); ao clicar, cartão com foto, título, quartos, área e link. **Buscar nesta área** filtra a lista pelo retângulo visível do mapa (`?area=`); "Área do mapa ✕" desfaz. Mapa e lista usam exatamente os mesmos filtros. Imóvel que não libera o endereço completo aparece em **posição aproximada** (≈110 m). A busca por texto passou a achar quadras escritas de jeitos diferentes ("QN303", "QN 303", "QN-303"). |
+| Menu de ações do empreendimento (1.5) | Edição só com "Salvar" e "Excluir empreendimento"; o "Ver no site" usava o código interno e abria página inexistente. Na lista, só o link "Editar". | Barra fixa no padrão do imóvel: **Ver no site** (endereço certo), **Compartilhar** (WhatsApp ou copiar link), **Cadastrar unidade**, **Imóveis (n)** vinculados, **Excluir**; à direita **Cancelar**, **Salvar como rascunho** e **Salvar e publicar / Salvar alterações**. Na lista, cada empreendimento ganhou ver no site, imóveis vinculados, cadastrar unidade, editar e excluir (com confirmação na própria tela). No celular os botões quebram de linha. |
+| Imóvel preenchido pelo empreendimento (1.5) | Ao vincular, só quartos/suítes/banheiros/vagas/área vinham da tipologia, e só ao salvar. | Ao escolher o empreendimento (ou a unidade) no imóvel, o painel **preenche na hora só os campos vazios**: endereço, bairro, cidade, UF, CEP, mapa, andares, unidades, condomínio, ano, condição (Na planta / Em construção), localização e arredores, descrição do prédio e do lazer, características, vídeo e tour; da unidade: andar, quartos, suítes, banheiros, vagas, áreas, varandas e a planta. **Fotos do prédio** vão para o fim da galeria (a capa continua a do imóvel). **Imóvel importado:** só completa o que falta e **não mexe na galeria**. Um aviso lista o que foi preenchido; nada é gravado até clicar em Salvar. Botão "Completar com os dados do empreendimento" para repetir. "Cadastrar unidade" cria o imóvel já vinculado e preenchido. |
+| Cartão do corretor (1.5) | Usava só o Meu perfil: sem foto lá, aparecia um ícone; com "Paulo Pop Imoveis" lá, saía "Corretor Associado Paulo Pop Imoveis". | Para o dono do site (administrador ou e-mail igual ao das Configurações), foto, nome e CRECI vazios no Meu perfil vêm de **Configurações → Perfil**. Outros corretores continuam só com os próprios dados (não herdam a foto do Paulo). **Aviso "Seu perfil está incompleto"** no topo do Dashboard e no Meu perfil, dizendo o que falta e se a imobiliária está diferente das Configurações; botão **Copiar das Configurações** no Meu perfil. Vale na página do imóvel, na ficha impressa e no estudo de mercado. |
+| Compartilhar empreendimento (1.5) | Sem imagem quando o empreendimento não tinha capa; sem dados estruturados; Residencial Maria Luiza sem descrição. | Imagem 1200×630 em `/api/og/empreendimento/{id}` (capa → fachada → áreas comuns → qualquer foto → imagem padrão). JSON-LD `ApartmentComplex` (endereço, mapa, unidades, faixa de preço). Sem chamada nem texto, a descrição é montada com o nome e o bairro. |
+| Imagem de compartilhamento nas listas (1.5) | /blog, /cidades e /parceiros (e cidades, parceiros e posts sem capa) saíam sem foto no WhatsApp. | Usam a imagem padrão de Configurações → SEO (ou `/og-default.jpg`). |
+| Canonical e sitemap (1.5) | O layout declarava a home como endereço oficial de toda página sem canonical próprio; o /sobre apontava para a home. `/contato` aparecia duas vezes no sitemap. | Canonical padrão removido do layout; /sobre aponta para `/sobre`. Sitemap com `/contato` uma vez só. |
+| Blog (1.5) | Post com H1 dentro do texto ficava com dois títulos principais. | Na página, o H1 do texto vira H2 (e entra no índice). O editor avisa quando o texto tem H1. |
+| Títulos (1.5) | Imóvel com título gravado terminando em "\| Paulo Pop" saía "… \| Paulo Pop \| Paulo Pop"; 28 de 49 títulos passavam de 65 caracteres. | Sufixo gravado é retirado e o título é cortado numa palavra inteira para caber (até 52 caracteres + " \| Paulo Pop"). Vale para imóvel, post e empreendimento. |
+| Celular (1.5) | Rolagem lateral de 55 a 70 px em /, /vender e /sobre (cartão de depoimento mais largo que a tela) e 2 px em /imoveis (o botão "Filtros" era desenhado duas vezes). | Cartões de depoimento respeitam a largura da tela (texto longo e link quebram). Um botão "Filtros" só. Medido em 390 px: 0 px de rolagem lateral em todas as páginas conferidas. |
+| Textos do painel (1.5) | "26 imóvelis encontrados"; tela Marketing sem acentos. | "26 imóveis encontrados" (também nas mensagens de excluir e alterar status e na lista pública); Marketing acentuada. |
+| Segurança (1.5) | `GET /api/empreendimentos/{id}` devolvia empreendimentos em rascunho para qualquer visitante. | Rascunho só para quem está logado (visitante recebe 404). |
+
+## 2. Como publicar — passo a passo (1.5)
+
+### 2.1 Backup
+
+```bash
+docker compose exec postgres pg_dump -U paulopop paulopop > backup-antes-v1.5.sql
+docker compose exec app tar czf - -C /app/public/uploads . > uploads-antes-v1.5.tgz
+```
+
+### 2.2 Código e `.env`
+
+1. Substitua o código pela pasta `paulopop-master/` do pacote `corretorpaulopop-v1.5.zip` (mantenha o `.env` do servidor e a pasta de uploads).
+2. `.env`: **nenhuma variável nova**. Continuam valendo as da 1.4 (`NEXTAUTH_SECRET`, `NEXT_PUBLIC_SITE_URL=https://corretorpaulopop.com`, `GEMINI_API_KEY` e `GOOGLE_MAPS_SERVER_KEY` opcionais).
+3. Suba: `docker compose up -d --build`. Não há migração nova (o `scripts/docker-start.sh` não aplica nada além das da 1.4).
+4. **Mapa da busca:** o navegador do visitante baixa as imagens do mapa de `tile.openstreetmap.org`. A política de segurança do site (`img-src https:`) já permite; nada a configurar no servidor.
+
+### 2.3 Conferência depois de publicar
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" https://corretorpaulopop.com/api/health                          # 200
+curl -s "https://corretorpaulopop.com/api/imoveis/mapa?transacao=comprar" | head -c 200; echo            # {"pins":[…
+curl -s https://corretorpaulopop.com/sobre | grep -o '<link rel="canonical"[^>]*>'                       # …/sobre
+curl -s https://corretorpaulopop.com/sitemap.xml | grep -c "/contato<"                                   # 1
+```
+
+- ☐ /imoveis no celular e no computador: botão **Mapa**; pinos com preço; clicar num pino abre o cartão; arrastar o mapa → **Buscar nesta área** → a lista mostra só os imóveis da área; "Área do mapa ✕" volta ao normal.
+- ☐ Buscar "QN 303" e "qn303": mesmo resultado.
+- ☐ Celular (390 px): /, /vender, /sobre e /imoveis sem rolagem lateral; só um botão "Filtros".
+- ☐ Colar no WhatsApp o link de um empreendimento: a prévia mostra a capa ou a fachada (o WhatsApp guarda prévias antigas; teste com um link ainda não enviado).
+- ☐ Página de um imóvel: cartão do corretor com a foto do Paulo e "Corretor Associado REMAX INOVELAR" (mesmo antes de completar o Meu perfil).
+- ☐ Post do blog que tinha dois H1 (dicas-para-vender-imovel-em-samambaia…): só um H1; o título sem "| Paulo Pop | Paulo Pop".
+- ☐ Imóvel 245856515-098 (Residencial Tom Jobim): título com um "| Paulo Pop" só.
+- ☐ PAINEL: Dashboard mostra o aviso de perfil incompleto enquanto o Meu perfil não estiver completo.
+- ☐ PAINEL → Empreendimentos: ações na lista; abrir um → barra de ações embaixo; **Ver no site** abre a página certa.
+- ☐ PAINEL → Empreendimento → **Cadastrar unidade** → o imóvel abre já preenchido (aviso azul no topo) → escolher a unidade → quartos, área etc. → Salvar rascunho.
+- ☐ PAINEL → um imóvel **importado** → vincular a um empreendimento → aviso diz que a galeria foi mantida; endereço e quartos do anúncio não mudam.
+- ☐ PAINEL → Imóveis: "N imóveis encontrados" (sem "imóvelis"); Marketing com acentos.
+
+### 2.4 Conteúdo que o Paulo preenche no painel
+
+- **Meu perfil:** clicar em **Copiar das Configurações**, conferir (Nome que aparece no site = `Corretor Paulo Pop`; Vínculo = `Corretor Associado`; Imobiliária = `REMAX INOVELAR`; foto) e **Salvar**. O aviso do Dashboard some.
+- **Empreendimentos:** quanto mais completo o cadastro do prédio (endereço com mapa, condomínio médio, andares, unidades, texto "Sobre", lazer, amenidades uma por linha, fotos da fachada e do lazer, tipologias com planta), mais o imóvel novo já nasce preenchido. Dar uma capa a cada empreendimento melhora a prévia no WhatsApp.
+- **Imóveis:** para aparecerem no mapa, precisam de latitude e longitude (vêm do empreendimento ou do cadastro). O mapa diz quantos ficaram de fora por não terem localização.
+- **Blog:** revisar o post de Samambaia (endereço fala de Samambaia, título fala de contrato exclusivo em Águas Claras).
+
+### 2.5 Voltar atrás (rollback)
+
+Suba o código 1.4. Não há banco a desfazer (a 1.5 não tem migração). Imóveis salvos com dados vindos do empreendimento continuam com esses dados.
+
+## 3. Mudanças por área (1.5)
+
+### 3.1 Busca por mapa
+
+- **Como era:** /imoveis só em lista; o filtro de bairro e a busca por texto não sabiam de quadras escritas sem espaço.
+- **Como ficou:** filtros extraídos para `src/lib/property-filters.ts` (lista e mapa usam a mesma função `buildWhere`), com o novo filtro `area=sul,oeste,norte,leste`. `GET /api/imoveis/mapa` devolve até 500 pinos dos imóveis publicados que batem com a busca. O mapa (Leaflet + OpenStreetMap) só carrega quando o visitante abre o modo mapa. Pinos de imóvel sem endereço completo liberado ficam arredondados a 3 casas decimais. `quadraVariants()` gera "QN 303"/"QN303"/"QN-303" para a busca por texto. O componente de filtros ganhou `mode` (coluna do computador ou botão do celular), corrigindo o botão "Filtros" desenhado duas vezes.
+- **Arquivos:** `src/lib/property-filters.ts` (novo), `src/lib/map-pins.ts` (novo), `src/app/api/imoveis/mapa/route.ts` (novo), `src/components/public/PropertyMapSearch.tsx` (novo), `src/app/imoveis/page.tsx`, `src/components/public/PropertyFilters.tsx`, `src/lib/property-search.ts`, `src/app/globals.css`.
+- **Não incluído:** desenhar uma área livre (polígono). "Buscar nesta área" usa o retângulo visível do mapa.
+
+### 3.2 Menu de ações do empreendimento
+
+- **Como era:** barra com "Excluir empreendimento" e "Salvar alterações"; "Ver no site" com o id em vez do endereço; lista só com "Editar".
+- **Como ficou:** componente `EmpreendimentoActions` (barra fixa, mesmo desenho da barra do imóvel) e `EmpreendimentoRowActions` (lista, com confirmação de exclusão na tela, sem janela do navegador). A exclusão avisa quantos imóveis vinculados ficam sem empreendimento (eles não são apagados). `GET /api/empreendimentos/{id}` devolve o número de imóveis vinculados e não mostra rascunhos a visitantes. Lista de imóveis do painel aceita `?empreendimento={id}` com o selo do filtro e o atalho "Cadastrar unidade".
+- **Arquivos:** `src/components/admin/EmpreendimentoActions.tsx` (novo), `src/components/admin/EmpreendimentoRowActions.tsx` (novo), `src/app/admin/empreendimentos/[id]/page.tsx`, `src/app/admin/empreendimentos/page.tsx`, `src/app/admin/imoveis/page.tsx`, `src/app/api/empreendimentos/[id]/route.ts`.
+
+### 3.3 Imóvel preenchido pelo empreendimento
+
+- **Como era:** só a tipologia da unidade preenchia quartos, suítes, banheiros, vagas e área útil, ao salvar.
+- **Como ficou:** `src/lib/empreendimento-fill.ts` monta o que o prédio oferece (`empreendimentoFill`) e aplica sem sobrescrever (`applyEmpreendimentoFill`): só campos vazios (contagens 0 contam como vazias); fotos do prédio no fim da galeria, sem repetir e sem trocar a capa; imóvel importado (`importedAt`/`sourcePortal`) só ganha fotos se não tiver nenhuma; vídeo só se não houver. `GET /api/admin/empreendimentos/{id}/preenchimento?unitId=` entrega os dados (só leitura). O formulário do imóvel chama ao escolher o empreendimento ou a unidade, mostra o aviso com a lista do que entrou e só grava ao salvar. `POST /api/imoveis` aceita `empreendimentoId` (o imóvel nasce vinculado, com bairro e cidade do prédio no endereço da página), e `/admin/imoveis/novo?empreendimento={id}` abre o cadastro já preenchido.
+- **Arquivos:** `src/lib/empreendimento-fill.ts` (novo), `src/app/api/admin/empreendimentos/[id]/preenchimento/route.ts` (novo), `src/components/admin/PropertyForm/index.tsx`, `src/components/admin/PropertyForm/TabPrincipal.tsx`, `src/components/admin/PropertyCreateModal.tsx`, `src/app/admin/imoveis/novo/page.tsx`, `src/app/api/imoveis/route.ts`.
+
+### 3.4 Cartão do corretor e perfil incompleto
+
+- **Como era:** `agentDisplay` usava a reserva das Configurações só para WhatsApp e imobiliária, e só quando o campo era nulo (texto vazio não contava).
+- **Como ficou:** `ownerFallback()` decide a reserva: o dono do site herda também foto, nome e CRECI; os outros corretores, como antes. Campo vazio passa a contar como vazio. `profileGaps()` lista o que falta (e a imobiliária diferente das Configurações) para o aviso do Dashboard e do Meu perfil. `GET /api/admin/perfil` devolve também os dados de Configurações → Perfil (`configProfile`), usados na prévia e no botão "Copiar das Configurações" (que só preenche o formulário; grava ao Salvar).
+- **Arquivos:** `src/lib/agent-display.ts`, `src/app/imoveis/[slug]/page.tsx`, `src/app/imoveis/[slug]/imprimir/page.tsx`, `src/app/estudo/[token]/page.tsx`, `src/components/public/StudyReport.tsx`, `src/lib/market-study-db.ts`, `src/app/admin/page.tsx`, `src/app/admin/perfil/page.tsx`, `src/app/api/admin/perfil/route.ts`.
+
+### 3.5 SEO: compartilhamento, canonical, sitemap, títulos e blog
+
+- **Como ficou:** montagem da imagem 1200×630 extraída para `src/lib/og-image.ts` (usada pelo imóvel e pelo empreendimento) e `jsonLdString()` para JSON-LD sem risco de fechar a tag `<script>`. `src/lib/seo-og.ts` dá a imagem padrão às páginas que declaram o próprio openGraph. `src/lib/seo-title.ts` (`cleanPageTitle`) tira o sufixo da marca gravado e encurta o título. `demoteH1`/`hasH1` em `src/lib/blog.ts`.
+- **Arquivos:** `src/lib/og-image.ts`, `src/lib/seo-og.ts`, `src/lib/seo-title.ts` (novos); `src/app/api/og/empreendimento/[id]/route.ts` (novo); `src/app/api/og/imovel/[id]/route.ts`, `src/app/empreendimentos/[slug]/page.tsx`, `src/app/layout.tsx`, `src/app/sobre/page.tsx`, `src/app/sitemap.ts`, `src/app/blog/page.tsx`, `src/app/blog/[slug]/page.tsx`, `src/app/cidades/page.tsx`, `src/app/cidades/[slug]/page.tsx`, `src/app/parceiros/page.tsx`, `src/app/parceiros/[slug]/page.tsx`, `src/components/admin/BlogPostEditor.tsx`, `src/lib/blog.ts`.
+
+### 3.6 Celular e textos
+
+- **Arquivos:** `src/components/public/Testimonials.tsx` (grade de uma coluna no celular, `min-w-0`, quebra de texto longo, rodapé do cartão que quebra linha), `src/components/admin/ImoveisTableClient.tsx`, `src/app/imoveis/page.tsx` (plural), `src/app/admin/marketing/MarketingAdminClient.tsx` (acentos).
+
+## 4. Banco de dados (1.5)
+
+Nenhuma migração. Nenhuma tabela ou coluna nova.
+
+## 5. API (1.5)
+
+| Método | Rota | Acesso | Observação |
+|---|---|---|---|
+| GET | `/api/imoveis/mapa` | Público | Pinos dos imóveis publicados com os filtros de /imoveis (até 500). Posição aproximada quando o endereço completo não é liberado. Cache de 30–60 s. |
+| GET | `/api/og/empreendimento/{id}` | Público | Imagem 1200×630 do empreendimento publicado (`?modo=foto` = inteira). |
+| GET | `/api/admin/empreendimentos/{id}/preenchimento` | Logado | Dados do empreendimento (e da unidade, com `?unitId=`) para preencher o imóvel. Só leitura. |
+| POST | `/api/imoveis` | Logado | Aceita `empreendimentoId` (imóvel nasce vinculado). |
+| GET | `/api/empreendimentos/{id}` | Público / logado | Rascunho só para logado; devolve `_count.properties`. |
+| GET | `/api/admin/perfil` | Logado | Devolve também `configProfile` (Configurações → Perfil). |
+
+## 6. Variáveis de ambiente
+
+Nenhuma nova.
+
+## 7. Testes (1.5)
+
+- `npm test`: **192 testes passando** (167 da 1.4 + 25 novos em `tests/unit/v1_5.test.ts`: título, H1, cartão do corretor e perfil incompleto, preenchimento pelo empreendimento — inclusive imóvel importado —, área do mapa, pinos aproximados, preço curto, quadras e JSON-LD). Testes com banco rodados contra PostgreSQL local com todas as migrações.
+- `npm run build`: sem erros. `next lint`: sem erro novo (os 4 avisos de aspas em `BlogPostEditor.tsx` já existiam na 1.4).
+- Playwright em **1366 px e 390 px**, com servidor de produção local e dados de teste: /, /vender, /sobre, /imoveis, /imoveis?modo=mapa, página de empreendimento e post do blog — 0 px de rolagem lateral em todas; canonical, og:image, um H1 e JSON-LD conferidos; 10 pinos no mapa. Painel: aviso de perfil incompleto (Dashboard e Meu perfil), prévia do cartão com a foto das Configurações, ações da lista e da barra do empreendimento, "Cadastrar unidade" → imóvel salvo com endereço, condomínio, tipologia da unidade 701, descrição, características, vídeo e 3 fotos; imóvel importado vinculado → endereço, quartos e galeria do anúncio mantidos; painel no celular sem rolagem lateral.
+- **Não testado:** as imagens do mapa (o ambiente de teste não acessa `tile.openstreetmap.org`; os pinos e cartões foram conferidos sobre fundo cinza); a prévia real no WhatsApp; exclusão de empreendimento pela tela; dados reais do site (testado com dados de exemplo).
+
+## 8. Pendências (fora deste pacote)
+
+- **Aprovados que dependem de algo do Paulo:** motor de cálculo por fatores e parecer A4 (PTAM) — precisam de um caso já resolvido na Planilha 3 para conferir os números e das tabelas de índices do DF; botão "Buscar amostras" pela API do Claude — precisa da chave `ANTHROPIC_API_KEY` e do limite de gasto mensal; `www.corretorpaulopop.com` — registro no DNS (fora do código).
+- **Fora do código, adiado pelo Paulo para depois da 1.5:** preencher os IDs do GA4 e do Meta Pixel em Configurações → Rastreamento (os campos existem desde a 1.1).
+- **Benchmarking do DF Imóveis:** não foi feito com o site aberto (o navegador não conseguiu abrir o portal). A busca desta versão vem do item aprovado "busca por mapa"; o comparativo fica para quando o portal puder ser visitado.
+- Desenho livre de área no mapa; agrupamento de pinos muito próximos.
+- Da 1.4: login do conector por OAuth; quadras das outras cidades; aviso automático de candidatas; limites de texto nas rotas antigas.
+
+## 9. Arquivos da 1.5
+
+**Novos (13):** `src/lib/` property-filters, map-pins, empreendimento-fill, og-image, seo-og, seo-title; `src/components/public/PropertyMapSearch.tsx`; `src/components/admin/` EmpreendimentoActions, EmpreendimentoRowActions; `src/app/api/` imoveis/mapa/route, og/empreendimento/[id]/route, admin/empreendimentos/[id]/preenchimento/route; `tests/unit/v1_5.test.ts`.
+
+**Alterados (40):** `package.json` (1.5.0), `ALTERACOES.md`; `src/app/` layout, globals.css, sitemap, sobre/page, imoveis/page, imoveis/[slug]/page, imoveis/[slug]/imprimir/page, empreendimentos/[slug]/page, estudo/[token]/page, blog/page, blog/[slug]/page, cidades/page, cidades/[slug]/page, parceiros/page, parceiros/[slug]/page, admin/page, admin/perfil/page, admin/imoveis/page, admin/imoveis/novo/page, admin/empreendimentos/page, admin/empreendimentos/[id]/page, admin/marketing/MarketingAdminClient; `src/app/api/` imoveis/route, og/imovel/[id]/route, empreendimentos/[id]/route, admin/perfil/route; `src/components/admin/` BlogPostEditor, ImoveisTableClient, PropertyCreateModal, PropertyForm/index, PropertyForm/TabPrincipal; `src/components/public/` PropertyFilters, StudyReport, Testimonials; `src/lib/` agent-display, blog, market-study-db, property-search.
+
+**Removido:** nada.
+
+---
+
+# Histórico — Alterações v1.4
 
 **Versão:** 1.4 · **Data:** 30/09/2026 · **Base:** `paulopop-v1.3-completo.zip` · **Pacote único:** `corretorpaulopop-v1.4.zip`
 

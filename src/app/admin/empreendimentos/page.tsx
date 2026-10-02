@@ -4,6 +4,7 @@ import { Suspense } from 'react'
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { Plus, Building2, Search, Globe, FileText } from 'lucide-react'
+import { EmpreendimentoRowActions } from '@/components/admin/EmpreendimentoRowActions'
 
 interface SearchParams { q?: string; page?: string }
 
@@ -24,6 +25,7 @@ async function EmpreendimentosTable({ searchParams }: { searchParams: SearchPara
       orderBy: { createdAt: 'desc' },
       include: {
         images: { where: { category: 'FACHADA' }, take: 1, orderBy: { order: 'asc' } },
+        _count: { select: { properties: true } }, // v1.5: menu de ações
       },
     }),
     prisma.empreendimento.count({ where }),
@@ -54,7 +56,7 @@ async function EmpreendimentosTable({ searchParams }: { searchParams: SearchPara
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Cidade</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Unidades</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
-                  <th className="px-4 py-3" />
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -87,7 +89,7 @@ async function EmpreendimentosTable({ searchParams }: { searchParams: SearchPara
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <Link href={`/admin/empreendimentos/${e.id}`} className="text-[#1e3a8a] hover:underline text-xs font-medium">Editar</Link>
+                        <EmpreendimentoRowActions id={e.id} slug={e.slug} name={e.name} published={isPublished} linkedCount={e._count.properties} />
                       </td>
                     </tr>
                   )
@@ -97,11 +99,15 @@ async function EmpreendimentosTable({ searchParams }: { searchParams: SearchPara
           </div>
           <div className="md:hidden space-y-3">
             {items.map(e => (
-              <Link key={e.id} href={`/admin/empreendimentos/${e.id}`}
-                className="block bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-shadow">
-                <p className="font-medium text-gray-800 text-sm truncate">{e.name}</p>
-                <p className="text-xs text-gray-400">{e.city ?? ''}</p>
-              </Link>
+              <div key={e.id} className="rounded-xl border border-gray-200 bg-white p-4">
+                <Link href={`/admin/empreendimentos/${e.id}`} className="block">
+                  <p className="truncate text-sm font-medium text-gray-800">{e.name}</p>
+                  <p className="text-xs text-gray-400">
+                    {e.city ?? ''}{e.city ? ' · ' : ''}{e.status === 'PUBLISHED' ? 'Publicado' : 'Rascunho'} · {e._count.properties} {e._count.properties === 1 ? 'imóvel' : 'imóveis'}
+                  </p>
+                </Link>
+                <EmpreendimentoRowActions variant="buttons" id={e.id} slug={e.slug} name={e.name} published={e.status === 'PUBLISHED'} linkedCount={e._count.properties} />
+              </div>
             ))}
           </div>
         </>

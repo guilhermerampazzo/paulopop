@@ -29,6 +29,9 @@
 *.bak-*
 *.bak
 
+# pacotes de atualização do cliente (zips + relatórios, nunca commitar)
+atualizacao-*/
+
 # debug
 npm-debug.log*
 yarn-debug.log*

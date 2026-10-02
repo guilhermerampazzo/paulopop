@@ -5,10 +5,10 @@
  */
 import { useEffect, useRef, useState } from 'react'
 import { useSession } from 'next-auth/react'
-import { Save, Upload, UserCircle2, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
+import { Save, Upload, UserCircle2, CheckCircle, AlertCircle, Loader2, Copy } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { AgentCard } from '@/components/public/AgentCard'
-import { agentDisplay } from '@/lib/agent-display'
+import { agentDisplay, ownerFallback, profileGaps, isSiteOwner, type OwnerConfigLike } from '@/lib/agent-display'
 
 interface Profile {
   name?: string; email?: string; role?: string; phone?: string | null; whatsapp?: string | null; creci?: string | null
@@ -22,6 +22,8 @@ const ROLE: Record<string, string> = { SUPER_ADMIN: 'Super administrador', ADMIN
 export default function PerfilPage() {
   const { update } = useSession()
   const [p, setP] = useState<Profile>({})
+  // v1.5: Configurações → Perfil (reserva do cartão e botão de cópia)
+  const [cfg, setCfg] = useState<OwnerConfigLike | null>(null)
   const [pw, setPw] = useState({ currentPassword: '', newPassword: '', confirm: '' })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -29,7 +31,10 @@ export default function PerfilPage() {
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    fetch('/api/admin/perfil').then(r => r.json()).then((d: Profile) => setP(d ?? {})).finally(() => setLoading(false))
+    fetch('/api/admin/perfil').then(r => r.json()).then((d: Profile & { configProfile?: OwnerConfigLike | null }) => {
+      const { configProfile, ...profile } = d ?? {}
+      setP(profile); setCfg(configProfile ?? null)
+    }).finally(() => setLoading(false))
   }, [])
 
   const set = (k: keyof Profile) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setP(prev => ({ ...prev, [k]: e.target.value }))
@@ -60,6 +65,23 @@ export default function PerfilPage() {
     } finally { setSaving(false) }
   }
 
+  /** v1.5: preenche os campos vazios (e a imobiliária, se diferente) com os dados de Configurações → Perfil. Só grava ao clicar em Salvar. */
+  function copyFromConfig() {
+    if (!cfg) return
+    const pick = (cur: string | null | undefined, v: string | null | undefined) => (cur && cur.trim() ? cur : (v ?? cur ?? ''))
+    setP(prev => ({
+      ...prev,
+      avatarUrl: pick(prev.avatarUrl, cfg.ownerPhotoUrl),
+      publicName: pick(prev.publicName, cfg.ownerName),
+      creci: pick(prev.creci, cfg.ownerCreci),
+      whatsapp: pick(prev.whatsapp, cfg.ownerWhatsapp),
+      phone: pick(prev.phone, cfg.ownerPhone),
+      company: cfg.ownerCompany?.trim() ? cfg.ownerCompany : prev.company,
+      companyRole: pick(prev.companyRole, 'Corretor Associado'),
+    }))
+    setFeedback({ type: 'success', msg: 'Dados copiados das Configurações. Confira e clique em Salvar.' })
+  }
+
   const input = 'w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2563eb] focus:border-transparent'
   // função (não componente) para os inputs não perderem o foco a cada tecla
   const field = (label: string, k: keyof Profile, placeholder?: string, type = 'text') => (
@@ -69,6 +91,10 @@ export default function PerfilPage() {
     </div>
   )
 
+  const agentLike = { name: p.name ?? '', publicName: p.publicName, phone: p.phone, whatsapp: p.whatsapp, creci: p.creci, company: p.company, companyRole: p.companyRole, avatarUrl: p.avatarUrl, role: p.role, email: p.email }
+  const owner = isSiteOwner(agentLike, cfg)
+  const gaps = loading ? [] : profileGaps(agentLike, cfg)
+
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-[#2563eb]" /></div>
 
   return (
@@ -76,6 +102,21 @@ export default function PerfilPage() {
       {feedback && (
         <div role="alert" className={`flex items-center gap-2 rounded-xl px-4 py-3 text-sm ${feedback.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-700'}`}>
           {feedback.type === 'success' ? <CheckCircle className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}{feedback.msg}
+        </div>
+      )}
+
+      {/* v1.5: aviso de perfil incompleto, com o que falta e o que o site está usando no lugar */}
+      {gaps.length > 0 && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <p className="font-semibold">Seu perfil está incompleto</p>
+          <ul className="mt-2 list-disc space-y-0.5 pl-5">
+            {gaps.map(g => <li key={g.field + g.label}>{g.label}{g.fromConfig ? ' — o site está usando o de Configurações → Perfil' : ''}</li>)}
+          </ul>
+          {cfg && owner && (
+            <button type="button" onClick={copyFromConfig} className="mt-3 inline-flex items-center gap-1.5 rounded-xl border border-amber-300 bg-white px-3 py-1.5 text-xs font-medium hover:border-[#2563eb]">
+              <Copy className="h-3.5 w-3.5" /> Copiar das Configurações
+            </button>
+          )}
         </div>
       )}
 
@@ -110,7 +151,7 @@ export default function PerfilPage() {
         {/* v1.4: prévia do hub do corretor, como sai na página do imóvel e na ficha impressa */}
         <div className="rounded-xl border border-dashed border-gray-300 p-4">
           <p className="mb-3 text-xs font-medium uppercase tracking-wide text-gray-500">Como aparece no site</p>
-          <AgentCard agent={agentDisplay({ name: p.name ?? '', publicName: p.publicName, phone: p.phone, whatsapp: p.whatsapp, creci: p.creci, company: p.company, companyRole: p.companyRole, avatarUrl: p.avatarUrl })} />
+          <AgentCard agent={agentDisplay(agentLike, ownerFallback(agentLike, cfg))} />
           <p className="mt-3 text-xs text-gray-500">A foto aparece inteira, sem corte. Para um enquadramento melhor, envie uma foto na vertical (proporção 4:5).</p>
         </div>
         <div>

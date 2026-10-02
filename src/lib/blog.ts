@@ -81,6 +81,21 @@ export function headingSlug(text: string): string {
  * Adiciona `id` aos <h2> e <h3> do HTML (mantém ids já existentes) e devolve o índice.
  * Ids repetidos ganham sufixo -2, -3… O HTML deve já ter passado por `sanitizeHtml`.
  */
+/**
+ * v1.5 — A página do post já tem o título como H1; um H1 dentro do texto
+ * (colado de outro lugar) vira H2, para a página ter um título principal só.
+ */
+export function demoteH1(html: string): string {
+  return String(html ?? '')
+    .replace(/<h1\b/gi, '<h2')
+    .replace(/<\/h1\s*>/gi, '</h2>')
+}
+
+/** v1.5 — O texto tem algum H1? (aviso no editor do blog) */
+export function hasH1(html: string): boolean {
+  return /<h1\b/i.test(String(html ?? ''))
+}
+
 export function addHeadingIds(html: string): { html: string; toc: TocEntry[] } {
   const toc: TocEntry[] = []
   const used = new Set<string>()

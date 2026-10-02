@@ -17,7 +17,7 @@ import {
 import { SectionEditor } from './SectionEditor'
 import { ImageUpload, inputCls } from './sections/shared'
 import type { Section } from '@/lib/sections'
-import { BLOG_CATEGORIES, VISIBILITY_LABEL, postVisibility, parseBrasiliaDateTime, toBrasiliaInput, formatBlogDateTime, type BlogVisibility } from '@/lib/blog'
+import { BLOG_CATEGORIES, VISIBILITY_LABEL, hasH1, postVisibility, parseBrasiliaDateTime, toBrasiliaInput, formatBlogDateTime, type BlogVisibility } from '@/lib/blog'
 import { slugify } from '@/lib/utils'
 
 const RichTextEditor = dynamic(
@@ -364,6 +364,11 @@ export function BlogPostEditor({ initial, cities }: Props) {
               <span className="block text-sm font-medium text-gray-700 mb-2">Conteúdo *</span>
               <RichTextEditor value={form.content} onChange={html => set('content', html)} />
               <p className="mt-2 text-[11px] text-gray-500">Use títulos (H2/H3) para montar o índice lateral do post automaticamente.</p>
+              {hasH1(form.content) && (
+                <p role="status" className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  O texto tem um título H1. O título do post já é o H1 da página; no site esse título do texto será mostrado como H2. Para ficar igual ao que você vê aqui, troque-o por H2.
+                </p>
+              )}
             </div>
 
             <div className="bg-white rounded-2xl p-5 md:p-6 shadow-sm min-w-0">

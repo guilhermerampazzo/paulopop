@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic'
  * v1.3 — Hub público "Cidades do DF": capa + cards das cidades publicadas
  * (capa, nome, tagline, nº de imóveis ativos e link).
  */
+import { defaultOgImages } from '@/lib/seo-og'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrowRight, Home, MapPinned } from 'lucide-react'
@@ -11,11 +12,14 @@ import { prisma } from '@/lib/prisma'
 import { absUrl } from '@/lib/site'
 import { countActiveProperties } from '@/lib/section-data'
 
-export const metadata: Metadata = {
-  title: 'Cidades do DF: guia de bairros e imóveis',
-  description: 'Conheça as regiões administrativas do Distrito Federal: história, números, locais para visitar e imóveis à venda e para alugar em cada cidade.',
-  alternates: { canonical: absUrl('/cidades') },
-  openGraph: { title: 'Cidades do DF | Paulo Pop', description: 'Guia das cidades do Distrito Federal com imóveis à venda e para alugar.', url: absUrl('/cidades') },
+// v1.5: generateMetadata para incluir a imagem de compartilhamento padrão
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: 'Cidades do DF: guia de bairros e imóveis',
+    description: 'Conheça as regiões administrativas do Distrito Federal: história, números, locais para visitar e imóveis à venda e para alugar em cada cidade.',
+    alternates: { canonical: absUrl('/cidades') },
+    openGraph: { title: 'Cidades do DF | Paulo Pop', description: 'Guia das cidades do Distrito Federal com imóveis à venda e para alugar.', url: absUrl('/cidades'), images: await defaultOgImages() },
+  }
 }
 
 export default async function CidadesHubPage() {

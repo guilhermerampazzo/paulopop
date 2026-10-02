@@ -5,7 +5,8 @@ import { AreaInsightPanel } from '@/components/admin/AreaInsightPanel'
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { EstruturaEditor } from '@/components/admin/EstruturaEditor'
-import { Building2, ImagePlus, Trash2, Save, Eye, ArrowLeft, Plus, X } from 'lucide-react'
+import { EmpreendimentoActions } from '@/components/admin/EmpreendimentoActions'
+import { Building2, ImagePlus, Save, Eye, ArrowLeft, Plus, X } from 'lucide-react'
 
 interface EmpImage { id?: string; url: string; thumbnailUrl?: string; caption?: string; order: number; category: string }
 interface FloorPlan { id?: string; url: string; caption?: string; order: number }
@@ -68,12 +69,17 @@ export default function EmpreendimentoEditPage() {
 
   const [form, setForm] = useState<FormData>(emptyForm)
   const [areaInsightId, setAreaInsightId] = useState<string | null>(null)
+  // v1.5: menu de ações (link público pelo slug e nº de imóveis vinculados)
+  const [slug, setSlug] = useState<string | null>(null)
+  const [linkedCount, setLinkedCount] = useState<number | null>(null)
 
   useEffect(() => {
     fetch(`/api/empreendimentos/${id}`)
       .then(r => r.json())
       .then(data => {
         setAreaInsightId(data.areaInsightId ?? null)
+        setSlug(data.slug ?? null)
+        setLinkedCount(data._count?.properties ?? null)
         setForm({
           name: data.name ?? '', tagline: data.tagline ?? '',
           description: data.description ?? '', status: data.status ?? 'DRAFT',
@@ -116,15 +122,19 @@ export default function EmpreendimentoEditPage() {
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
       setForm(prev => ({ ...prev, [field]: e.target.value }))
 
-  async function handleSave() {
+  async function handleSave(statusOverride?: 'DRAFT' | 'PUBLISHED') {
     setSaving(true); setError('')
     try {
+      const nextForm = statusOverride ? { ...form, status: statusOverride } : form
       const res = await fetch(`/api/empreendimentos/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, images, floorPlanImages }),
+        body: JSON.stringify({ ...nextForm, images, floorPlanImages }),
       })
       if (!res.ok) { const d = await res.json(); setError(d.error ?? 'Erro ao salvar'); return }
+      const d = await res.json().catch(() => null) as { slug?: string; status?: string } | null
+      if (statusOverride) setForm(nextForm)
+      if (d?.slug) setSlug(d.slug)
       setSaved(true); setTimeout(() => setSaved(false), 3000)
     } finally { setSaving(false) }
   }
@@ -190,12 +200,12 @@ export default function EmpreendimentoEditPage() {
         </div>
         <div className="flex items-center gap-2">
           {form.status === 'PUBLISHED' && (
-            <a href={`/empreendimentos/${id}`} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-1.5 px-3 py-2 border border-gray-300 text-gray-600 text-sm rounded-lg hover:bg-gray-50">
+            <a href={`/empreendimentos/${slug ?? id}`} target="_blank" rel="noopener noreferrer"
+              className="hidden sm:flex items-center gap-1.5 px-3 py-2 border border-gray-300 text-gray-600 text-sm rounded-lg hover:bg-gray-50">
               <Eye className="w-4 h-4" />Ver no site
             </a>
           )}
-          <button onClick={handleSave} disabled={saving}
+          <button onClick={() => handleSave()} disabled={saving}
             className="flex items-center gap-1.5 px-4 py-2 bg-[#1e3a8a] text-white text-sm font-medium rounded-lg hover:bg-[#172554] disabled:opacity-50">
             <Save className="w-4 h-4" />{saving ? 'Salvando...' : saved ? 'Salvo!' : 'Salvar'}
           </button>
@@ -483,15 +493,18 @@ export default function EmpreendimentoEditPage() {
         </div>
       )}
 
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-3 flex justify-between items-center z-10">
-        <button onClick={handleDelete} className="text-sm text-red-500 hover:text-red-700 flex items-center gap-1.5">
-          <Trash2 className="w-4 h-4" />Excluir empreendimento
-        </button>
-        <button onClick={handleSave} disabled={saving}
-          className="flex items-center gap-1.5 px-5 py-2.5 bg-[#1e3a8a] text-white text-sm font-medium rounded-lg hover:bg-[#172554] disabled:opacity-50">
-          <Save className="w-4 h-4" />{saving ? 'Salvando...' : saved ? 'Salvo!' : 'Salvar alterações'}
-        </button>
-      </div>
+      {/* v1.5: menu de ações no padrão do cadastro de imóveis */}
+      <EmpreendimentoActions
+        id={id}
+        slug={slug}
+        name={form.name}
+        status={form.status}
+        linkedCount={linkedCount}
+        saving={saving}
+        saved={saved}
+        onSave={handleSave}
+        onDelete={handleDelete}
+      />
     </div>
   )
 }

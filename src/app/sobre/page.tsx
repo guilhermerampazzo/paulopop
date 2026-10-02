@@ -17,6 +17,8 @@ export async function generateMetadata(): Promise<Metadata> {
     title: `Sobre ${name} | Corretor de Imóveis`,
     description: config?.ownerBio?.substring(0, 160)
       ?? `Conheça ${name}, corretor de imóveis especializado em compra, venda e aluguel.`,
+    // v1.5: endereço oficial próprio (antes herdava o da home e o Google tendia a não indexar o Sobre)
+    alternates: { canonical: '/sobre' },
   }
 }
 

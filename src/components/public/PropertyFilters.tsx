@@ -48,9 +48,12 @@ export interface FilterLocation { city: string; neighborhoods: string[] }
 interface PropertyFiltersProps {
   className?: string
   locations?: FilterLocation[]
+  /** v1.5: 'sidebar' = só a coluna do computador; 'mobile' = só o botão do celular (antes as duas
+   *  cópias do componente desenhavam o botão "Filtros" duas vezes no celular e a página rolava para o lado) */
+  mode?: 'sidebar' | 'mobile' | 'both'
 }
 
-export function PropertyFilters({ className, locations = [] }: PropertyFiltersProps) {
+export function PropertyFilters({ className, locations = [], mode = 'both' }: PropertyFiltersProps) {
   const router = useRouter()
   const pathname = usePathname()
   const params = useSearchParams()
@@ -102,8 +105,9 @@ export function PropertyFilters({ className, locations = [] }: PropertyFiltersPr
     const next = new URLSearchParams()
     if (q) next.set('q', q)
     if (busca) next.set('busca', busca)
+    if (params.get('modo') === 'mapa') next.set('modo', 'mapa') // v1.5: limpar filtros mantém o mapa aberto
     router.push(`${pathname}?${next.toString()}`)
-  }, [q, busca, pathname, router])
+  }, [q, busca, params, pathname, router])
 
   const hasFilters = transacao !== 'comprar' || !!finalidade || !!tipo || !!precoMin || !!precoMax ||
     !!quartos || !!banheiros || !!areaMin || !!estado || !!bairro || features.length > 0
@@ -296,6 +300,7 @@ export function PropertyFilters({ className, locations = [] }: PropertyFiltersPr
   return (
     <>
       {/* Desktop sidebar */}
+      {mode !== 'mobile' && (
       <aside className="hidden lg:block w-72 flex-shrink-0" aria-label="Filtros de busca">
         <div className="bg-white rounded-2xl p-6 shadow-sm sticky top-24">
           <h2 className="font-semibold text-[#1e3a8a] mb-4 flex items-center gap-2">
@@ -305,9 +310,11 @@ export function PropertyFilters({ className, locations = [] }: PropertyFiltersPr
           {filterContent}
         </div>
       </aside>
+      )}
 
       {/* Mobile filter button */}
-      <div className="lg:hidden">
+      {mode !== 'sidebar' && (
+      <div className={cn('lg:hidden', className)}>
         <button
           type="button"
           onClick={() => setMobileOpen(true)}
@@ -355,6 +362,7 @@ export function PropertyFilters({ className, locations = [] }: PropertyFiltersPr
           </div>
         )}
       </div>
+      )}
     </>
   )
 }

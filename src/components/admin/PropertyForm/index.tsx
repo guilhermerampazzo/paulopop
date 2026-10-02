@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Printer, X, Save, CheckCircle, Megaphone, FileText, BarChart3, AlertCircle, BadgeCheck } from 'lucide-react'
+import { Printer, X, Save, CheckCircle, Megaphone, FileText, BarChart3, AlertCircle, BadgeCheck, Wand2 } from 'lucide-react'
+import { applyEmpreendimentoFill, isImportedProperty, type EmpreendimentoFill } from '@/lib/empreendimento-fill'
 import { SaleModal } from '@/components/admin/SaleModal'
 import { formatDuration } from '@/lib/sales'
 import { Button } from '@/components/ui/Button'
@@ -84,6 +85,57 @@ export function PropertyForm({ propertyId, initialData }: PropertyFormProps) {
 
   const handleChange = useCallback((field: string, value: unknown) => {
     setData(prev => ({ ...prev, [field]: value }))
+  }, [])
+
+  // ─── v1.5: preenchimento automático a partir do empreendimento ───────────────
+  // Só campos vazios recebem valor; imóvel importado não ganha fotos se já tiver galeria.
+  const dataRef = useRef(data)
+  dataRef.current = data
+  const [fillNotice, setFillNotice] = useState<{ name: string; filled: string[]; imported: boolean } | null>(null)
+  const [filling, setFilling] = useState(false)
+
+  const fillFromEmpreendimento = useCallback(async (empId: string, unitId: string | null) => {
+    if (!empId) return
+    setFilling(true)
+    try {
+      const qs = unitId ? `?unitId=${encodeURIComponent(unitId)}` : ''
+      const res = await fetch(`/api/admin/empreendimentos/${encodeURIComponent(empId)}/preenchimento${qs}`)
+      if (!res.ok) throw new Error('Não foi possível ler o empreendimento')
+      const body = await res.json() as { empreendimento: { name: string }; fill: EmpreendimentoFill }
+      const current = dataRef.current
+      const imported = isImportedProperty(current)
+      const { patch, filled } = applyEmpreendimentoFill(current, body.fill, { imported })
+      if (Object.keys(patch).length) setData(prev => ({ ...prev, ...patch }))
+      setFillNotice({ name: body.empreendimento.name, filled, imported })
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : 'Erro ao preencher com o empreendimento')
+    } finally {
+      setFilling(false)
+    }
+  }, [])
+
+  // Ao escolher o empreendimento ou a unidade na aba Principal, completa o que estiver vazio
+  const handlePrincipalChange = useCallback((field: string, value: unknown) => {
+    handleChange(field, value)
+    if (field === 'empreendimentoId' && typeof value === 'string' && value) void fillFromEmpreendimento(value, null)
+    if (field === 'unitId' && typeof value === 'string' && value) {
+      const empId = dataRef.current.empreendimentoId
+      if (typeof empId === 'string' && empId) void fillFromEmpreendimento(empId, value)
+    }
+  }, [handleChange, fillFromEmpreendimento])
+
+  // "Cadastrar unidade" no empreendimento abre o imóvel novo com ?preencher=1
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    const empId = initialData.empreendimentoId
+    if (params.get('preencher') === '1' && typeof empId === 'string' && empId) {
+      void fillFromEmpreendimento(empId, (initialData.unitId as string) || null)
+      params.delete('preencher')
+      const q = params.toString()
+      window.history.replaceState(null, '', `${window.location.pathname}${q ? `?${q}` : ''}`)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function save(status?: string, publishAuthConfirmed = false) {
@@ -310,8 +362,40 @@ export function PropertyForm({ propertyId, initialData }: PropertyFormProps) {
       {/* Conteúdo da aba */}
       <div className="flex-1 p-4 md:p-6">
         <div role="tabpanel">
+          {/* v1.5: o que veio do empreendimento */}
+          {fillNotice && (
+            <div role="status" className="mb-4 flex items-start gap-3 rounded-xl border border-[#D6E2F0] bg-[#F0F4F8] p-4 text-sm text-[#1e3a8a]">
+              <Wand2 className="mt-0.5 h-4 w-4 flex-shrink-0" aria-hidden="true" />
+              <div className="flex-1">
+                {fillNotice.filled.length ? (
+                  <>
+                    <p className="font-semibold">Preenchido a partir do empreendimento {fillNotice.name}</p>
+                    <p className="mt-1 text-gray-700">{fillNotice.filled.join(', ')}.</p>
+                    <p className="mt-1 text-xs text-gray-500">
+                      Só os campos que estavam vazios foram preenchidos; nada do que já existia foi alterado.
+                      {fillNotice.imported ? ' Imóvel importado: a galeria de fotos do anúncio foi mantida.' : ''}
+                      {' '}Confira, complete o que é desta unidade (preço, fotos do apartamento, descrição) e salve.
+                    </p>
+                  </>
+                ) : (
+                  <p>O empreendimento {fillNotice.name} não tinha nada a acrescentar: os campos que ele preenche já estavam preenchidos.</p>
+                )}
+              </div>
+              <button type="button" onClick={() => setFillNotice(null)} className="text-gray-400 hover:text-gray-600" aria-label="Fechar aviso">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          )}
           {activeTab === 'principal' && (
-            <TabPrincipal data={data} onChange={handleChange} />
+            <TabPrincipal
+              data={data}
+              onChange={handlePrincipalChange}
+              onFillFromEmpreendimento={() => {
+                const empId = data.empreendimentoId
+                if (typeof empId === 'string' && empId) void fillFromEmpreendimento(empId, (data.unitId as string) || null)
+              }}
+              filling={filling}
+            />
           )}
           {activeTab === 'descricao' && (
             <TabDescricao data={data} onChange={handleChange} />

@@ -96,7 +96,7 @@ export function ImoveisTableClient({ properties, total, page, totalPages, search
       })
       if (!res.ok) throw new Error('Falha ao excluir')
       const { count } = await res.json()
-      showToast('success', `${count} imóvel${count !== 1 ? 'is' : ''} excluído${count !== 1 ? 's' : ''} com sucesso.`)
+      showToast('success', `${count} ${count !== 1 ? 'imóveis' : 'imóvel'} excluído${count !== 1 ? 's' : ''} com sucesso.`)
       setSelected(new Set())
       setDeleteTarget(null)
       startTransition(() => router.refresh())
@@ -119,7 +119,7 @@ export function ImoveisTableClient({ properties, total, page, totalPages, search
       if (!res.ok) throw new Error('Falha ao alterar status')
       const { count } = await res.json()
       const label = STATUS_OPTIONS.find(s => s.value === status)?.label ?? status
-      showToast('success', `Status de ${count} imóvel${count !== 1 ? 'is' : ''} alterado para "${label}".`)
+      showToast('success', `Status de ${count} ${count !== 1 ? 'imóveis' : 'imóvel'} alterado para "${label}".`)
       setSelected(new Set())
       startTransition(() => router.refresh())
     } catch {
@@ -187,7 +187,7 @@ export function ImoveisTableClient({ properties, total, page, totalPages, search
             onClick={() =>
               setDeleteTarget({
                 ids: Array.from(selected),
-                label: `${selected.size} imóvel${selected.size !== 1 ? 'is' : ''} selecionado${selected.size !== 1 ? 's' : ''}`,
+                label: `${selected.size} ${selected.size !== 1 ? 'imóveis' : 'imóvel'} selecionado${selected.size !== 1 ? 's' : ''}`,
               })
             }
             className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500 hover:bg-red-600 rounded-lg transition-colors"
@@ -210,7 +210,7 @@ export function ImoveisTableClient({ properties, total, page, totalPages, search
       {/* Contador */}
       <div className="flex items-center justify-between mb-2 text-sm text-gray-500">
         <span>
-          {total} imóvel{total !== 1 ? 'is' : ''} encontrado{total !== 1 ? 's' : ''}
+          {total} {total !== 1 ? 'imóveis' : 'imóvel'} encontrado{total !== 1 ? 's' : ''}
           {isPending && <span className="ml-2 text-xs text-gray-400">Atualizando...</span>}
         </span>
         {totalPages > 1 && <span>Página {page} de {totalPages}</span>}

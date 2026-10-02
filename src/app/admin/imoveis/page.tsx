@@ -11,6 +11,8 @@ interface SearchParams {
   q?: string
   status?: string
   page?: string
+  /** v1.5: imóveis vinculados a um empreendimento (menu de ações do empreendimento) */
+  empreendimento?: string
 }
 
 async function PropertiesTable({ searchParams }: { searchParams: SearchParams }) {
@@ -34,6 +36,7 @@ async function PropertiesTable({ searchParams }: { searchParams: SearchParams })
         }
       : {}),
     ...(searchParams.status ? { status: searchParams.status as never } : {}),
+    ...(searchParams.empreendimento ? { empreendimentoId: searchParams.empreendimento } : {}),
   }
 
   const [properties, total] = await Promise.all([
@@ -89,7 +92,7 @@ async function PropertiesTable({ searchParams }: { searchParams: SearchParams })
   )
 }
 
-export default function AdminImoveisPage({
+export default async function AdminImoveisPage({
   searchParams,
 }: {
   searchParams: SearchParams
@@ -103,6 +106,11 @@ export default function AdminImoveisPage({
     { value: 'INACTIVE', label: 'Inativo' },
     { value: 'SUSPENDED', label: 'Suspenso' },
   ]
+
+  // v1.5: filtro "imóveis deste empreendimento"
+  const empFilter = searchParams.empreendimento
+    ? await prisma.empreendimento.findUnique({ where: { id: searchParams.empreendimento }, select: { id: true, name: true } })
+    : null
 
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto">
@@ -154,6 +162,7 @@ export default function AdminImoveisPage({
             <option key={o.value} value={o.value}>{o.label}</option>
           ))}
         </select>
+        {empFilter && <input type="hidden" name="empreendimento" value={empFilter.id} />}
         <button
           type="submit"
           className="px-4 py-2 bg-[#2563eb] text-white text-sm font-medium rounded-lg hover:bg-[#1d4ed8] transition-colors"
@@ -161,6 +170,13 @@ export default function AdminImoveisPage({
           Filtrar
         </button>
       </form>
+      {empFilter && (
+        <div className="-mt-3 mb-4 flex flex-wrap items-center gap-2 text-sm">
+          <span className="rounded-full bg-[#eff6ff] px-3 py-1 text-[#1e3a8a]">Empreendimento: <b>{empFilter.name}</b></span>
+          <Link href={`/admin/imoveis/novo?empreendimento=${empFilter.id}`} className="text-[#2563eb] hover:underline">Cadastrar unidade</Link>
+          <Link href="/admin/imoveis" className="text-gray-500 hover:underline">Limpar filtro</Link>
+        </div>
+      )}
 
       {/* Tabela */}
       <Suspense fallback={

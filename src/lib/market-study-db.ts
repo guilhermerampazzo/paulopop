@@ -10,7 +10,7 @@ export function loadStudy(id: string, opts: { approvedOnly?: boolean } = {}) {
     where: { id },
     include: {
       samples: { where: opts.approvedOnly ? { candidateStatus: 'APPROVED' } : undefined, orderBy: { order: 'asc' } },
-      agent: { select: { id: true, name: true, publicName: true, creci: true, phone: true, whatsapp: true, email: true, avatarUrl: true, company: true, companyRole: true, companyCreci: true } },
+      agent: { select: { id: true, name: true, publicName: true, creci: true, phone: true, whatsapp: true, email: true, avatarUrl: true, company: true, companyRole: true, companyCreci: true, role: true } },
       property: { select: { id: true, ref: true, slug: true } },
     },
   })
